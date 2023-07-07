@@ -7,6 +7,7 @@ class Graph:
 
     def add_node(self, node):
         self.nodes.append(node)
+        self.distance
 
     def add_nodes(self, *nodes):
         for node in nodes:
@@ -14,7 +15,8 @@ class Graph:
 
     def add_edge(self, src, dest, weight = None):
         if (src not in self.nodes) or (dest not in self.nodes):
-            return 'Invalid edge'
+            print('Invalid edge')
+            exit(1)
 
         new_edge = Edge(src, dest, weight)
         self.edges.append(new_edge)
@@ -24,7 +26,8 @@ class Graph:
     def add_edges(self, *edges):
         for edge in edges:
             if (edge[0] not in self.nodes) or (edge[1] not in self.nodes):
-                return 'Invalid edge'
+                print('Invalid edge')
+                exit(1)
 
             new_edge = Edge(*edge)
             self.edges.append(new_edge)
@@ -45,9 +48,11 @@ class UndirGraph(Graph):
 
     # Each edge is a tuple
     def add_edges(self, *edges):
-        super().add_edges(edges)
+        
+        super().add_edges(*edges)
 
         # Append reverse edges
         for edge in edges:
-            reverse_edge = Edge(*edge)
+            edge_weight = edge[2] if len(edge) == 3 else None
+            reverse_edge = Edge(edge[1], edge[0], edge_weight)
             self.edges.append(reverse_edge)
