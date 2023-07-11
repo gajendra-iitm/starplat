@@ -1,36 +1,51 @@
 from graphs.edge import Edge
+from scipy.sparse import csr_matrix
+import numpy as np
 
 class Graph:
-    def __init__(self):
-        self.nodes = []
-        self.edges = []
+    def __init__(self, nodesTotal = 0, edgesTotal = 0):
+        self.nodesTotal = nodesTotal
+        # Nodes from 0 to nodesTotal - 1
 
-    def add_node(self, node):
-        self.nodes.append(node)
-        self.distance
+        self.edgesTotal = edgesTotal
+        self.edgesCSR  = csr_matrix((nodesTotal, nodesTotal), dtype=int)
+        self.edgesCSR.data[:] = np.full(self.edgesCSR.data.shape, -1)
 
-    def add_nodes(self, *nodes):
-        for node in nodes:
-            self.nodes.append(node)
+        # self.indexOfNodes = [0] * (nodesTotal)
+        # self.edgeList = []
+        # self.edgeLen = []
 
-    def add_edge(self, src, dest, weight = None):
-        if (src not in self.nodes) or (dest not in self.nodes):
-            print('Invalid edge')
-            exit(1)
 
-        new_edge = Edge(src, dest, weight)
-        self.edges.append(new_edge)
+    def add_edge(self, src, dest, weight = 0):
+        self.edgesCSR[src,dest] = weight
 
-    
-    # Each edge is a tuple
-    def add_edges(self, *edges):
-        for edge in edges:
-            if (edge[0] not in self.nodes) or (edge[1] not in self.nodes):
-                print('Invalid edge')
-                exit(1)
 
-            new_edge = Edge(*edge)
-            self.edges.append(new_edge)
+        # startIndex = self.indexOfNodes[src]
+        # endIndex = self.indexOfNodes[src+1]
+        # nbrsCount = endIndex - startIndex
+        # insertAt = 0
+
+        # if (self.edgeList[startIndex] >= dest) or (nbrsCount == 0):
+        #     insertAt = startIndex
+
+        # elif self.edgeList[endIndex-1] <= dest:
+        #     insertAt = endIndex
+
+        # else:
+        #     for i in range(startIndex, endIndex-1):
+        #         if self.edgeList[i] <= dest and self.edgeList[i+1] >= dest:
+        #             insertAt = i+1
+        #             break
+        # self.edgeList.insert(insertAt, dest)
+        # self.edgeLen.insert(insertAt, weight)
+
+        # for i in range(src+1, self.nodesTotal+2):
+        #     self.indexOfNodes[i] +=1
+
+        # newEdge = Edge(src, dest, weight)
+        # self.edges[src].append(newEdge)
+        # self.edgesTotal +=1
+
 
 
 class DirGraph(Graph):
@@ -39,20 +54,9 @@ class DirGraph(Graph):
 
 
 class UndirGraph(Graph):
-    def add_edge(self, src, dest, weight=None):
+    def add_edge(self, src, dest, weight=0):
         super().add_edge(src, dest, weight)
 
         # Append reverse edge
         reverse_edge = Edge(dest, src, weight)
         self.edges.append(reverse_edge)
-
-    # Each edge is a tuple
-    def add_edges(self, *edges):
-        
-        super().add_edges(*edges)
-
-        # Append reverse edges
-        for edge in edges:
-            edge_weight = edge[2] if len(edge) == 3 else None
-            reverse_edge = Edge(edge[1], edge[0], edge_weight)
-            self.edges.append(reverse_edge)
