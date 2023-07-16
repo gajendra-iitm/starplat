@@ -1,22 +1,33 @@
-from edge import Edge
+from .edge import Edge
 
 class Graph:
-    def __init__(self, filepath):
-        file = open(filepath)
-        self.nodesTotal = int(file.readline())
+    def __init__(self):
+        self.nodesTotal = None
+        self.edgesTotal = None
         
-        self.indexOfNodes = [0] * (self.nodesTotal+2)
-        self.edgesTotal = 0
-        self.edgeList = None
-        self.edgeLen = None
+        self.edgeList = []
+        self.edgeLen = []
+
+        self.indexOfNodes = []
 
         # All edges of graph
         self.graph_edge = []
 
         # Edges for each node
+        self.edges = {}
+
+
+    def parseGraph(self, filepath):
+        file = open(filepath)
+
+        self.nodesTotal = int(file.readline())
+        self.indexOfNodes = [0] * (self.nodesTotal+2)
+        self.edgesTotal = 0
+
         self.edges = {i:[] for i in range(self.nodesTotal+1)}
 
 
+        # Parsing edges
         edge_line = file.readline()
         while edge_line:
             self.edgesTotal +=1
@@ -29,7 +40,7 @@ class Graph:
             edge_line = file.readline()
         file.close()
 
-
+    
         self.edgeLen = [0] * self.edgesTotal
         self.edgeList = [0] * self.edgesTotal
 
@@ -39,7 +50,6 @@ class Graph:
             edgeOfVertex = self.edges[vertex]
             edgeOfVertex.sort(key = lambda edge: edge.dest)
 
-            
             # Prefix sum computation
             self.indexOfNodes[vertex] = edge_no
 
@@ -53,6 +63,35 @@ class Graph:
         self.indexOfNodes[self.nodesTotal+1] = edge_no
 
 
+
+    def getOutNeighbors(self, node):
+        return [edge.dest for edge in self.edges[node]]
+    
+    def nodes(self):
+        return [i for i in range(self.nodesTotal+1)]
+    
+    def get_edge(self, src, dest):
+        for edge in self.edges[src]:
+            if edge.dest == dest:
+                return edge
+            
+    
+    def attachNodeProperty(self, **kwargs):
+        distance = kwargs.get('distance')
+        modified = kwargs.get('modified')
+        modified_next = kwargs.get('modified_next')
+
+        if distance is not None:
+            self.distance = {i:distance for i in range(self.nodesTotal+1)}
+
+        if modified is not None:
+            self.modified = {i:modified for i in range(self.nodesTotal+1)}
+
+        if modified_next is not None:
+            self.modified_next = {i:modified_next for i in range(self.nodesTotal+1)}
+
+    
+    
     def add_edge(self, src, dest, weight = 0):
         new_edge = Edge(src, dest, weight)
 
@@ -86,7 +125,6 @@ class Graph:
     
         self.edgesTotal +=1
         self.indexOfNodes[self.nodesTotal + 1] += 1
-
 
 
 class DirGraph(Graph):

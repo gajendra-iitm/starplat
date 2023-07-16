@@ -1,49 +1,38 @@
-from graphs.graph import DirGraph
-import sys
+from math import inf
 
-# Declaring distance and visited dictionary
-dist, visited = {}, {}
+def Compute_SSSP(g, src_node):
 
-def update_dist(curr_node):
+    def isFinished(modified):
+        for node in modified.keys():
+            if modified[node]:
+                return False
+        return True
+    
 
-    # Getting neighbours of curr_node
-    for edge in dg.edges:
-        if edge.src == curr_node:
-            dist[edge.dest] = min(dist[edge.dest], dist[curr_node] + edge.weight)
+    g.attachNodeProperty(distance=inf, modified=False, modified_next=False)
+    g.modified[src_node] = True
+    g.distance[src_node] = 0
 
+    finished = False
 
-def get_min_unvisited(curr_node):
-    minval, minnode = sys.maxsize, curr_node
+    while not finished:
 
-    for node in visited:
-        if not visited[node]:
-            if dist[node] < minval:
-                minval = dist[node]
-                minnode = node
+        for v in filter(lambda node: g.modified[node] == True, g.nodes()):
 
-    return minnode
+            # Changed loop to accessing via nodes
+            for nbr in g.getOutNeighbors(v):
 
+                e = g.get_edge(v, nbr)
+                
+                g.distance[nbr] = min(g.distance[nbr], g.distance[v] + e.weight)
+                g.modified_next[nbr] = True
 
-dg = DirGraph(r'/home/viswesh/Desktop/StarPlat/Py-Starplat/graphs/input.txt')
+        
+        # Making a deep copy
+        g.modified = g.modified_next.copy()
 
+        g.attachNodeProperty(modified_next=False)
 
-# Initializing distance and visited dictionary 
-for node in dg.nodes:
-    dist[node] = sys.maxsize
-    visited[node] = False
-dist[source_node] = 0
-visited[source_node] = True
+        finished = isFinished(g.modified)
 
-curr_node = source_node
-
-for i in range(len(dg.nodes)):
-    update_dist(curr_node)
-    next_node = get_min_unvisited(curr_node)
-
-    curr_node = next_node
-    visited[curr_node] = True
-
-
-# OUTPUT
-for item in dist.items():
-    print(item)
+    return g.distance
