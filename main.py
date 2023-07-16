@@ -2,6 +2,8 @@ from graphs.graph import *
 from SSSP import Compute_SSSP
 
 # input in input.txt
+# first line is max_node (0 to max_node inclusive)
+# following lines are edges: src dest weight
 
 filepath = ''
 my_graph = DirGraph()
