@@ -23,9 +23,15 @@ def Compute_SSSP(g, src_node):
             for nbr in g.getOutNeighbors(v):
 
                 e = g.get_edge(v, nbr)
+
+                new_distance = g.distance[v] + e.weight
+                if new_distance < g.distance[nbr]:
+                    g.distance[nbr] = new_distance
+
+                    g.modified_next[nbr] = True
                 
-                g.distance[nbr] = min(g.distance[nbr], g.distance[v] + e.weight)
-                g.modified_next[nbr] = True
+                # g.distance[nbr] = min(g.distance[nbr], g.distance[v] + e.weight)
+                # g.modified_next[nbr] = True
 
         
         # Making a deep copy
