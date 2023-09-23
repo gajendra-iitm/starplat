@@ -7,7 +7,7 @@ def Compute_SSSP(g, src_node):
             if modified[node]:
                 return False
         return True
-    
+       
 
     g.attachNodeProperty(distance=inf, modified=False, modified_next=False)
     g.modified[src_node] = True

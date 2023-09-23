@@ -5,9 +5,9 @@ from SSSP import Compute_SSSP
 # first line is max_node (0 to max_node inclusive)
 # following lines are edges: src dest weight
 
-filepath = r'/home/viswesh/Desktop/StarPlat/Py-Starplat/graphs/input.txt'
-my_graph = DirGraph()
-my_graph.parseGraph(filepath)
+filepath = r'./graphs/input.txt'
+my_graph = DirGraph(filepath)
+my_graph.parseGraph()
 src_node = 0
 
 result = Compute_SSSP(my_graph, src_node)

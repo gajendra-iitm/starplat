@@ -1,29 +1,40 @@
 from .edge import Edge
+# from .node import Node
 
 class Graph:
-    def __init__(self):
-        self.nodesTotal = None
-        self.edgesTotal = None
+    def __init__(self, file):
+        ### PRIVATE VARS ###
+        self.filepath = file
+        self.nodesTotal = 0 
+        self.edgesTotal = 0
+        self.edgeLen = []
+        
+        # Node-wise edges
+        self.edges = {}
+        ### PRIVATE VARS ###
+        
         
         self.edgeList = []
-        self.edgeLen = []
-
         self.indexOfNodes = []
-
+        self.rev_indexOfNodes = []
         # All edges of graph
         self.graph_edge = []
+        
+        
+    def getEdges(self):
+        return self.edges
+    
+    def getEdgeLen(self):
+        return self.edgeLen
+    
+    def num_nodes(self):
+        return self.nodesTotal + 1
+    
 
-        # Edges for each node
-        self.edges = {}
-
-
-    def parseGraph(self, filepath):
-        file = open(filepath)
+    def parseEdges(self):
+        file = open(self.filepath)
 
         self.nodesTotal = int(file.readline())
-        self.indexOfNodes = [0] * (self.nodesTotal+2)
-        self.edgesTotal = 0
-
         self.edges = {i:[] for i in range(self.nodesTotal+1)}
 
 
@@ -31,27 +42,49 @@ class Graph:
         edge_line = file.readline()
         while edge_line:
             self.edgesTotal +=1
+            
+            source, destination, weightVal = list(map(int,edge_line.split()))
+            
+            if source > self.nodesTotal:
+                self.nodesTotal = source
+                
+            if destination > self.nodesTotal:
+                self.nodesTotal = destination
 
-            new_edge = Edge(*map(int,edge_line.split()))
+            e = Edge(source, destination, weightVal)
 
-            self.edges[new_edge.src].append(new_edge)
-            self.graph_edge.append(new_edge)
+            self.edges[source].append(e)
+            self.graph_edge.append(e)
 
             edge_line = file.readline()
+            
         file.close()
-
     
+    
+
+    def parseGraph(self):
+        self.parseEdges()
+
+        self.indexOfNodes = [0] * (self.nodesTotal+2)
+        self.rev_indexOfNodes = [0] * (self.nodesTotal+2)
+        
         self.edgeLen = [0] * self.edgesTotal
         self.edgeList = [0] * self.edgesTotal
+        self.srcList = [0] * self.edgesTotal
 
-        # Sort the edges
         edge_no = 0
-        for vertex in self.edges.keys():
-            edgeOfVertex = self.edges[vertex]
+        
+        # Sort the edges of each node
+        for i in range(self.nodesTotal+1):
+            edgeOfVertex = self.edges[i]
             edgeOfVertex.sort(key = lambda edge: edge.dest)
 
-            # Prefix sum computation
-            self.indexOfNodes[vertex] = edge_no
+
+        # Prefix sum computation for out neighbours.
+        # Loads indexOfNodes and EdgeList
+        for i in range(self.nodesTotal+1):
+
+            self.indexOfNodes[i] = edge_no
 
             for j in range(len(edgeOfVertex)):
 
@@ -61,14 +94,27 @@ class Graph:
                 edge_no +=1
 
         self.indexOfNodes[self.nodesTotal+1] = edge_no
+        
+        
+        # Prefix sum computation for in neighbours.
+        # Loads rev_indexOfNodes and srcList
+        
+        
+        
+        
 
 
 
     def getOutNeighbors(self, node):
         return [edge.dest for edge in self.edges[node]]
     
+    def nodes_to(self, node):
+        pass
+        
+    
     def nodes(self):
         return [i for i in range(self.nodesTotal+1)]
+    
     
     def get_edge(self, src, dest):
         for edge in self.edges[src]:
@@ -76,20 +122,9 @@ class Graph:
                 return edge
             
     
-    def attachNodeProperty(self, **kwargs):
-        distance = kwargs.get('distance')
-        modified = kwargs.get('modified')
-        modified_next = kwargs.get('modified_next')
-
-        if distance is not None:
-            self.distance = {i:distance for i in range(self.nodesTotal+1)}
-
-        if modified is not None:
-            self.modified = {i:modified for i in range(self.nodesTotal+1)}
-
-        if modified_next is not None:
-            self.modified_next = {i:modified_next for i in range(self.nodesTotal+1)}
-
+    def attachNodeProperty(self, *args, **kwargs):
+        for key,value in kwargs.items():
+            setattr(self, key, {i:value for i in range(self.nodesTotal+1)})
     
     
     def add_edge(self, src, dest, weight = 0):
