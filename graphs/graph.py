@@ -1,5 +1,4 @@
 from .edge import Edge
-import threading
 
 class Graph:
     def __init__(self, file):
@@ -18,6 +17,9 @@ class Graph:
         self.indexOfNodes = []          # Prefix sum for outneighbours
         self.rev_indexOfNodes = []      # Prefix sum for inneighbours
         self.graph_edge = []            # All edges of graph
+        self.edgeMap = []
+        self.outDeg =  {}
+        self.inDeg = {}
         ''' PUBLIC VARS '''
         
         
@@ -92,10 +94,14 @@ class Graph:
         self.__edgeLen = [0] * self.__edgesTotal
         self.edgeList = [0] * self.__edgesTotal
         self.srcList = [0] * self.__edgesTotal
-
+        
+        self.edgeMap = [0] * self.__edgesTotal
+        
+        edgeMapInter = [0] * self.__edgesTotal
+        vertexInter = [0] * self.__edgesTotal
+        
         
         edge_no = 0
-
         # Prefix sum computation for out neighbours.
         # Loads indexOfNodes and EdgeList
 
@@ -116,9 +122,60 @@ class Graph:
         
         # Prefix sum computation for in neighbours.
         # Loads rev_indexOfNodes and srcList
-
-
         
+        # Count indegrees first
+        edge_indexinrevCSR = [0] * self.__edgesTotal
+        
+        for i in range(self.__nodesTotal+1):
+            for j in range(self.indexOfNodes[i], self.indexOfNodes[i+1]):
+                
+                dest = self.edgeList[j]
+                temp = self.rev_indexOfNodes[dest]
+                self.rev_indexOfNodes[dest] += 1
+                edge_indexinrevCSR[j] = temp
+                
+        # convert to revCSR
+        prefix_sum = 0
+        for i in range(self.__nodesTotal+1):
+            temp = prefix_sum
+            prefix_sum += self.rev_indexOfNodes[i]
+            self.rev_indexOfNodes[i] = temp
+        self.rev_indexOfNodes[self.__nodesTotal+1] = prefix_sum
+        
+        
+        # Store the sources in srcList
+        for i in range(self.__nodesTotal+1):
+            for j in range(self.indexOfNodes[i], self.indexOfNodes[i+1]):
+                dest = self.edgeList[j]
+                index_in_srcList = self.rev_indexOfNodes[dest] + edge_indexinrevCSR[j]
+                self.srcList[index_in_srcList] = i
+                edgeMapInter[index_in_srcList] = j # RevCSR to CSR edge mapping
+                vertexInter[index_in_srcList] = self.srcList[index_in_srcList] #store the original content of srcList before sorting srcList.
+                
+        
+        # Sorting sources of each node.
+        for i in range(self.__nodesTotal+1):
+            sliceUpperLimit = self.rev_indexOfNodes[i+1]
+            
+            self.srcList[:sliceUpperLimit] = sorted(self.srcList[:sliceUpperLimit])
+            
+            vectSize = sliceUpperLimit - self.rev_indexOfNodes[i]
+            
+            for j in range(vectSize):
+                srcListIndex = j + self.rev_indexOfNodes[i]
+                for k in range(vectSize):
+                    if vertexInter[k+self.rev_indexOfNodes[i]] == self.srcList[srcListIndex]:
+                        self.edgeMap[srcListIndex] = edgeMapInter[k+self.rev_indexOfNodes[i]]
+                        
+                        break
+                    
+        
+        for i in range(self.__nodesTotal+1):
+            self.inDeg[i] = self.rev_indexOfNodes[i+1] - self.rev_indexOfNodes[i]
+            self.outDeg[i] = self.indexOfNodes[i+1] - self.indexOfNodes[i]
+                    
+             
+            
 
     def getOutNeighbors(self, node):
         return [edge.dest for edge in self.__edges[node]]
