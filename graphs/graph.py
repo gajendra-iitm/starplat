@@ -91,10 +91,10 @@ class Graph:
         self.indexOfNodes = [0] * (self.__nodesTotal+2)
         self.rev_indexOfNodes = [0] * (self.__nodesTotal+2)
         
-        self.__edgeLen = [0] * self.__edgesTotal
         self.edgeList = [0] * self.__edgesTotal
         self.srcList = [0] * self.__edgesTotal
         
+        self.__edgeLen = [0] * self.__edgesTotal
         self.edgeMap = [0] * self.__edgesTotal
         
         edgeMapInter = [0] * self.__edgesTotal
@@ -155,17 +155,18 @@ class Graph:
         
         # Sorting sources of each node.
         for i in range(self.__nodesTotal+1):
-            sliceUpperLimit = self.rev_indexOfNodes[i+1]
+            sliceLower = self.rev_indexOfNodes[i]
+            sliceUpper = self.rev_indexOfNodes[i+1]
             
-            self.srcList[:sliceUpperLimit] = sorted(self.srcList[:sliceUpperLimit])
+            self.srcList[sliceLower:sliceUpper] = sorted(self.srcList[sliceLower:sliceUpper])
             
-            vectSize = sliceUpperLimit - self.rev_indexOfNodes[i]
+            vectSize = sliceUpper - sliceLower
             
             for j in range(vectSize):
-                srcListIndex = j + self.rev_indexOfNodes[i]
+                srcListIndex = j + sliceLower
                 for k in range(vectSize):
-                    if vertexInter[k+self.rev_indexOfNodes[i]] == self.srcList[srcListIndex]:
-                        self.edgeMap[srcListIndex] = edgeMapInter[k+self.rev_indexOfNodes[i]]
+                    if vertexInter[k+sliceLower] == self.srcList[srcListIndex]:
+                        self.edgeMap[srcListIndex] = edgeMapInter[k+sliceLower]
                         
                         break
                     
@@ -181,7 +182,16 @@ class Graph:
         return [edge.dest for edge in self.__edges[node]]
     
     def nodes_to(self, node):
-        pass
+        startIndex, endIndex = self.rev_indexOfNodes[node], self.rev_indexOfNodes[node+1]
+        
+        return self.srcList[startIndex:endIndex].copy()
+    
+    
+    def count_outNbrs(self, node):
+        startIndex = self.indexOfNodes[node]
+        endIndex = self.indexOfNodes[node+1]
+        
+        return endIndex - startIndex
         
     
     def nodes(self):
