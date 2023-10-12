@@ -6,14 +6,18 @@ def Compute_SSSP(g, src_node):
     g.modified[src_node] = True
     g.distance[src_node] = 0
 
-    finished = False
+    # finished = False
     
-    def custom_condition():
+    def condition():
+        finished = True
+        for v in g.modified.values():
+            finished = finished and (not v)
+        
         return finished
     
-    with FixedPointUntil(custom_condition) as loop:
+    with FixedPointUntil(condition) as loop:
         
-        def custom_block():
+        def block():
 
             for v in filter(lambda node: g.modified[node] == True, g.nodes()):
 
@@ -32,10 +36,7 @@ def Compute_SSSP(g, src_node):
             g.modified = g.modified_next.copy()
 
             g.attachNodeProperty(modified_next=False)
-            
-            
-            
         
-        loop.run(custom_block)
+        loop.run(block)
         
     return g.distance
