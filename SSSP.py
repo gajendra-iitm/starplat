@@ -1,5 +1,5 @@
 from math import inf
-from FixedPoint import FixedPoint
+from constructs import FixedPoint
 
 def Compute_SSSP(g, src_node):
     g.attachNodeProperty(distance=inf, modified=False, modified_next=False)

@@ -37,15 +37,36 @@ class Graph:
     
     def getInOutNbrs(self, v):
         pass
-
-    def getEdge(self, s, d):
-        startEdge = self.indexOfNodes[s]
-        endEdge = self.indexOfNodes[s+1] - 1
+    
+    def getNeighbors(self, node):
+        out_edges = []
         
+        for i in range(self.indexOfNodes[node], self.indexOfNodes[node+1]):
+            nbr = self.edgeList[i]
+            
+            e = Edge()
+            e.src, e.dest, e.weight = node, nbr, self.__edgeLen[i]
+            e.id = i
+            e.dir = 1
+            
+            out_edges.append(e)
+            
+        return out_edges
+    
+    def neighbors(self, node):
+        return self.edgeList[self.indexOfNodes[node] : self.indexOfNodes[node+1]]
+
+    def getEdge(self, s, d):        
         for e in self.getNeigbours(s):
             nbr = e.dest
             if nbr == d:
                 return e
+            
+    
+    def is_an_edge(self, s, d):
+        if self.getEdge(s,d):
+            return True
+        return False
     
 
     def parseEdges(self):
@@ -68,7 +89,8 @@ class Graph:
             if destination > self.__nodesTotal:
                 self.__nodesTotal = destination
 
-            e = Edge(source, destination, weightVal)
+            e = Edge()
+            e.src, e.dest, e.weight = source, destination, weightVal
 
             self.__edges[source].append(e)
             self.graph_edge.append(e)
@@ -210,7 +232,8 @@ class Graph:
     
     
     def add_edge(self, src, dest, weight = 0):
-        new_edge = Edge(src, dest, weight)
+        new_edge = Edge()
+        new_edge.src, new_edge.dest, new_edge.weight = src, dest, weight
 
         self.__edges[new_edge.src].append(new_edge)
         self.graph_edge.append(new_edge)
@@ -253,5 +276,6 @@ class UndirGraph(Graph):
         super().add_edge(src, dest, weight)
 
         # Append reverse edge
-        reverse_edge = Edge(dest, src, weight)
+        reverse_edge = Edge()
+        reverse_edge.src, reverse_edge.dest, reverse_edge.weight = dest, src, weight
         self.__edges.append(reverse_edge)

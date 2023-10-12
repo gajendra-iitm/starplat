@@ -1,8 +1,10 @@
 class Edge:
-    def __init__(self, src, dest, weight=None):
-        self.src = src
-        self.dest = dest
-        self.weight = weight
+    def __init__(self):
+        self.src = None
+        self.dest = None
+        self.weight = None
+        self.id = None
+        self.dir = None
 
     
     def __repr__(self):
