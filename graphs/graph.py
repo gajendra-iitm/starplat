@@ -57,7 +57,7 @@ class Graph:
         return self.edgeList[self.indexOfNodes[node] : self.indexOfNodes[node+1]]
 
     def getEdge(self, s, d):        
-        for e in self.getNeigbours(s):
+        for e in self.getNeighbors(s):
             nbr = e.dest
             if nbr == d:
                 return e
