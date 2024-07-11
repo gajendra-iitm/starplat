@@ -1,4 +1,4 @@
-function v_cover(Graph g)
+function v_cover(Graph g, propNode<float> vc)
 {
     propNode<bool> visited;
     g.attachNodeProperty(visited = False);
@@ -9,5 +9,6 @@ function v_cover(Graph g)
                 v.visited = True;
             }
         }
+        v.vc = v.visited;
     }
 }
