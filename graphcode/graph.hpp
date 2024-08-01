@@ -507,7 +507,7 @@ class graph
      
      parseEdgesResidual();
    
-     printf("Here half\n");
+     // printf("Here half\n");
      //printf("HELLO AFTER THIS %d \n",nodesTotal);
      #pragma omp parallel for 
      for(int i=0;i<=nodesTotal;i++)//change to 1-nodesTotal.

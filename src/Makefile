@@ -161,6 +161,7 @@ bin/lex.yy.o: parser/lexer.l parser/lrparser.y
 
 bin:
 	mkdir -p bin
+	mkdir -p ../graphcode/generated_omp
 
 clean_windows:
 	rm -f $(EXPENDABLES_WINDOWS)
