@@ -24,5 +24,7 @@ cudadump/
 testcases/testAMD/*
 graphcode/generated_hip/*cc
 graphcode/generated_hip/*h
+graphcode/generated_mpi/*cc
+graphcode/generated_mpi/*h
 .idea/
 *.o
