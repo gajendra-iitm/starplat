@@ -38,4 +38,21 @@ int main(int argc, char*argv[]) {
     // }
     std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
     return 0;
+
+    }
+
+    graph g(filePath);
+
+    float* vc = new float[g.num_nodes()];
+    g.parseGraph();
+     std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
+     std::cout << "Number of edges: " << g.num_edges() << std::endl;
+    double starttime = omp_get_wtime();
+    v_cover(g,vc);
+    double endtime = omp_get_wtime();
+    // for (int i = 0; i < g.num_nodes(); i++) {
+    //     std::cout<< vc[i] << std::endl;
+    // }
+    std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
+    return 0;
     }
