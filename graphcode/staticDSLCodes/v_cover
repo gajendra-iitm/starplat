@@ -11,4 +11,3 @@ function v_cover(Graph g, propNode<float> vc)
         }
         v.vc = v.visited;
     }
-}
