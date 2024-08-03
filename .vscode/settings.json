@@ -1,0 +1,17 @@
+{
+  "files.associations": {
+    "cassert": "cpp",
+    "test": "c",
+    "ostream": "cpp",
+    "iostream": "cpp",
+    "functional": "c",
+    "array": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "atomic": "cpp",
+    "stdexcept": "cpp",
+    "__locale": "c",
+    "ios": "c"
+  },
+  "cph.general.saveLocation": ""
+}

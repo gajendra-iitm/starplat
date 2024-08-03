@@ -1,0 +1,48 @@
+// function yjhjnj(Graph g, int k)
+// {
+//   string s = "Hello";
+//   string s1;
+//   s1 = "World";
+//   message_passs("STRRR", 1);
+//   forall(n in g.nodes())
+//   {
+//     for (nod in g.neighbors(n))
+//     {
+//       int uy = 09;
+//     }
+//   }
+// }
+
+function test1(Graph g, propNode<float> features, propNode<int> labels)
+{
+  int num_epoch = 100;
+  int num_layer = 5;
+  int x = True;
+  // array<int> layers ={num_features,16 , num_classes};
+  container<int> layers;
+  layers.pushback(num_features);
+  layers.pushback(16);
+  layers.pushback(num_classes);
+  int x = 1;
+  initialize_layers(layers,”Xavier_transform”);
+  bool flag = true;
+  bool flag1 = True;
+  while (flag1)
+  {
+    x = 0;
+    x = x + 1;
+    forall(nod in g.nodes())
+    {
+      for (n in g.neighbors(nod))
+      {
+        if (n.labels == nod.labels)
+        {
+          int num_neurons = layers.getIdx(x);
+          message_pass(nod, n, features, "sum", num_neurons, 1);
+        }
+      }
+    }
+
+    // Backward Propagation
+  }
+}
