@@ -141,6 +141,7 @@ namespace spcuda
     addIncludeToFile("../graph.hpp", header, false);
     header.pushString("#include ");
     addIncludeToFile("../libcuda.cuh", header, false);
+    header.NewLine();
 
     header.pushstr_newL("#include <cooperative_groups.h>");
     // header.pushstr_newL("graph &g = NULL;");  //temporary fix - to fix the PageRank graph g instance
@@ -150,6 +151,12 @@ namespace spcuda
     main.pushString("#include ");
     sprintf(temp, "%s.h", fileName);
     addIncludeToFile(temp, main, false);
+
+    header.pushString("env environment(\"cuda\", \"static\", \"");
+    header.pushString(fileName);
+    header.pushString("\");");
+    header.NewLine();
+
     main.NewLine();
   }
 

@@ -52,6 +52,10 @@ namespace spomp
     addIncludeToFile(temp, main, false);
     header.pushString("using namespace std;");
     header.NewLine();
+    header.pushString("env environment(\"omp\", \"static\", \"");
+    header.pushString(fileName);
+    header.pushString("\");");
+    header.NewLine();
     main.NewLine();
   }
 
