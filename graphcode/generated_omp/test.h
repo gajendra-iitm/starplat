@@ -9,6 +9,7 @@
 #include"../atomicUtil.h"
 
 using namespace std;
+env environment("omp", "static", "test");
 void test1(graph& g , float* features , int* labels);
 
 #endif

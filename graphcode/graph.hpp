@@ -9,6 +9,9 @@
 #include <climits>
 #include "graph_ompv2.hpp"
 
+class env;
+extern env environment;
+
 // using namespace std;
 
 class edge
@@ -968,5 +971,172 @@ public:
     }
 
     return in_edges;
+  }
+};
+
+// class layer
+// {
+//   int32_t num_features;
+//   float *weights;
+//   float bias;
+//   float *output;
+//   float *input;
+//   float *grad_input;
+//   float *grad_weights;
+//   float *grad_bias;
+//   float *grad_output;
+// };
+
+// class GNN : public graph
+// {
+//   std::vector<layer> layers;
+
+//   std::vector<float> features;
+
+//   std::vector<int32_t> labels;
+
+//   char *featFile, *labFile;
+
+// public:
+//   GNN(graph &g, char *featFile, char *labFile) : graph(g)
+//   {
+//     this->featFile = featFile;
+//     this->labFile = labFile;
+//   }
+
+//   void loadFeatures()
+//   {
+//     std::ifstream infile;
+//     infile.open(featFile);
+//     std::string line;
+//     while (std::getline(infile, line))
+//     {
+//       if (line.length() == 0 || line[0] < '0' || line[0] > '9')
+//       {
+//         continue;
+//       }
+
+//       std::stringstream ss(line);
+//       float feature;
+//       ss >> feature;
+
+//       features.push_back(feature);
+//     }
+//   }
+
+//   void loadLabels()
+//   {
+//     std::ifstream infile;
+//     infile.open(labFile);
+//     std::string line;
+//     while (std::getline(infile, line))
+//     {
+//       if (line.length() == 0 || line[0] < '0' || line[0] > '9')
+//       {
+//         continue;
+//       }
+
+//       std::stringstream ss(line);
+
+//       int32_t label;
+//       ss >> label;
+
+//       labels.push_back(label);
+//     }
+//   }
+//   void initializeLayers(std::vector<int> layers, std::string init_type)
+//   {
+//     for (int i = 0; i < layers.size(); i++)
+//     {
+//       layer l;
+//       l.num_features = layers[i];
+//       l.weights = new float[l.num_features];
+//       l.bias = 0;
+//       l.output = new float[l.num_features];
+//       l.input = new float[l.num_features];
+//       l.grad_input = new float[l.num_features];
+//       l.grad_weights = new float[l.num_features];
+//       l.grad_bias = 0;
+//       l.grad_output = new float[l.num_features];
+
+//       if (init_type == "Xavier_transform")
+//       {
+//         for (int j = 0; j < l.num_features; j++)
+//         {
+//           l.weights[j] = 1.0 / sqrt(l.num_features);
+//         }
+//       }
+
+//       layers.push_back(l);
+//     }
+//   }
+
+//   // void forward()
+//   // {
+//   //   for (int i = 0; i < layers.size(); i++)
+//   //   {
+//   //     layer l = layers[i];
+//   //     for (int j = 0; j < l.num_features; j++)
+//   //     {
+//   //       l.output[j] = 0;
+//   //       for (int k = 0; k < l.num_features; k++)
+//   //       {
+//   //         l.output[j] += l.weights[k] * l.input[k];
+//   //       }
+//   //       l.output[j] += l.bias;
+//   //     }
+//   //   }
+//   // }
+
+//   // void message_pass()
+//   // {
+//   //   env *instance = env::get_instance();
+//   //   if (instance->get_backend() == "omp")
+//   //   {
+//   //     message_pass_omp(this);
+//   //   }
+//   //   else if (instance->get_backend() == "cuda")
+//   //   {
+//   //     message_pass_cuda();
+//   //   }
+//   // }
+
+//   // void backward()
+//   // {
+//   //   for (int i = layers.size() - 1; i >= 0; i--)
+//   //   {
+//   //     layer l = layers[i];
+//   //     for (int j = 0; j < l.num_features; j++)
+//   //     {
+//   //       l.grad_input[j] = 0;
+//   //       for (int k = 0; k < l.num_features; k++)
+//   //       {
+//   //         l.grad_input[j] += l.grad_output[k] * l.weights[k];
+//   //         l.grad_weights[j] += l.grad_output[k] * l.input[j];
+//   //       }
+//   //       l.grad_bias += l.grad_output[j];
+//   //     }
+//   //   }
+//   // }
+// };
+
+class env
+{
+  char *backend;
+  char *algoType;
+  char *filename;
+
+public:
+  env(char *backend, char *algoType, char *filename)
+  {
+    // use strdup for deep copy
+    this->backend = strdup(backend);
+    this->algoType = strdup(algoType);
+    this->filename = strdup(filename);
+  }
+
+  char *get_backend()
+  {
+    return backend;
   }
 };

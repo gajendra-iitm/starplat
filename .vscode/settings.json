@@ -11,7 +11,9 @@
     "atomic": "cpp",
     "stdexcept": "cpp",
     "__locale": "c",
-    "ios": "c"
+    "ios": "c",
+    "istream": "cpp",
+    "climits": "cpp"
   },
   "cph.general.saveLocation": ""
 }

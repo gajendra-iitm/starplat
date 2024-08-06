@@ -1,7 +1,7 @@
 // FOR BC: nvcc bc_dsl_v2.cu -arch=sm_60 -std=c++14 -rdc=true # HW must support CC 6.0+ Pascal or after
 #include "test.h"
 
-void yjhjnj(graph& g,int k)
+void test1(graph& g,float* features,int* labels)
 
 {
   int V = g.num_nodes();
@@ -46,24 +46,47 @@ void yjhjnj(graph& g,int k)
 
 
   //DECLAR DEVICE AND HOST vars in params
+  float* d_features;
+  cudaMalloc(&d_features, sizeof(float)*(V));
+
+  int* d_labels;
+  cudaMalloc(&d_labels, sizeof(int)*(V));
+
 
   //BEGIN DSL PARSING 
-  thrust::device_vector<char>  s = "Hello";
-  thrust::device_vector<char>  s1;
-  s1 = "World";
-  message_passs("STRRR",1);
+  int num_epoch = 100;
+  int num_layer = 5;
+  thrust::device_vector<int> layers;
+  layers.pushback(num_features);
+
+  layers.pushback(16);
+
+  layers.pushback(num_classes);
+
+  int x = 1;
+  initialize_layers(layers,Xavier_transform);
+
+  bool flag = true;
+  bool flag1 = true;
+  while(flag1){
+    x = 0;
+    cudaMemcpyToSymbol(::x, &x, sizeof(int), 0, cudaMemcpyHostToDevice);
+
+    test1_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_meta,d_data,d_labels);
+    cudaDeviceSynchronize();
+    cudaMemcpyFromSymbol(&x, ::x, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
 
-  yjhjnj_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_meta,d_data);
-  cudaDeviceSynchronize();
 
 
 
-
+  }
   //TIMER STOP
   cudaEventRecord(stop,0);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&milliseconds, start, stop);
   printf("GPU Time: %.6f ms\n", milliseconds);
 
+  cudaMemcpy(features, d_features, sizeof(float)*(V), cudaMemcpyDeviceToHost);
+  cudaMemcpy(  labels, d_labels, sizeof(int)*(V), cudaMemcpyDeviceToHost);
 } //end FUN

@@ -281,3 +281,4 @@ int main()
   printf("triangle Count %d\n",triangleC);
 
 }
+

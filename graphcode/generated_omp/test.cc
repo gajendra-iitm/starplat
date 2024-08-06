@@ -4,7 +4,6 @@ void test1(graph& g , float* features , int* labels)
 {
   int num_epoch = 100;
   int num_layer = 5;
-  int x = true;
   vector<int> layers;
   layers.pushback(num_features);
 
@@ -19,10 +18,10 @@ void test1(graph& g , float* features , int* labels)
   bool flag1 = true;
   while (flag1){
     x = 0;
-    x = x + 1;
     #pragma omp parallel for
     for (int nod = 0; nod < g.num_nodes(); nod ++) 
     {
+      x = x + 1;
       for (int edge = g.indexofNodes[nod]; edge < g.indexofNodes[nod+1]; edge ++) 
       {int n = g.edgeList[edge] ;
         if (labels[n] == labels[nod] )
