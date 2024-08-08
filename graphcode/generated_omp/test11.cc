@@ -56,6 +56,9 @@ int main()
   //   }
   // }
 
+  GNN gnn(G, "", "");
+  gnn.gcn_preprocessing();
+
   // print all the edges with weights
   for (int nod = 0; nod < G.num_nodes(); nod++)
   {

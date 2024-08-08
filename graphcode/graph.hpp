@@ -1,3 +1,4 @@
+#pragma once
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -8,10 +9,6 @@
 #include <string.h>
 #include <climits>
 #include "graph_ompv2.hpp"
-
-#ifndef GRAPH_H
-#define GRAPH_H
-#include "graphGNN_omp.hpp"
 
 class env;
 extern env environment;
@@ -60,17 +57,7 @@ public:
   std::map<int, int> outDeg;
   std::map<int, int> inDeg;
 
-  graph(char *file)
-  {
-    filePath = file;
-    nodesTotal = 0;
-    edgesTotal = 0;
-    diff_edgeList = NULL;
-    diff_indexofNodes = NULL;
-    diff_rev_indexofNodes = NULL;
-    diff_rev_edgeList = NULL;
-    rev_edgeLen = NULL;
-  }
+  graph(char *file);
 
   std::map<int, std::vector<edge>> getEdges();
 
@@ -95,6 +82,7 @@ public:
   int getInDegree(int v);
   void addEdge(int src, int dest, int aks);
   void delEdge(int src, int dest);
+  void changeWeight(int src, int dest, int weight);
   std::vector<update> parseUpdates(char *updateFile);
   std::vector<update> getDeletesFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
   std::vector<update> getAddsFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
@@ -113,6 +101,7 @@ public:
 
 class layer
 {
+public:
   int32_t num_features;
   float *weights;
   float bias;
@@ -133,97 +122,11 @@ class GNN
   char *featFile, *labFile;
 
 public:
-  GNN(graph &g, char *featFile, char *labFile) : g(g), featFile(featFile), labFile(labFile);
+  GNN(graph &g, char *featFile, char *labFile);
   graph &getGraph();
   void loadFeatures();
   void loadLabels();
-
-  // void initializeLayers(std::vector<int> layers, std::string init_type)
-  // {
-  //   for (int i = 0; i < layers.size(); i++)
-  //   {
-  //     layer l;
-  //     l.num_features = layers[i];
-  //     l.weights = new float[l.num_features];
-  //     l.bias = 0;
-  //     l.output = new float[l.num_features];
-  //     l.input = new float[l.num_features];
-  //     l.grad_input = new float[l.num_features];
-  //     l.grad_weights = new float[l.num_features];
-  //     l.grad_bias = 0;
-  //     l.grad_output = new float[l.num_features];
-
-  //     if (init_type == "Xavier_transform")
-  //     {
-  //       for (int j = 0; j < l.num_features; j++)
-  //       {
-  //         l.weights[j] = 1.0 / sqrt(l.num_features);
-  //       }
-  //     }
-
-  //     layers.push_back(l);
-  //   }
-  // }
-
-  // void gcn_preprocessing()
-  // {
-  //   if (environment.get_backend() == "omp")
-  //   {
-  //     gcn_preprocessing_omp(this);
-  //   }
-  //   else if (environment.get_backend() == "cuda")
-  //   {
-  //     // preprocessing_cuda();
-  //   }
-  // }
-
-  // void forward()
-  // {
-  //   for (int i = 0; i < layers.size(); i++)
-  //   {
-  //     layer l = layers[i];
-  //     for (int j = 0; j < l.num_features; j++)
-  //     {
-  //       l.output[j] = 0;
-  //       for (int k = 0; k < l.num_features; k++)
-  //       {
-  //         l.output[j] += l.weights[k] * l.input[k];
-  //       }
-  //       l.output[j] += l.bias;
-  //     }
-  //   }
-  // }
-
-  // void message_pass()
-  // {
-  //   env *instance = env::get_instance();
-  //   if (instance->get_backend() == "omp")
-  //   {
-  //     message_pass_omp(this);
-  //   }
-  //   else if (instance->get_backend() == "cuda")
-  //   {
-  //     message_pass_cuda();
-  //   }
-  // }
-
-  // void backward()
-  // {
-  //   for (int i = layers.size() - 1; i >= 0; i--)
-  //   {
-  //     layer l = layers[i];
-  //     for (int j = 0; j < l.num_features; j++)
-  //     {
-  //       l.grad_input[j] = 0;
-  //       for (int k = 0; k < l.num_features; k++)
-  //       {
-  //         l.grad_input[j] += l.grad_output[k] * l.weights[k];
-  //         l.grad_weights[j] += l.grad_output[k] * l.input[j];
-  //       }
-  //       l.grad_bias += l.grad_output[j];
-  //     }
-  //   }
-  // }
+  void gcn_preprocessing();
 };
 
 class env
@@ -233,6 +136,6 @@ class env
   char *filename;
 
 public:
-  env(char *backend, char *algoType, char *filename) char *get_backend();
+  env(char *backend, char *algoType, char *filename);
+  char *get_backend();
 };
-#endif

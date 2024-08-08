@@ -1,18 +1,4 @@
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <vector>
-#include <set>
-#include <map>
-#include <algorithm>
-#include <string.h>
-#include <climits>
-
-#ifndef GNN_OMP_H
-#define GNN_OMP_H
-
-class GNN;
-class graph;
+#include "graph.hpp"
 
 void gcn_preprocessing_omp(GNN &gnn)
 {
@@ -23,9 +9,12 @@ void gcn_preprocessing_omp(GNN &gnn)
   // change weight of all edges to 1
   int num_edges = g.num_edges();
 #pragma omp parallel for
-  for (int i = 0; i < num_edges; i++)
+  for (int nod = 0; nod < g.num_nodes(); nod++)
   {
-    g.edgeList[i].weight = 1;
+    for (auto &edge : g.getNeighbors(nod))
+    {
+      g.changeWeight(edge.source, edge.destination, 1);
+    }
   }
 
   int num_nodes = g.num_nodes();
@@ -34,5 +23,3 @@ void gcn_preprocessing_omp(GNN &gnn)
     g.addEdge(i, i, 1);
   }
 }
-
-#endif
