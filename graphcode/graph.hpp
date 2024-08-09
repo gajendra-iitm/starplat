@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string.h>
 #include <climits>
+#include <cmath>
 #include "graph_ompv2.hpp"
 
 class env;
@@ -20,7 +21,7 @@ class edge
 public:
   int32_t source;
   int32_t destination;
-  int32_t weight;
+  float weight;
   int32_t id; /* -unique Id for each edge.
                  -useful in adding properties to edges. */
   int dir;
@@ -32,10 +33,10 @@ class graph
 private:
   int32_t nodesTotal;
   int32_t edgesTotal;
-  int32_t *edgeLen;
-  int32_t *diff_edgeLen;
-  int32_t *rev_edgeLen;
-  int32_t *diff_rev_edgeLen;
+  float *edgeLen;
+  float *diff_edgeLen;
+  float *rev_edgeLen;
+  float *diff_rev_edgeLen;
   char *filePath;
   std::map<int32_t, std::vector<edge>> edges;
 
@@ -61,7 +62,7 @@ public:
 
   std::map<int, std::vector<edge>> getEdges();
 
-  int *getEdgeLen();
+  float *getEdgeLen();
 
   int num_nodes();
 
@@ -82,7 +83,7 @@ public:
   int getInDegree(int v);
   void addEdge(int src, int dest, int aks);
   void delEdge(int src, int dest);
-  void changeWeight(int src, int dest, int weight);
+  void changeWeight(int src, int dest, float weight);
   std::vector<update> parseUpdates(char *updateFile);
   std::vector<update> getDeletesFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
   std::vector<update> getAddsFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);

@@ -14,7 +14,9 @@
     "ios": "c",
     "istream": "cpp",
     "climits": "cpp",
-    "fstream": "cpp"
+    "fstream": "cpp",
+    "sstream": "cpp",
+    "cmath": "cpp"
   },
   "cph.general.saveLocation": ""
 }

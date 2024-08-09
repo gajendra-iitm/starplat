@@ -22,4 +22,33 @@ void gcn_preprocessing_omp(GNN &gnn)
   {
     g.addEdge(i, i, 1);
   }
+
+  // calculate degree matrix
+  std::vector<float> degree(num_nodes, 0);
+#pragma omp parallel for
+  for (int nod = 0; nod < num_nodes; nod++)
+  {
+    for (auto edge : g.getNeighbors(nod))
+    {
+      degree[nod] += edge.weight;
+    }
+  }
+
+  // calculate inverse of degree matrix
+  std::vector<float> inv_degree(num_nodes, 0);
+#pragma omp parallel for
+  for (int nod = 0; nod < num_nodes; nod++)
+  {
+    inv_degree[nod] = 1 / sqrt(degree[nod]);
+  }
+
+  // calculate the normalized adjacency matrix
+#pragma omp parallel for
+  for (int nod = 0; nod < num_nodes; nod++)
+  {
+    for (auto &edge : g.getNeighbors(nod))
+    {
+      g.changeWeight(edge.source, edge.destination, edge.weight * inv_degree[edge.source] * inv_degree[edge.destination]);
+    }
+  }
 }

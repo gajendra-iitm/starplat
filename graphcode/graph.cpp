@@ -21,7 +21,7 @@ std::map<int, std::vector<edge>> graph::getEdges()
   return edges;
 }
 
-int *graph::getEdgeLen()
+float *graph::getEdgeLen()
 {
   return edgeLen;
 }
@@ -211,7 +211,7 @@ void graph::addEdge(int src, int dest, int aks)
   }
 
   edgeList = (int32_t *)realloc(edgeList, sizeof(int32_t) * (edgesTotal + 1));
-  edgeLen = (int32_t *)realloc(edgeLen, sizeof(int32_t) * (edgesTotal + 1));
+  edgeLen = (float *)realloc(edgeLen, sizeof(float) * (edgesTotal + 1));
 
   for (int i = edgesTotal - 1; i >= insertAt; i--) // shift the elements
   {
@@ -282,7 +282,7 @@ void graph::delEdge(int src, int dest)
   printf("src %d dest %d mid %d\n", src, dest, mid);
 }
 
-void graph::changeWeight(int src, int dest, int weight)
+void graph::changeWeight(int src, int dest, float weight)
 {
   int startEdge = indexofNodes[src];
   int endEdge = indexofNodes[src + 1] - 1;
@@ -361,7 +361,7 @@ void graph::parseEdges()
     edge e;
     int32_t source;
     int32_t destination;
-    int32_t weightVal;
+    float weightVal;
 
     ss >> source;
     if (source > nodesTotal)
@@ -414,7 +414,7 @@ void graph::parseEdgesResidual()
     edge e;
     int32_t source;
     int32_t destination;
-    int32_t weightVal;
+    float weightVal;
 
     ss >> source;
     if (source > nodesTotal)
@@ -478,7 +478,7 @@ void graph::parseGraphResidual()
   rev_indexofNodes = new int32_t[nodesTotal + 2];
   edgeList = new int32_t[edgesTotal]; // new int32_t[edgesTotal] ;
   srcList = new int32_t[edgesTotal];
-  edgeLen = new int32_t[edgesTotal]; // new int32_t[edgesTotal] ;
+  edgeLen = new float[edgesTotal]; // new int32_t[edgesTotal] ;
   edgeMap = new int32_t[edgesTotal];
   perNodeCSRSpace = new int32_t[nodesTotal + 1];
   perNodeRevCSRSpace = new int32_t[nodesTotal + 1];
@@ -625,7 +625,7 @@ void graph::parseGraph()
   rev_indexofNodes = new int32_t[nodesTotal + 2];
   edgeList = new int32_t[edgesTotal]; // new int32_t[edgesTotal] ;
   srcList = new int32_t[edgesTotal];
-  edgeLen = new int32_t[edgesTotal]; // new int32_t[edgesTotal] ;
+  edgeLen = new float[edgesTotal]; // new int32_t[edgesTotal] ;
   edgeMap = new int32_t[edgesTotal];
   perNodeCSRSpace = new int32_t[nodesTotal + 1];
   perNodeRevCSRSpace = new int32_t[nodesTotal + 1];
@@ -755,7 +755,7 @@ void graph::updateCSRDel(std::vector<update> &batchUpdate, int k, int size)
   std::vector<std::pair<int, int>> perNodeUpdateRevInfo;
   std::vector<update> slicedUpdates;
   if (rev_edgeLen == NULL)
-    rev_edgeLen = new int[edgesTotal];
+    rev_edgeLen = new float[edgesTotal];
   for (int i = 0; i < num_nodes; i++)
   {
     perNodeUpdateInfo.push_back({0, 0});
@@ -792,7 +792,7 @@ void graph::updateCSRDel(std::vector<update> &batchUpdate, int k, int size)
   for (int i = 0; i < edgesTotal; i++)
   {
     /* int e = edgeMap[i];
-     int weight = edgeLen[e];*/
+     float weight = edgeLen[e];*/
     rev_edgeLen[i] = 1; // weight;
   }
 
@@ -1025,63 +1025,15 @@ void GNN::gcn_preprocessing()
 {
   std::cout << "going to preprocessing\n";
 
-  if (strcmp(environment.get_backend(), "omp") == 0)
-  {
-    gcn_preprocessing_omp(*this);
-  }
-  else if (strcmp(environment.get_backend(), "cuda") == 0)
-  {
-    // preprocessing_cuda();
-  }
+  // if (strcmp(environment.get_backend(), "omp") == 0)
+  // {
+  gcn_preprocessing_omp(*this);
+  // }
+  // else if (strcmp(environment.get_backend(), "cuda") == 0)
+  // {
+  //   preprocessing_cuda();
+  // }
 }
-
-// void forward()
-// {
-//   for (int i = 0; i < layers.size(); i++)
-//   {
-//     layer l = layers[i];
-//     for (int j = 0; j < l.num_features; j++)
-//     {
-//       l.output[j] = 0;
-//       for (int k = 0; k < l.num_features; k++)
-//       {
-//         l.output[j] += l.weights[k] * l.input[k];
-//       }
-//       l.output[j] += l.bias;
-//     }
-//   }
-// }
-
-// void message_pass()
-// {
-//   env *instance = env::get_instance();
-//   if (instance->get_backend() == "omp")
-//   {
-//     message_pass_omp(this);
-//   }
-//   else if (instance->get_backend() == "cuda")
-//   {
-//     message_pass_cuda();
-//   }
-// }
-
-// void backward()
-// {
-//   for (int i = layers.size() - 1; i >= 0; i--)
-//   {
-//     layer l = layers[i];
-//     for (int j = 0; j < l.num_features; j++)
-//     {
-//       l.grad_input[j] = 0;
-//       for (int k = 0; k < l.num_features; k++)
-//       {
-//         l.grad_input[j] += l.grad_output[k] * l.weights[k];
-//         l.grad_weights[j] += l.grad_output[k] * l.input[j];
-//       }
-//       l.grad_bias += l.grad_output[j];
-//     }
-//   }
-// }
 
 env::env(char *backend, char *algoType, char *filename)
 {
