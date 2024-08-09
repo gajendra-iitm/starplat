@@ -13,7 +13,10 @@
     "__locale": "c",
     "ios": "c",
     "istream": "cpp",
-    "climits": "cpp"
+    "climits": "cpp",
+    "fstream": "cpp",
+    "sstream": "cpp",
+    "cmath": "cpp"
   },
   "cph.general.saveLocation": ""
 }

@@ -55,5 +55,18 @@ int main()
   //     cout<<edge.source<<" "<<edge.destination<<endl;
   //   }
   // }
+
+  GNN gnn(G, "", "");
+  gnn.gcn_preprocessing();
+
+  // print all the edges with weights
+  for (int nod = 0; nod < G.num_nodes(); nod++)
+  {
+    for (auto edge : G.getNeighbors(nod))
+    {
+      cout << edge.source << " " << edge.destination << " " << edge.weight << endl;
+    }
+  }
+
   printf("%s\n", environment.get_backend());
 }
