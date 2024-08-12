@@ -104,10 +104,10 @@ class layer
 {
 public:
   int32_t num_features;
-  float *weights;
-  float bias;
-  float *output;
-  float *input;
+  float **weights;
+  float *bias;
+  float **outputFeatures;
+  float **inputFeatures;
   float *grad_input;
   float *grad_weights;
   float *grad_bias;
@@ -118,7 +118,6 @@ class GNN
 {
   graph &g;
   std::vector<layer> layers;
-  std::vector<float> features;
   std::vector<int32_t> labels;
   char *featFile, *labFile;
 
@@ -128,6 +127,7 @@ public:
   void loadFeatures();
   void loadLabels();
   void gcn_preprocessing();
+  std::vector<layer> &getLayers();
 };
 
 class env

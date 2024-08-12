@@ -954,6 +954,11 @@ graph &GNN::getGraph()
   return g;
 }
 
+std::vector<layer> &GNN::getLayers()
+{
+  return layers;
+}
+
 void GNN::loadFeatures()
 {
   std::ifstream infile;
@@ -1002,8 +1007,8 @@ void GNN::loadLabels()
 //     l.num_features = layers[i];
 //     l.weights = new float[l.num_features];
 //     l.bias = 0;
-//     l.output = new float[l.num_features];
-//     l.input = new float[l.num_features];
+//     l.outputFeatures = new float[l.num_features];
+//     l.inputFeatures = new float[l.num_features];
 //     l.grad_input = new float[l.num_features];
 //     l.grad_weights = new float[l.num_features];
 //     l.grad_bias = 0;
