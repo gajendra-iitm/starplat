@@ -9,6 +9,7 @@
 #include <string.h>
 #include <climits>
 #include <cmath>
+#include <random>
 #include "graph_ompv2.hpp"
 
 class env;
@@ -83,6 +84,7 @@ public:
   int getInDegree(int v);
   void addEdge(int src, int dest, int aks);
   void delEdge(int src, int dest);
+  float getWeight(int src, int dest);
   void changeWeight(int src, int dest, float weight);
   std::vector<update> parseUpdates(char *updateFile);
   std::vector<update> getDeletesFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
@@ -106,10 +108,11 @@ public:
   int32_t num_features;
   float **weights;
   float *bias;
-  float **outputFeatures;
   float **inputFeatures;
+  float **aggregatedFeatures;
+  float **outputFeatures;
   float *grad_input;
-  float *grad_weights;
+  float **grad_weights;
   float *grad_bias;
   float *grad_output;
 };
@@ -119,14 +122,19 @@ class GNN
   graph &g;
   std::vector<layer> layers;
   std::vector<int32_t> labels;
-  char *featFile, *labFile;
+  std::vector<std::vector<float>> features;
+  char *feat_file, *lab_file;
+  int num_features, num_classes;
 
 public:
-  GNN(graph &g, char *featFile, char *labFile);
+  GNN(graph &g, char *feat_file, char *lab_file);
   graph &getGraph();
   void loadFeatures();
   void loadLabels();
-  void gcn_preprocessing();
+  void gcnPreprocessing();
+  int numFeatures();
+  int numClasses();
+  void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
   std::vector<layer> &getLayers();
 };
 

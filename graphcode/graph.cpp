@@ -282,6 +282,28 @@ void graph::delEdge(int src, int dest)
   printf("src %d dest %d mid %d\n", src, dest, mid);
 }
 
+float graph::getWeight(int src, int dest)
+{
+  int startEdge = indexofNodes[src];
+  int endEdge = indexofNodes[src + 1] - 1;
+  int mid;
+
+  while (startEdge <= endEdge)
+  {
+    mid = (startEdge + endEdge) / 2;
+
+    if (edgeList[mid] == dest)
+      break;
+
+    if (dest < edgeList[mid])
+      endEdge = mid - 1;
+    else
+      startEdge = mid + 1;
+  }
+
+  return edgeLen[mid];
+}
+
 void graph::changeWeight(int src, int dest, float weight)
 {
   int startEdge = indexofNodes[src];
@@ -943,10 +965,13 @@ std::vector<edge> graph::getInNeighbors(int node)
   return in_edges;
 }
 
-GNN::GNN(graph &g, char *featFile, char *labFile) : g(g), featFile(featFile), labFile(labFile)
+GNN::GNN(graph &g, char *feat_file, char *lab_file) : g(g), feat_file(feat_file), lab_file(lab_file)
 {
-  // loadFeatures();
-  // loadLabels();
+  loadFeatures();
+  loadLabels();
+
+  std::cout << "features size " << num_features << std::endl;
+  std::cout << "labels size " << num_classes << std::endl;
 }
 
 graph &GNN::getGraph()
@@ -959,10 +984,22 @@ std::vector<layer> &GNN::getLayers()
   return layers;
 }
 
+int GNN::numFeatures()
+{
+  return num_features;
+}
+
+int GNN::numClasses()
+{
+  return num_classes;
+}
+
 void GNN::loadFeatures()
 {
+  num_features = 0;
+  bool is_first = true;
   std::ifstream infile;
-  infile.open(featFile);
+  infile.open(feat_file);
   std::string line;
   while (std::getline(infile, line))
   {
@@ -972,17 +1009,24 @@ void GNN::loadFeatures()
     }
 
     std::stringstream ss(line);
-    float feature;
-    ss >> feature;
-
+    std::vector<float> feature;
+    float feat;
+    while (ss >> feat)
+    {
+      feature.push_back(feat);
+      if (is_first)
+        num_features++;
+    }
     features.push_back(feature);
+
+    is_first = false;
   }
 }
 
 void GNN::loadLabels()
 {
   std::ifstream infile;
-  infile.open(labFile);
+  infile.open(lab_file);
   std::string line;
   while (std::getline(infile, line))
   {
@@ -998,6 +1042,7 @@ void GNN::loadLabels()
 
     labels.push_back(label);
   }
+  num_classes = std::set<int>(labels.begin(), labels.end()).size();
 }
 // void initializeLayers(std::vector<int> layers, std::string init_type)
 // {
@@ -1026,7 +1071,7 @@ void GNN::loadLabels()
 //   }
 // }
 
-void GNN::gcn_preprocessing()
+void GNN::gcnPreprocessing()
 {
   std::cout << "going to preprocessing\n";
 
@@ -1038,6 +1083,15 @@ void GNN::gcn_preprocessing()
   // {
   //   preprocessing_cuda();
   // }
+}
+
+void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
+{
+  // void initializeLayers_omp(GNN &gnn, std::vector<int> neuronsPerLayer, char *initType)
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    initializeLayers_omp(*this, neuronsPerLayer, initType);
+  }
 }
 
 env::env(char *backend, char *algoType, char *filename)
