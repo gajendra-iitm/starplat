@@ -10,8 +10,11 @@ filepath = r'./tests/inputs/input.txt'
 my_graph = DirGraph(filepath)
 my_graph.parseGraph()
 src_node = 0
+print(my_graph)
 
-# result = Compute_SSSP(my_graph, src_node)
-result = Compute_TC(my_graph)
+
+result = Compute_SSSP(my_graph, src_node)
+#result1 = Compute_TC(my_graph)
 
 print(result)
+#print(result1)
