@@ -27,11 +27,11 @@ To Compile the dsl codes to generate OMP specific code use the following command
 
 ### Running the OMP code
 
-In the graphcode folder there is a main.cpp file, edit out the dsl file name in the header and modify path for the loading different graphs and then compile and run using g++.
+In the graphcode folder there is a main.cpp file, edit out the dsl file name in the header, then compile and run using g++.
 ```  
 export OMP_NUM_THREADS=16
 g++ main.cpp -o main -fopenmp 
-./main
+./main inputGraph_filePath
 ```
 
 
