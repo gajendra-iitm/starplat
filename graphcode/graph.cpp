@@ -988,6 +988,11 @@ int GNN::numFeatures()
 {
   return num_features;
 }
+//return the  features of the graph
+std::vector<std::vector<float>> &GNN::getFeatures()
+{
+  return features;
+}
 
 int GNN::numClasses()
 {
@@ -1020,6 +1025,7 @@ void GNN::loadFeatures()
     features.push_back(feature);
 
     is_first = false;
+
   }
 }
 
@@ -1093,6 +1099,24 @@ void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
     initializeLayers_omp(*this, neuronsPerLayer, initType);
   }
 }
+
+
+void GNN::aggregate(int node, int layerNumber){
+
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    aggregate_omp(*this,node, layerNumber);
+  }
+}
+
+void GNN::forwardPass(int node, int layerNumber)
+{
+   if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    forwardPass_omp(*this, node, layerNumber);
+  }
+}
+
 
 env::env(char *backend, char *algoType, char *filename)
 {
