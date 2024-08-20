@@ -15,7 +15,5 @@ print(my_graph)
 
 vc = {node: False for node in my_graph.nodes()}
 result = v_cover(my_graph, vc)
-#result1 = Compute_TC(my_graph)
 
 print(result)
-#print(result1)

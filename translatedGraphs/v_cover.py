@@ -18,5 +18,4 @@ def v_cover(g, vc):
                 vc[v] = True
                 vc[nbr] = True
     
-    # Return the vertex cover dictionary
     return vc
