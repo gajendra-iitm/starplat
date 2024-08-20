@@ -133,9 +133,12 @@ public:
   void loadLabels();
   void gcnPreprocessing();
   int numFeatures();
+  std::vector<std::vector<float>> &getFeatures();
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
   std::vector<layer> &getLayers();
+  void aggregate(int node, int layerNumber);
+  void forwardPass(int node, int layerNumber);
 };
 
 class env
