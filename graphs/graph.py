@@ -279,3 +279,5 @@ class UndirGraph(Graph):
         reverse_edge = Edge()
         reverse_edge.src, reverse_edge.dest, reverse_edge.weight = dest, src, weight
         self.__edges.append(reverse_edge)
+
+        

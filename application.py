@@ -1,6 +1,7 @@
 from graphs.graph import *
 from translatedGraphs.SSSP import Compute_SSSP
 from translatedGraphs.TriangleCounting import Compute_TC
+from translatedGraphs.v_cover import v_cover
 
 # input in input.txt
 # first line is max_node (0 to max_node inclusive)
@@ -12,8 +13,8 @@ my_graph.parseGraph()
 src_node = 0
 print(my_graph)
 
-
-result = Compute_SSSP(my_graph, src_node)
+vc = {node: False for node in my_graph.nodes()}
+result = v_cover(my_graph, vc)
 #result1 = Compute_TC(my_graph)
 
 print(result)
