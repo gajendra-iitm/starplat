@@ -109,7 +109,6 @@ public:
   float **weights;
   float *bias;
   float **inputFeatures;
-  float **aggregatedFeatures;
   float **outputFeatures;
   float *grad_input;
   float **grad_weights;

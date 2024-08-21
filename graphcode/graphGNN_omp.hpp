@@ -4,18 +4,18 @@ void xaviersInit_omp(float **weights, int num_neurons_current, int num_features_
 {
   // xaiver's initialization
   double xavier = sqrt(6.0 / (num_neurons_current + num_features_next));
-  std::random_device rd;  // Obtain a random number from hardware
-  std::mt19937 gen(42); // Seed the generator
+  std::random_device rd; // Obtain a random number from hardware
+  std::mt19937 gen(42);  // Seed the generator
   std::uniform_real_distribution<> dist(0.0, xavier);
-  std::cout<< "xavier distribution with input neurons : "<<num_neurons_current<<" and output neurons : " << num_features_next<< std::endl;
+  std::cout << "xavier distribution with input neurons : " << num_neurons_current << " and output neurons : " << num_features_next << std::endl;
   for (int i = 0; i < num_neurons_current; i++)
   {
     for (int j = 0; j < num_features_next; j++)
     {
       weights[i][j] = dist(gen);
-      std::cout<< weights[i][j] << " ";
+      // std::cout << weights[i][j] << " ";
     }
-    std::cout<<std::endl;
+    // std::cout << std::endl;
   }
 }
 
@@ -23,27 +23,27 @@ void normalDistributionInit_omp(float **weights, int num_neurons_current, int nu
 {
   double mean = 0.0;
   double std = 0.02;
-  std::random_device rd;  // Obtain a random number from hardware
-  std::mt19937 gen(42); // Seed the generator
+  std::random_device rd; // Obtain a random number from hardware
+  std::mt19937 gen(42);  // Seed the generator
   std::normal_distribution<> dist(mean, std);
-  std::cout<< "normal distribution with input neurons : "<<num_neurons_current<<" and output neurons : " << num_features_next<< std::endl;
-  for (int i = 0; i < num_neurons_current; i++)
-  {
-    for (int j = 0; j < num_features_next; j++)
-    {
-      weights[i][j] = dist(gen);
-    }
-  }
+  // std::cout << "normal distribution with input neurons : " << num_neurons_current << " and output neurons : " << num_features_next << std::endl;
+  // for (int i = 0; i < num_neurons_current; i++)
+  // {
+  //   for (int j = 0; j < num_features_next; j++)
+  //   {
+  //     weights[i][j] = dist(gen);
+  //   }
+  // }
 }
 void uniformDistributionInit_omp(float **weights, int num_neurons_current, int num_features_next)
 {
   // uniform distribution
   double min = -0.5;
   double max = 0.5;
-  std::random_device rd;  // Obtain a random number from hardware
-  std::mt19937 gen(42); // Seed the generator
+  std::random_device rd; // Obtain a random number from hardware
+  std::mt19937 gen(42);  // Seed the generator
   std::uniform_real_distribution<> dist(min, max);
-  std::cout<< "uniform distributionx  with input neurons : "<<num_neurons_current<<" and output neurons : " << num_features_next<< std::endl;
+  std::cout << "uniform distributionx  with input neurons : " << num_neurons_current << " and output neurons : " << num_features_next << std::endl;
   for (int i = 0; i < num_neurons_current; i++)
   {
     for (int j = 0; j < num_features_next; j++)
@@ -51,7 +51,6 @@ void uniformDistributionInit_omp(float **weights, int num_neurons_current, int n
       weights[i][j] = dist(gen);
     }
   }
-
 }
 
 void gcn_preprocessing_omp(GNN &gnn)
@@ -138,12 +137,11 @@ float softmax_derivative(float *x, int size)
   }
 }
 
-
 void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, char *initType)
 {
   std::vector<int32_t> neuronsPerLayer;
   neuronsPerLayer.push_back(gnn.numFeatures());
-  
+  std::cout << "Neurons initially" << gnn.numFeatures() << std::endl;
   for (int i = 0; i < neuronsPerHiddenLayer.size(); i++)
   {
     neuronsPerLayer.push_back(neuronsPerHiddenLayer[i]);
@@ -157,24 +155,20 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
     layers[i].num_features = neuronsPerLayer[i];
     layers[i].weights = new float *[neuronsPerLayer[i]];
 
-    for(int x = 0;  x < layers[i].num_features; x++)
+    for (int x = 0; x < layers[i].num_features; x++)
     {
       layers[i].weights[x] = new float[neuronsPerLayer[i + 1]];
-    } 
-
+    }
 
     layers[i].inputFeatures = new float *[gnn.getGraph().num_nodes()];
     layers[i].outputFeatures = new float *[gnn.getGraph().num_nodes()];
     for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
     {
-      layers[i].inputFeatures[j] = new float [neuronsPerLayer[i]];
-      if(i < neuronsPerLayer.size() - 1)
-        layers[i].outputFeatures[j] = new float[neuronsPerLayer[i+1]];
-
+      layers[i].inputFeatures[j] = new float[neuronsPerLayer[i]];
+      if (i < neuronsPerLayer.size() - 1)
+        layers[i].outputFeatures[j] = new float[neuronsPerLayer[i + 1]];
     }
 
-  
-    
     layers[i].bias = new float[neuronsPerLayer[i + 1]];
     layers[i].grad_input = new float[neuronsPerLayer[i]];
     layers[i].grad_weights = new float *[neuronsPerLayer[i]];
@@ -185,7 +179,7 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
     layers[i].grad_bias = new float[neuronsPerLayer[i + 1]];
     layers[i].grad_output = new float[neuronsPerLayer[i + 1]];
 
-   // std::cout << "layer with size " << layers[i].num_features << " initialized" << std::endl;
+    // std::cout << "layer with size " << layers[i].num_features << " initialized" << std::endl;
   }
   layers[neuronsPerLayer.size() - 1].num_features = neuronsPerLayer[neuronsPerLayer.size() - 1];
   layers[neuronsPerLayer.size() - 1].bias = new float[neuronsPerLayer[neuronsPerLayer.size() - 1]];
@@ -193,13 +187,14 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
   layers[neuronsPerLayer.size() - 1].grad_output = new float[neuronsPerLayer[neuronsPerLayer.size() - 1]];
   std::vector<std::vector<float>> features = gnn.getFeatures();
 
-  for(int j = 0; j < gnn.getGraph().num_nodes(); j++)
+  for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
+  {
+    for (int i = 0; i < gnn.numFeatures(); i++)
     {
-      for(int i = 0; i < gnn.numFeatures(); i++){
       layers[0].inputFeatures[j][i] = features[j][i];
-     //std::cout << layers[0].inputFeatures[j][i] << " ";
-      }
-   //std::cout << std::endl;
+      // std::cout << layers[0].inputFeatures[j][i] << " ";
+    }
+    // std::cout << std::endl;
   }
 
   if (strcmp(initType, "xaviers") == 0)
@@ -249,7 +244,6 @@ void getWeights_omp(GNN &gnn, int layerr)
   }
 }
 
-
 // void calculategradinput_omp(GNN &gnn, int layer)
 // {
 //   std::vector<layer> layers = gnn.getLayers();
@@ -265,65 +259,45 @@ void getWeights_omp(GNN &gnn, int layerr)
 //   }
 // }
 
-
-
 void aggregate_omp(GNN &gnn, int node, int layerNumber)
 {
-    graph &g = gnn.getGraph();
-    std::vector<layer> &layers = gnn.getLayers();
+  graph &g = gnn.getGraph();
+  std::vector<layer> &layers = gnn.getLayers();
 
   for (auto edge : g.getNeighbors(node))
   {
-    int c = 0;
+    // int c = 0;
     for (int i = 0; i < layers[layerNumber].num_features; i++)
     {
+
       layers[layerNumber].inputFeatures[node][i] += layers[layerNumber].inputFeatures[edge.destination][i] * edge.weight;
-      // std::cout<< layers[0].inputFeatures[node][i] <<" ";
-      c++;
+      std::cout << layers[0].inputFeatures[node][i] << " ";
+      // c++;
     }
-    // std::cout<<std::endl;
-    // std::cout<< c <<std::endl;
+    std::cout << std::endl;
+    //   std::cout<<std::endl;
+    //   std::cout<< c <<std::endl;
   }
 }
 
-void forwardPass_omp(GNN &gnn, int node, int layerNumber)//, char *aggregationType)
+void forwardPass_omp(GNN &gnn, int node, int layerNumber) //, char *aggregationType)
 {
   std::vector<layer> &layers = gnn.getLayers();
   graph &g = gnn.getGraph();
- aggregate_omp(gnn, node, layerNumber);
+  aggregate_omp(gnn, node, layerNumber);
 
-  for (int i = 0; i < layers[layerNumber+1].num_features; i++)
+  for (int i = 0; i < layers[layerNumber + 1].num_features; i++)
   {
-    layers[layerNumber].outputFeatures[node][i] = 0;
+    // layers[layerNumber].outputFeatures[node][i] = 0;
     for (int j = 0; j < layers[layerNumber].num_features; j++)
     {
-      layers[layerNumber].outputFeatures[node][i] += (layers[layerNumber].inputFeatures[node][j]*layers[layerNumber].weights[j][i]) ;
-     // std::cout<< layers[layerNumber].inputFeatures[node][i] <<"    "<< layers[layerNumber].weights[node][i]<<std::endl;
+
+      layers[layerNumber].outputFeatures[node][i] += (layers[layerNumber].inputFeatures[node][j] * layers[layerNumber].weights[j][i]);
+      // std::cout<< layers[layerNumber].inputFeatures[node][i] <<"    "<< layers[layerNumber].weights[node][i]<<std::endl;
     }
-   layers[layerNumber].outputFeatures[node][i] = relu(layers[layerNumber].outputFeatures[node][i] + layers[layerNumber + 1].bias[i]);
+    layers[layerNumber].outputFeatures[node][i] = relu(layers[layerNumber].outputFeatures[node][i] + layers[layerNumber + 1].bias[i]);
   }
 }
-
-// {
-//   vector<layer> &layers = gnn.getLayers();
-//   graph &g = gnn.getGraph();
-//   int num_nodes = g.num_nodes();
-//   int num_edges = g.num_edges();
-// // forward pass for graph neural networks
-// #pragma omp parallel for schedule(dynamic)
-//   // for (int nod = 0; nod < num_nodes; nod++)
-//   // {
-//   for (int i = 0; i < layers.num_features; i++)
-//   {
-//     // layers.inputFeatures[i] = 0;
-//     // for (auto edge : g.getNeighbors(nod))
-//     // {
-//     layers.inputFeatures[i] += layers.weights[edge.destination][i] * edge.weight;
-//     // }
-//     // layers.outputFeatures[i] = relu(layers.inputFeatures[i] + layers.bias[i]);
-//   }
-//   // }
-// }
 
 // void backPropagation(GNN &gnn, int layerr)
 // {
@@ -366,7 +340,7 @@ void forwardPass_omp(GNN &gnn, int node, int layerNumber)//, char *aggregationTy
 //   std::vector<std::vector<float>> m_biases = gnn.getMBiases(layer);
 //   std::vector<std::vector<float>> v_weights = gnn.getVWeights(layer);
 //   std::vector<std::vector<float>> v_biases = gnn.getVBiases(layer);
-//   int t = gnn.getT(layer); 
+//   int t = gnn.getT(layer);
 //   // adam optimizer
 //   #pragma omp parallel for schedule(dynamic)
 //   for (int i = 0; i < weights.size(); i++)

@@ -47,37 +47,39 @@ int main()
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
-  for (int nod = 0; nod < G.num_nodes(); nod++)
-  {
-    for (auto edge : G.getNeighbors(nod))
-    {
-      cout << edge.source << " " << edge.destination << " " << edge.weight << endl;
-    }
-  }
+  // for (int nod = 0; nod < G.num_nodes(); nod++)
+  // {
+  //   for (auto edge : G.getNeighbors(nod))
+  //   {
+  //     cout << edge.source << " " << edge.destination << " " << edge.weight << endl;
+  //   }
+  // }
 
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
   neuronsPerHiddenLayer.push_back(8);
-  neuronsPerHiddenLayer.push_back(2);
+
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
   std::vector<layer> layers = gnn.getLayers();
 
   graph &g = gnn.getGraph();
-    for(int j = 0; j < gnn.getGraph().num_nodes(); j++)
-    {
-      for(int i = 0; i < gnn.numFeatures(); i++){
-      std::cout << layers[0].inputFeatures[j][i] << " ";
-      }
-    std::cout << std::endl;
-  }
-  //std::cout <<  "This is a partitioning beetween aggregated features and forward propagation"<< std::endl;
-  
-  gnn.forwardPass(0, 0);
+  // for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
+  // {
+  //   for (int i = 0; i < gnn.numFeatures(); i++)
+  //   {
+  //     std::cout << layers[0].inputFeatures[j][i] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+
+  int node_num = 5;
+  gnn.forwardPass(node_num, 0);
   int num_nodes = g.num_nodes();
-  for(int i = 0;i< layers[1].num_features;i++){
-    std::cout << layers[0].outputFeatures[0][i] << " ";
+  for (int i = 0; i < layers[1].num_features; i++)
+  {
+    std::cout << layers[0].outputFeatures[node_num][i] << " ";
   }
   // for (int j = 0; j < num_nodes; j++)
   // {
@@ -103,6 +105,4 @@ int main()
   //     cout << endl;
   //   }
   // }
-
-
 }
