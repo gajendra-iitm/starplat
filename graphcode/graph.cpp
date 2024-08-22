@@ -985,6 +985,11 @@ std::vector<layer> &GNN::getLayers()
   return layers;
 }
 
+std::vector<int32_t> &GNN::getLabels()
+{
+  return labels;
+}
+
 int GNN::numFeatures()
 {
   return num_features;
@@ -1056,32 +1061,6 @@ void GNN::loadLabels()
   }
   num_classes = std::set<int>(labels.begin(), labels.end()).size();
 }
-// void initializeLayers(std::vector<int> layers, std::string init_type)
-// {
-//   for (int i = 0; i < layers.size(); i++)
-//   {
-//     layer l;
-//     l.num_features = layers[i];
-//     l.weights = new float[l.num_features];
-//     l.bias = 0;
-//     l.outputFeatures = new float[l.num_features];
-//     l.inputFeatures = new float[l.num_features];
-//     l.grad_input = new float[l.num_features];
-//     l.grad_weights = new float[l.num_features];
-//     l.grad_bias = 0;
-//     l.grad_output = new float[l.num_features];
-
-//     if (init_type == "Xavier_transform")
-//     {
-//       for (int j = 0; j < l.num_features; j++)
-//       {
-//         l.weights[j] = 1.0 / sqrt(l.num_features);
-//       }
-//     }
-
-//     layers.push_back(l);
-//   }
-// }
 
 void GNN::gcnPreprocessing()
 {

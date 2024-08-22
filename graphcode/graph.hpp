@@ -109,11 +109,12 @@ public:
   float **weights;
   float *bias;
   float **inputFeatures;
+  float **aggregatedFeatures;
   float **outputFeatures;
-  float *grad_input;
+  float **grad_input;
   float **grad_weights;
   float *grad_bias;
-  float *grad_output;
+  // float *grad_output;
 };
 
 class GNN
@@ -124,6 +125,7 @@ class GNN
   std::vector<std::vector<float>> features;
   char *feat_file, *lab_file;
   int num_features, num_classes;
+  // std::vector<std::string> activationFunctions;
 
 public:
   GNN(graph &g, char *feat_file, char *lab_file);
@@ -136,6 +138,7 @@ public:
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
   std::vector<layer> &getLayers();
+  std::vector<int32_t> &getLabels();
   void aggregate(int node, int layerNumber);
   void forwardPass(int node, int layerNumber);
 };
