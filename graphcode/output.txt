@@ -1,0 +1,8 @@
+Here half
+batch size = 4
+Number of nodes: 10
+Number of edges: 30
+static count = 3
+After update = 6
+
+Time taken : 0.0224634
