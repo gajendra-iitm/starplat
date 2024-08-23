@@ -279,7 +279,29 @@ void graph::delEdge(int src, int dest)
 
   edgeLen[mid] = INT_MAX / 2;
 
-  printf("src %d dest %d mid %d\n", src, dest, mid);
+  // printf("src %d dest %d mid %d\n", src, dest, mid);
+}
+
+float graph::getWeight(int src, int dest)
+{
+  int startEdge = indexofNodes[src];
+  int endEdge = indexofNodes[src + 1] - 1;
+  int mid;
+
+  while (startEdge <= endEdge)
+  {
+    mid = (startEdge + endEdge) / 2;
+
+    if (edgeList[mid] == dest)
+      break;
+
+    if (dest < edgeList[mid])
+      endEdge = mid - 1;
+    else
+      startEdge = mid + 1;
+  }
+
+  return edgeLen[mid];
 }
 
 void graph::changeWeight(int src, int dest, float weight)
@@ -943,10 +965,14 @@ std::vector<edge> graph::getInNeighbors(int node)
   return in_edges;
 }
 
-GNN::GNN(graph &g, char *featFile, char *labFile) : g(g), featFile(featFile), labFile(labFile)
+GNN::GNN(graph &g, char *feat_file, char *lab_file) : g(g), feat_file(feat_file), lab_file(lab_file)
 {
-  // loadFeatures();
-  // loadLabels();
+  loadFeatures();
+  loadLabels();
+
+  std::cout << "nodes size " << g.num_nodes() << std::endl;
+  std::cout << "features size " << num_features << std::endl;
+  std::cout << "labels size " << num_classes << std::endl;
 }
 
 graph &GNN::getGraph()
@@ -954,11 +980,38 @@ graph &GNN::getGraph()
   return g;
 }
 
+std::vector<layer> &GNN::getLayers()
+{
+  return layers;
+}
+
+std::vector<int32_t> &GNN::getLabels()
+{
+  return labels;
+}
+
+int GNN::numFeatures()
+{
+  return num_features;
+}
+// return the  features of the graph
+std::vector<std::vector<float>> &GNN::getFeatures()
+{
+  return features;
+}
+
+int GNN::numClasses()
+{
+  return num_classes;
+}
+
 void GNN::loadFeatures()
 {
+  num_features = 0;
   std::ifstream infile;
-  infile.open(featFile);
+  infile.open(feat_file);
   std::string line;
+  std::vector<float> raw_features;
   while (std::getline(infile, line))
   {
     if (line.length() == 0 || line[0] < '0' || line[0] > '9')
@@ -967,17 +1020,30 @@ void GNN::loadFeatures()
     }
 
     std::stringstream ss(line);
-    float feature;
-    ss >> feature;
-
-    features.push_back(feature);
+    float feat;
+    while (ss >> feat)
+    {
+      raw_features.push_back(feat);
+      num_features++;
+    }
+  }
+  num_features /= g.num_nodes();
+  // push num_feature number of elements from raw_features onto a temp_feat and then push the temp_feat onto features
+  for (int i = 0; i < raw_features.size(); i += num_features)
+  {
+    std::vector<float> temp_feat;
+    for (int j = 0; j < num_features; j++)
+    {
+      temp_feat.push_back(raw_features[i + j]);
+    }
+    features.push_back(temp_feat);
   }
 }
 
 void GNN::loadLabels()
 {
   std::ifstream infile;
-  infile.open(labFile);
+  infile.open(lab_file);
   std::string line;
   while (std::getline(infile, line))
   {
@@ -993,35 +1059,10 @@ void GNN::loadLabels()
 
     labels.push_back(label);
   }
+  num_classes = std::set<int>(labels.begin(), labels.end()).size();
 }
-// void initializeLayers(std::vector<int> layers, std::string init_type)
-// {
-//   for (int i = 0; i < layers.size(); i++)
-//   {
-//     layer l;
-//     l.num_features = layers[i];
-//     l.weights = new float[l.num_features];
-//     l.bias = 0;
-//     l.output = new float[l.num_features];
-//     l.input = new float[l.num_features];
-//     l.grad_input = new float[l.num_features];
-//     l.grad_weights = new float[l.num_features];
-//     l.grad_bias = 0;
-//     l.grad_output = new float[l.num_features];
 
-//     if (init_type == "Xavier_transform")
-//     {
-//       for (int j = 0; j < l.num_features; j++)
-//       {
-//         l.weights[j] = 1.0 / sqrt(l.num_features);
-//       }
-//     }
-
-//     layers.push_back(l);
-//   }
-// }
-
-void GNN::gcn_preprocessing()
+void GNN::gcnPreprocessing()
 {
   std::cout << "going to preprocessing\n";
 
@@ -1033,6 +1074,32 @@ void GNN::gcn_preprocessing()
   // {
   //   preprocessing_cuda();
   // }
+}
+
+void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
+{
+  // void initializeLayers_omp(GNN &gnn, std::vector<int> neuronsPerLayer, char *initType)
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    initializeLayers_omp(*this, neuronsPerLayer, initType);
+  }
+}
+
+void GNN::aggregate(int node, int layerNumber)
+{
+
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    aggregate_omp(*this, node, layerNumber);
+  }
+}
+
+void GNN::forwardPass(int node, int layerNumber)
+{
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    forwardPass_omp(*this, node, layerNumber);
+  }
 }
 
 env::env(char *backend, char *algoType, char *filename)
