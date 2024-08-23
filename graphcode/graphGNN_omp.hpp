@@ -116,7 +116,7 @@ float derivative_relu(float x)
   return x > 0 ? 1 : 0;
 }
 
-float softmax(float *x, int size)
+void softmax(float *x, int size, float *y)
 {
   float sum = 0;
   for (int i = 0; i < size; i++)
@@ -125,17 +125,17 @@ float softmax(float *x, int size)
   }
   for (int i = 0; i < size; i++)
   {
-    x[i] = exp(x[i]) / sum;
+    y[i] = exp(x[i]) / sum;
   }
 }
 
-float softmax_derivative(float *x, int size)
-{
-  for (int i = 0; i < size; i++)
-  {
-    x[i] = x[i] * (1 - x[i]);
-  }
-}
+// float softmax_derivative(float *x, int size)
+// {
+//   for (int i = 0; i < size; i++)
+//   {
+//     x[i] = x[i] * (1 - x[i]);
+//   }
+// }
 
 void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, char *initType)
 {
@@ -153,11 +153,13 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
   for (int i = 0; i < neuronsPerLayer.size() - 1; i++)
   {
     layers[i].num_features = neuronsPerLayer[i];
-    layers[i].weights = new float *[neuronsPerLayer[i]];
-
-    for (int x = 0; x < layers[i].num_features; x++)
+    if (i != neuronsPerHiddenLayer.size())
     {
-      layers[i].weights[x] = new float[neuronsPerLayer[i + 1]];
+      layers[i].weights = new float *[neuronsPerLayer[i]];
+      for (int x = 0; x < layers[i].num_features; x++)
+      {
+        layers[i].weights[x] = new float[neuronsPerLayer[i + 1]];
+      }
     }
 
     layers[i].inputFeatures = new float *[gnn.getGraph().num_nodes()];
@@ -169,6 +171,8 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
       layers[i].aggregatedFeatures[j] = new float[neuronsPerLayer[i]];
       if (i < neuronsPerLayer.size() - 1)
         layers[i].outputFeatures[j] = new float[neuronsPerLayer[i + 1]];
+      else
+        layers[i].outputFeatures[j] = new float[neuronsPerLayer[i]];
     }
 
     layers[i].bias = new float[neuronsPerLayer[i + 1]];
@@ -284,6 +288,12 @@ void forwardPass_omp(GNN &gnn, int node, int layerNumber) //, char *aggregationT
 {
   std::vector<layer> &layers = gnn.getLayers();
   graph &g = gnn.getGraph();
+  if (layerNumber == layers.size() - 1)
+  {
+    // layers[layerNumber].outputFeatures[node] = softmax(layers[layerNumber].inputFeatures[node], layers[layerNumber].num_features);
+    softmax(layers[layerNumber].inputFeatures[node], layers[layerNumber].num_features, layers[layerNumber].outputFeatures[node]);
+    return;
+  }
   aggregate_omp(gnn, node, layerNumber);
 
   for (int i = 0; i < layers[layerNumber + 1].num_features; i++)
@@ -294,12 +304,8 @@ void forwardPass_omp(GNN &gnn, int node, int layerNumber) //, char *aggregationT
       layers[layerNumber].outputFeatures[node][i] += (layers[layerNumber].aggregatedFeatures[node][j] * layers[layerNumber].weights[j][i]);
       // std::cout<< layers[layerNumber].inputFeatures[node][i] <<"    "<< layers[layerNumber].weights[node][i]<<std::endl;
     }
-    if (layerNumber == layers.size() - 1)
-    {
-      layers[layerNumber].outputFeatures[node][i] = softmax(layers[layerNumber].outputFeatures[node], layers[layerNumber + 1].num_features);
-    }
-    else
-      layers[layerNumber].outputFeatures[node][i] = relu(layers[layerNumber].outputFeatures[node][i] + layers[layerNumber + 1].bias[i]);
+    layers[layerNumber].outputFeatures[node][i] = relu(layers[layerNumber].outputFeatures[node][i] + layers[layerNumber + 1].bias[i]);
+    layers[layerNumber + 1].inputFeatures[node][i] = layers[layerNumber].outputFeatures[node][i];
   }
 }
 
@@ -349,26 +355,8 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
 {
   graph &g = gnn.getGraph();
   std::vector<layer> &layers = gnn.getLayers();
-
-  // Loss_n (L_n) = 1/m (\sum{y_pred_n - y_n})
-  // grad_weights_n = A_n-1^T * Loss_n
-  // grad_bias_n = Loss_n
-  // Loss_n-1 = Loss_n * W_n^T
-  // grad_weights_n-1 = A_n-2^T * Loss_n-1
-  // grad_bias_n-1 = Loss_n-1
-  // Loss_n-2 = Loss_n-1 * W_n-1^T
-  // grad_weights_n-2 = A_n-3^T * Loss_n-2
-  // grad_bias_n-2 = Loss_n-2
-  //...
-  // Loss_1 = Loss_2 * W_2^T
-  // grad_weights_1 = X^T * Loss_1
-  // grad_bias_1 = Loss_1
-
-  // backpropagation for graph neural networks
-  // Loss = y_pred - y_true
-  // Y_pred = last layer output
-  // Y_true = labels
   std::vector<int32_t> y_true = gnn.getLabels();
+
   std::vector<std::vector<float>> y_pred = layers[layerNumber].outputFeatures;
   std::vector<std::vector<float>> Loss;
   if (layerNumber == layers.size() - 1)
@@ -412,7 +400,7 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
       {
         for (int nod = 0; nod < g.num_nodes(); nod++)
         {
-          layers[layerNumber].grad_weights[i][j] += layers[layerNumber].outputFeatures[nod][i] * Loss[nod][j];
+          layers[layerNumber - 1].grad_weights[i][j] += layers[layerNumber - 1].outputFeatures[nod][i] * Loss[nod][j];
           layers[layerNumber].grad_input[nod][j] += Loss[nod][i] * layers[layerNumber].weights[j][i];
         }
       }
@@ -449,12 +437,31 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
           {
             layers[layerNumber].grad_input[nod][j] += layers[layerNumber + 1].grad_input[nod][i] * layers[layerNumber + 1].weights[i][j];
             if (j == 0)
-              layers[layerNumber].grad_bias[i] += Loss[nod][i];
+            // layers[layerNumber].grad_bias[i] += Loss[nod][i];
           }
         }
       }
     }
   }
+
+  // Loss_n (L_n) = 1/m (\sum{y_pred_n - y_n})
+  // grad_weights_n = A_n-1^T * Loss_n
+  // grad_bias_n = Loss_n
+  // Loss_n-1 = Loss_n * W_n^T
+  // grad_weights_n-1 = A_n-2^T * Loss_n-1
+  // grad_bias_n-1 = Loss_n-1
+  // Loss_n-2 = Loss_n-1 * W_n-1^T
+  // grad_weights_n-2 = A_n-3^T * Loss_n-2
+  // grad_bias_n-2 = Loss_n-2
+  //...
+  // Loss_1 = Loss_2 * W_2^T
+  // grad_weights_1 = X^T * Loss_1
+  // grad_bias_1 = Loss_1
+
+  // backpropagation for graph neural networks
+  // Loss = y_pred - y_true
+  // Y_pred = last layer output
+  // Y_true = labels
 }
 
 // void backPropagation(GNN &gnn, int layerNumber)
