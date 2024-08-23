@@ -244,21 +244,6 @@ void getWeights_omp(GNN &gnn, int layerNumber)
   }
 }
 
-void calculategradinput_omp(GNN &gnn, int layerNumber)
-{
-  std::vector<layer> layers = gnn.getLayers();
-  for (int nod = 0; nod < gnn.getGraph().num_nodes(); nod++)
-  {
-    for (auto edge : gnn.getGraph().getNeighbors(nod))
-    {
-      for (int i = 0; i < layers[layerNumber].num_features; i++)
-      {
-        layers[layerNumber].grad_input[nod][i] += layers[layerNumber].grad_output[edge.destination][i] * layers[layerNumber + 1].weights[i][edge.destination];
-      }
-    }
-  }
-}
-
 void aggregate_omp(GNN &gnn, int node, int layerNumber)
 {
   graph &g = gnn.getGraph();
@@ -357,7 +342,7 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
   std::vector<layer> &layers = gnn.getLayers();
   std::vector<int32_t> y_true = gnn.getLabels();
 
-  std::vector<std::vector<float>> y_pred = layers[layerNumber].outputFeatures;
+  float **y_pred = layers[layerNumber].outputFeatures;
   std::vector<std::vector<float>> Loss;
   if (layerNumber == layers.size() - 1)
   {
@@ -436,7 +421,7 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
           if (layerNumber > 0)
           {
             layers[layerNumber].grad_input[nod][j] += layers[layerNumber + 1].grad_input[nod][i] * layers[layerNumber + 1].weights[i][j];
-            if (j == 0)
+            // if (j == 0)
             // layers[layerNumber].grad_bias[i] += Loss[nod][i];
           }
         }
