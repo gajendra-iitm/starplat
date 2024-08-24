@@ -373,7 +373,7 @@ void freeAllUpdateMemory (std::vector<int*> updates) {
 
     
     speedUpForGetEdge = std::vector<std::unordered_map<int, int> > (endNode-startNode+1) ;
-    printf ("start node = %d and end node = %d\n", startNode, endNode) ;
+    // printf ("start node = %d and end node = %d\n", startNode, endNode) ;
     if (optimized) {
       for (int u = startNode; u < endNode+1; u++) {
         int u_temp = u-startNode ;
