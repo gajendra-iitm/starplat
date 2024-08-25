@@ -17,7 +17,7 @@ LIBS = $(LIBDIR)/libboost_mpi.a $(LIBDIR)/libboost_serialization.a
 
 MPI_SRC = ../mpi_header/graph_mpi.cc ../mpi_header/updates.cc \
        ../mpi_header/graph_properties/node_property/node_property.cc \
-       ../mpi_header/graph_properties/edge_property/edge_property.cc \x
+       ../mpi_header/graph_properties/edge_property/edge_property.cc \
        ../mpi_header/rma_datatype/rma_datatype.cc
 
 all: bc_dslV2.out triangle_counting.out PageRankDSLV3.out
