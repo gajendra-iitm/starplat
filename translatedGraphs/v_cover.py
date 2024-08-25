@@ -1,11 +1,6 @@
 def v_cover(g, vc):
     # Attach the 'visited' property to all nodes in the graph
-    g.attachNodeProperty(visited=False)
-    
-    # Initialize all nodes as not visited
-    for v in g.nodes():
-        g.visited[v] = False
-    
+    g.attachNodeProperty(visited=False)    
     # Iterate over all nodes and their neighbors to find the vertex cover
     for v in filter(lambda node: not g.visited[node], g.nodes()):
         # For each unvisited node, check its neighbors
