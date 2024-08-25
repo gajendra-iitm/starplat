@@ -45,7 +45,6 @@ __global__ void test1_kernel(int V, int E, int* d_meta, int* d_data,int* d_label
 
 
     } // if filter end
-
   } //  end FOR NBR ITR. TMP FIX!
 } // end KER FUNC
 

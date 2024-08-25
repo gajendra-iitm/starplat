@@ -108,13 +108,11 @@ public:
   int32_t num_features;
   float **weights;
   float *bias;
-  float **inputFeatures;
   float **aggregatedFeatures;
   float **outputFeatures;
-  float **grad_input;
+  float **grad_pre_act_output;
+  float **grad_post_act_output;
   float **grad_weights;
-  float *grad_bias;
-  // float *grad_output;
 };
 
 class GNN
@@ -141,6 +139,7 @@ public:
   std::vector<int32_t> &getLabels();
   void aggregate(int node, int layerNumber);
   void forwardPass(int node, int layerNumber);
+  void backPropogation(int layerNumber);
 };
 
 class env
