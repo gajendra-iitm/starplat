@@ -147,34 +147,32 @@ function_data: T_FUNC id '(' paramList ')' {
 			  // | return_func {$$ = $1};	
 
 paramList: param {$$=Util::createPList($1);};
-               | param ',' paramList {$$=Util::addToPList($3,$1); 
-			                           };
+               | param ',' paramList { $$=Util::addToPList($3,$1); };
 
 type: type1 {$$ = $1;}
     | type2 {$$ = $1;}
 	| type3 {$$ = $1;}
 
-param : type1 id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
-                        Type* type=(Type*)$1;
-	                     Identifier* id=(Identifier*)$2;
-						 
-						 if(type->isGraphType())
-						    {
-							 tempIds.push_back(id);
-						   
-							}
-					printf("\n");
-                    $$=Util::createParamNode($1,$2); } ;
-               | type2 id { // Identifier* id=(Identifier*)Util::createIdentifierNode($2);
-			  
-					
-                             $$=Util::createParamNode($1,$2);};
+param : type1 id 	{  //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+						Type* type=(Type*)$1;
+						Identifier* id=(Identifier*)$2;
+						
+						if(type->isGraphType())
+						{
+							tempIds.push_back(id);
+						}
+						printf("\n");
+						$$=Util::createParamNode($1,$2);
+					} ;
+               | type2 id 	{ // Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+                            	$$=Util::createParamNode($1,$2);
+						  	};
 			   | type2 id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($4);
 			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
 				                        Type* tempType=(Type*)$1;
 			                            if(tempType->isNodeEdgeType())
-										  tempType->addSourceGraph($4);
-				                         $$=Util::createParamNode(tempType,$2);
+											tempType->addSourceGraph($4);
+				                        $$=Util::createParamNode(tempType,$2);
 									 };
 
 
@@ -504,233 +502,226 @@ id : ID   {
 
 %%
 
-void create_directory(const char *backendTarget) {
+void create_directory(const char *backendTarget)
+{
     char directory_name[256];
     snprintf(directory_name, sizeof(directory_name), "../graphcode/generated_%s", backendTarget);
     // Check if directory exists
     struct stat st = {0};
-    if (stat(directory_name, &st) == -1) {
+    if (stat(directory_name, &st) == -1)
+	{
         // Check if the mkdir fails
-        if (mkdir(directory_name, 0700) == -1) {
+        if (mkdir(directory_name, 0700) == -1)
+		{
             perror("mkdir");
         }
-    } else {
+    }
+	else
+	{
         printf("Directory already exists %s\n", directory_name);
     }
 }
 
-void yyerror(const char *s) {
+void yyerror(const char *s)
+{
     fprintf(stderr, "%s\n", s);
 }
 
 
 int main(int argc,char **argv) 
 {
-  
-  if(argc<4){
-    std::cout<< "Usage: " << argv[0] << " [-s|-d] -f <dsl.sp> -b [cuda|omp|mpi|acc|multigpu|amd] " << '\n';
-    std::cout<< "E.g. : " << argv[0] << " -s -f ../graphcode/sssp_dslV2 -b omp " << '\n';
-    exit(-1);
-  }
-  
-    //dsl_cpp_generator cpp_backend;
-    SymbolTableBuilder stBuilder;
-     FILE    *fd;
-     
-  int opt;
-  char* fileName=NULL;
-  backendTarget = NULL;
-  bool staticGen = false;
-  bool dynamicGen = false;
-  bool optimize = false;
-
-  while ((opt = getopt(argc, argv, "sdf:b:o")) != -1) 
-  {
-     switch (opt) 
-     {
-      case 'f':
-        fileName = optarg;
-        break;
-      case 'b':
-        backendTarget = optarg;
-        break;
-      case 's':
-	    staticGen = true;
-		break;
-	  case 'd':
-	    dynamicGen = true;
-        break;	
-	  case 'o':
-	  	optimize = true;
-		break;	
-      case '?':
-        fprintf(stderr,"Unknown option: %c\n", optopt);
+	if(argc<4)
+	{
+		std::cout<< "Usage: " << argv[0] << " [-s|-d] -f <dsl.sp> -b [cuda|omp|mpi|acc|multigpu|amd] " << '\n';
+		std::cout<< "E.g. : " << argv[0] << " -s -f ../graphcode/sssp_dslV2 -b omp " << '\n';
 		exit(-1);
-        break;
-      case ':':
-        fprintf(stderr,"Missing arg for %c\n", optopt);
-		exit(-1);
-        break;
-     }
-  }
-   
-   printf("fileName %s\n",fileName);
-   printf("Backend Target %s\n",backendTarget);
+	}
 
-   
-   if(fileName==NULL||backendTarget==NULL)
-   {
-	   if(fileName==NULL)
-	      fprintf(stderr,"FileName option Error!\n");
-	   if(backendTarget==NULL)
-	      fprintf(stderr,"backendTarget option Error!\n")	;
-	   exit(-1);	    
-   }
-   else
-    {
+	//dsl_cpp_generator cpp_backend;
+	SymbolTableBuilder stBuilder;
+	FILE    *fd;
+		
+	int opt;
+	char* fileName=NULL;
+	backendTarget = NULL;
+	bool staticGen = false;
+	bool dynamicGen = false;
+	bool optimize = false;
+
+	while ((opt = getopt(argc, argv, "sdf:b:o")) != -1) 
+	{
+		switch (opt) 
+		{
+			case 'f':
+				fileName = optarg;
+				break;
+			case 'b':
+				backendTarget = optarg;
+				break;
+			case 's':
+				staticGen = true;
+				break;
+			case 'd':
+				dynamicGen = true;
+				break;	
+			case 'o':
+				optimize = true;
+				break;	
+			case '?':
+				fprintf(stderr,"Unknown option: %c\n", optopt);
+				exit(-1);
+				break;
+			case ':':
+				fprintf(stderr,"Missing arg for %c\n", optopt);
+				exit(-1);
+				break;
+		}
+	}
+
+	printf("fileName %s\n",fileName);
+	printf("Backend Target %s\n",backendTarget);
+
+
+	if(fileName==NULL||backendTarget==NULL)
+	{
+		if(fileName==NULL)
+			fprintf(stderr,"FileName option Error!\n");
+		if(backendTarget==NULL)
+			fprintf(stderr,"backendTarget option Error!\n")	;
+		exit(-1);	    
+	}
+	else
+	{
 
 		if(!((strcmp(backendTarget,"omp")==0)|| (strcmp(backendTarget,"amd")==0) || (strcmp(backendTarget,"mpi")==0)||(strcmp(backendTarget,"cuda")==0) || (strcmp(backendTarget,"acc")==0) || (strcmp(backendTarget,"sycl")==0)|| (strcmp(backendTarget,"multigpu")==0)))
 
-		   {
-			  fprintf(stderr, "Specified backend target is not implemented in the current version!\n");
-			   exit(-1);
-		   }
+			{
+				fprintf(stderr, "Specified backend target is not implemented in the current version!\n");
+				exit(-1);
+			}
 	}
 
-   if(!(staticGen || dynamicGen)) {
+	if(!(staticGen || dynamicGen))
+	{
 		fprintf(stderr, "Type of graph(static/dynamic) not specified!\n");
 		exit(-1);
-     }
-	  
-     
+	}
 
+	create_directory(backendTarget);
+	yyin= fopen(fileName,"r");
 
-   create_directory(backendTarget);
-   yyin= fopen(fileName,"r");
-   
-   if(!yyin) {
-	printf("file doesn't exists!\n");
-	exit(-1);
-   }
-   
-   
-   int error=yyparse();
-   printf("error val %d\n",error);
+	if(!yyin) {
+		printf("file doesn't exists!\n");
+		exit(-1);
+	}
 
+	int error=yyparse();
+	printf("error val %d\n",error);
 
 	if(error!=1)
 	{
-     //TODO: redirect to different backend generator after comparing with the 'b' option
-    std::cout << "at 1" << std::endl;
-	stBuilder.buildST(frontEndContext.getFuncList());
-	frontEndContext.setDynamicLinkFuncs(stBuilder.getDynamicLinkedFuncs());
-	std::cout << "at 2" << std::endl;
+		//TODO: redirect to different backend generator after comparing with the 'b' option
+		std::cout << "at 1" << std::endl;
+		stBuilder.buildST(frontEndContext.getFuncList());
+		frontEndContext.setDynamicLinkFuncs(stBuilder.getDynamicLinkedFuncs());
+		std::cout << "at 2" << std::endl;
 
-	if(staticGen)
-	  {
-		  /*
-		  if(optimize)
-		  {
-			  attachPropAnalyser apAnalyser;
-			  apAnalyser.analyse(frontEndContext.getFuncList());
+		if(staticGen)
+		{
+			if (strcmp(backendTarget, "cuda") == 0)
+			{
+				spcuda::dsl_cpp_generator cpp_backend;
+				cpp_backend.setFileName(fileName);
+				//~ cpp_backend.setOptimized();
 
-			  dataRaceAnalyser drAnalyser;
-			  drAnalyser.analyse(frontEndContext.getFuncList());
-			  
-			  if(strcmp(backendTarget,"cuda")==0)
-			  {
-			  	deviceVarsAnalyser dvAnalyser;
-				//cpp_backend.setOptimized();
-			  	dvAnalyser.analyse(frontEndContext.getFuncList());
-			  }
-		  }
-		  */
-	  //cpp_backend.setFileName(fileName);
-	  //cpp_backend.generate();
-     if (strcmp(backendTarget, "cuda") == 0) {
-        spcuda::dsl_cpp_generator cpp_backend;
-        cpp_backend.setFileName(fileName);
-	//~ cpp_backend.setOptimized();
-	
-	if (optimize) {
-	  attachPropAnalyser apAnalyser;
-	  apAnalyser.analyse(frontEndContext.getFuncList());
+				if (optimize)
+				{
+					attachPropAnalyser apAnalyser;
+					apAnalyser.analyse(frontEndContext.getFuncList());
 
-	  dataRaceAnalyser drAnalyser;
-	  drAnalyser.analyse(frontEndContext.getFuncList());
+					dataRaceAnalyser drAnalyser;
+					drAnalyser.analyse(frontEndContext.getFuncList());
 
-	  deviceVarsAnalyser dvAnalyser;
-	  dvAnalyser.analyse(frontEndContext.getFuncList());
-	  cpp_backend.setOptimized();
+					deviceVarsAnalyser dvAnalyser;
+					dvAnalyser.analyse(frontEndContext.getFuncList());
+					cpp_backend.setOptimized();
+				}
+				
+				cpp_backend.generate();
+			} 
+			else if (strcmp(backendTarget, "omp") == 0)
+			{
+				spomp::dsl_cpp_generator cpp_backend;
+				std::cout<< "size:" << frontEndContext.getFuncList().size() << '\n';
+				cpp_backend.setFileName(fileName);
+				cpp_backend.generate();
+			} 
+			else if (strcmp(backendTarget, "mpi") == 0)
+			{
+				spmpi::dsl_cpp_generator cpp_backend;
+				std::cout<< "size:" << frontEndContext.getFuncList().size() << '\n';
+				cpp_backend.setFileName(fileName);
+				cpp_backend.generate();
+			} 
+			else if (strcmp(backendTarget, "acc") == 0)
+			{
+				spacc::dsl_cpp_generator cpp_backend;
+				cpp_backend.setFileName(fileName);
+				if(optimize)
+				{
+					cpp_backend.setOptimized();
+					blockVarsAnalyser bvAnalyser;
+					bvAnalyser.analyse(frontEndContext.getFuncList());
+				}
+				cpp_backend.generate();
+			}
+			else if(strcmp(backendTarget, "multigpu") == 0)
+			{
+				spmultigpu::dsl_cpp_generator cpp_backend;
+				pushpullAnalyser pp;
+				pp.analyse(frontEndContext.getFuncList());
+				cpp_backend.setFileName(fileName);
+				cpp_backend.generate();
+			}
+			else if (strcmp(backendTarget, "sycl") == 0)
+			{
+				std::cout<<"GENERATING SYCL CODE"<<std::endl;
+				spsycl::dsl_cpp_generator cpp_backend;
+				cpp_backend.setFileName(fileName);
+				cpp_backend.generate();
+			}
+			else if (strcmp(backendTarget, "amd") == 0)
+			{
+				std::cout<<"GENERATING OPENCL CODE"<<std::endl;
+				spamd::dsl_cpp_generator cpp_backend;
+				cpp_backend.setFileName(fileName);
+				cpp_backend.generate();
+			}
+			else
+				std::cout<< "invalid backend" << '\n';
+		}
+		else 
+		{
+			if(strcmp(backendTarget, "omp") == 0)
+			{
+				spdynomp::dsl_dyn_cpp_generator cpp_dyn_gen;
+				cpp_dyn_gen.setFileName(fileName);
+				cpp_dyn_gen.generate();
+			}
+			if(strcmp(backendTarget, "mpi") == 0)
+			{
+				spdynmpi::dsl_dyn_cpp_generator cpp_dyn_gen;
+				std::cout<<"created dyn mpi"<<std::endl;
+				cpp_dyn_gen.setFileName(fileName);
+				std::cout<<"file name set"<<std::endl;
+				cpp_dyn_gen.generate();	
+			}
+		}
 	}
-		  
-        cpp_backend.generate();
-      } 
-      else if (strcmp(backendTarget, "omp") == 0) {
-        spomp::dsl_cpp_generator cpp_backend;
-	std::cout<< "size:" << frontEndContext.getFuncList().size() << '\n';
-        cpp_backend.setFileName(fileName);
-        cpp_backend.generate();
-      } 
-	  else if (strcmp(backendTarget, "mpi") == 0) {
-        spmpi::dsl_cpp_generator cpp_backend;
-		std::cout<< "size:" << frontEndContext.getFuncList().size() << '\n';
-        cpp_backend.setFileName(fileName);
-        cpp_backend.generate();
-      } 
-      else if (strcmp(backendTarget, "acc") == 0) {
-        spacc::dsl_cpp_generator cpp_backend;
-        cpp_backend.setFileName(fileName);
-		if(optimize) {
-			cpp_backend.setOptimized();
-			blockVarsAnalyser bvAnalyser;
-			bvAnalyser.analyse(frontEndContext.getFuncList());
-		}
-        cpp_backend.generate();
-      }
-	  else if(strcmp(backendTarget, "multigpu") == 0){
-		spmultigpu::dsl_cpp_generator cpp_backend;
-		pushpullAnalyser pp;
-		pp.analyse(frontEndContext.getFuncList());
-		cpp_backend.setFileName(fileName);
-		cpp_backend.generate();
-}
-	  else if (strcmp(backendTarget, "sycl") == 0) {
-		std::cout<<"GENERATING SYCL CODE"<<std::endl;
-        spsycl::dsl_cpp_generator cpp_backend;
-        cpp_backend.setFileName(fileName);
-        cpp_backend.generate();
-	  }
-	  else if (strcmp(backendTarget, "amd") == 0) {
-		std::cout<<"GENERATING OPENCL CODE"<<std::endl;
-        spamd::dsl_cpp_generator cpp_backend;
-        cpp_backend.setFileName(fileName);
-        cpp_backend.generate();
-	  }
-      else
-	    std::cout<< "invalid backend" << '\n';
-	  }
-	else 
-	 {
-		if(strcmp(backendTarget, "omp") == 0) {
-		   spdynomp::dsl_dyn_cpp_generator cpp_dyn_gen;
-		   cpp_dyn_gen.setFileName(fileName);
-	       cpp_dyn_gen.generate();
-		}
-		if(strcmp(backendTarget, "mpi") == 0){
-		   spdynmpi::dsl_dyn_cpp_generator cpp_dyn_gen;
-		   std::cout<<"created dyn mpi"<<std::endl;
-		   cpp_dyn_gen.setFileName(fileName);
-		   std::cout<<"file name set"<<std::endl;
-	       cpp_dyn_gen.generate();	
-		}
-	 }
-	
-   }
 
 	printf("finished successfully\n");
-   
-   /* to generate code, ./finalcode -s/-d -f "filename" -b "backendname"*/
+
+	/* to generate code, ./finalcode -s/-d -f "filename" -b "backendname"*/
 	return 0;   
-	 
+		
 }
