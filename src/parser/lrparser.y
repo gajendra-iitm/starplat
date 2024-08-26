@@ -9,6 +9,7 @@
 	#include "../analyser/attachProp/attachPropAnalyser.h"
 	#include "../analyser/dataRace/dataRaceAnalyser.h"
 	#include "../analyser/deviceVars/deviceVarsAnalyser.h"
+    #include "../analyser/liveVars/liveVarsAnalyser.h"
 	#include "../analyser/pushpull/pushpullAnalyser.h"
 
 	#include "../analyser/blockVars/blockVarsAnalyser.h"
@@ -644,6 +645,10 @@ int main(int argc,char **argv)
 
 					deviceVarsAnalyser dvAnalyser;
 					dvAnalyser.analyse(frontEndContext.getFuncList());
+
+                    liveVarsAnalyser lvAnalyser;
+                    lvAnalyser.analyse(frontEndContext.getFuncList());
+                    
 					cpp_backend.setOptimized();
 				}
 				
