@@ -39,11 +39,11 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  graph G("/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_graph.txt");
+  graph G("/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/Pubmed/pubmed_edgelist.txt");
 
   G.parseGraph();
 
-  GNN gnn(G, "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_features/sample_graph_feat.txt", "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_labels/sample_graph_labels.txt");
+  GNN gnn(G, "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/Pubmed/pubmed_dataset.txt", "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/Pubmed/pubmed_labels.txt");
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
@@ -58,11 +58,12 @@ int main()
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
-  neuronsPerHiddenLayer.push_back(8);
+  neuronsPerHiddenLayer.push_back(32);
+  neuronsPerHiddenLayer.push_back(16);
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
-  std::vector<layer> layers = gnn.getLayers();
+  std::vector<layer> &layers = gnn.getLayers();
 
   graph &g = gnn.getGraph();
   // for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
@@ -73,23 +74,43 @@ int main()
   //   }
   //   std::cout << std::endl;
   // }
-  for (int epoch = 0; epoch < 10; epoch++)
+  for (int epoch = 1; epoch < 50; epoch++)
   {
-    for (int j = 0; j < 3; j++)
+    for (int j = 0; j < layers.size(); j++)
     {
       for (int k = 0; k < g.num_nodes(); k++)
       {
         gnn.forwardPass(k, j);
       }
+    }
+    for (int j = layers.size() - 1; j >= 0; j--)
+    {
       gnn.backPropogation(j);
     }
     gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8);
+    gnn.predict();
+
+    cout<<epoch<<endl;
   }
-  int num_nodes = g.num_nodes();
-  for (int i = 0; i < layers[2].num_features; i++)
+
+  for (int j = 0; j < layers.size(); j++)
   {
-    std::cout << layers[1].postActivatedFeatures[2][i] << " ";
-  }
+    for (int k = 0; k < g.num_nodes(); k++)
+    {
+      gnn.forwardPass(k, j);
+    }
+  } 
+gnn.predict();
+  // print all outputfeatures of all nodes of layer 2
+  // for (int j = 0; j < g.num_nodes(); j++)
+  // {
+  //   for (int i = 0; i < layers[layers.size() - 1].num_features; i++)
+  //   {
+  //     std::cout << layers[layers.size() - 1].postActivatedFeatures[j][i] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+
   // for (int j = 0; j < num_nodes; j++)
   // {
   //   //layers[0].preActivatedFeatures[0][j] = 0;
