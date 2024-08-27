@@ -39,11 +39,11 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  graph G("../sample_graphs/sample_graph.txt");
+  graph G("/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_graph.txt");
 
   G.parseGraph();
 
-  GNN gnn(G, "../sample_graphs/sample_graph_features/sample_features.txt", "../sample_graphs/sample_graph_labels/sample_labels");
+  GNN gnn(G, "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_features/sample_graph_feat.txt", "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_labels/sample_graph_labels.txt");
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
@@ -74,12 +74,18 @@ int main()
   //   std::cout << std::endl;
   // }
 
-  int node_num = 5;
-  gnn.forwardPass(node_num, 0);
-  int num_nodes = g.num_nodes();
-  for (int i = 0; i < layers[1].num_features; i++)
+  for (int j = 0; j < 3; j++)
   {
-    std::cout << layers[0].outputFeatures[node_num][i] << " ";
+    for (int k = 0; k < g.num_nodes(); k++)
+    {
+      gnn.forwardPass(k, j);
+    }
+  }
+
+  int num_nodes = g.num_nodes();
+  for (int i = 0; i < layers[2].num_features; i++)
+  {
+    std::cout << layers[1].outputFeatures[2][i] << " ";
   }
   // for (int j = 0; j < num_nodes; j++)
   // {

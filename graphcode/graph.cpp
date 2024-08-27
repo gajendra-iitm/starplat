@@ -1014,6 +1014,7 @@ void GNN::loadFeatures()
   std::vector<float> raw_features;
   while (std::getline(infile, line))
   {
+
     if (line.length() == 0 || line[0] < '0' || line[0] > '9')
     {
       continue;
@@ -1027,6 +1028,8 @@ void GNN::loadFeatures()
       num_features++;
     }
   }
+  std::cout << "num_features " << num_features << std::endl;
+  std::cout << "num Nodes" << g.num_nodes() << std::endl;
   num_features /= g.num_nodes();
   // push num_feature number of elements from raw_features onto a temp_feat and then push the temp_feat onto features
   for (int i = 0; i < raw_features.size(); i += num_features)
@@ -1099,6 +1102,14 @@ void GNN::forwardPass(int node, int layerNumber)
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
     forwardPass_omp(*this, node, layerNumber);
+  }
+}
+
+void GNN::backPropogation(int layerNumber)
+{
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    // backPropagation_omp(*this, layerNumber);
   }
 }
 
