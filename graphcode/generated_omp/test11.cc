@@ -73,29 +73,32 @@ int main()
   //   }
   //   std::cout << std::endl;
   // }
-
-  for (int j = 0; j < 3; j++)
+  for (int epoch = 0; epoch < 10; epoch++)
   {
-    for (int k = 0; k < g.num_nodes(); k++)
+    for (int j = 0; j < 3; j++)
     {
-      gnn.forwardPass(k, j);
+      for (int k = 0; k < g.num_nodes(); k++)
+      {
+        gnn.forwardPass(k, j);
+      }
+      gnn.backPropogation(j);
     }
+    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8);
   }
-
   int num_nodes = g.num_nodes();
   for (int i = 0; i < layers[2].num_features; i++)
   {
-    std::cout << layers[1].outputFeatures[2][i] << " ";
+    std::cout << layers[1].postActivatedFeatures[2][i] << " ";
   }
   // for (int j = 0; j < num_nodes; j++)
   // {
-  //   //layers[0].outputFeatures[0][j] = 0;
+  //   //layers[0].preActivatedFeatures[0][j] = 0;
   //   for (int i = 0; i < layers[0].num_features; i++)
   //   {
-  //     std::cout<<layers[0].outputFeatures[0][j]<<" ";
+  //     std::cout<<layers[0].preActivatedFeatures[0][j]<<" ";
   //   }
   //   std::cout<<std::endl;
-  //   // layers[0].outputFeatures[0][j] = relu(layers[0].outputFeatures[0][j] + layers[0].bias[j]);
+  //   // layers[0].preActivatedFeatures[0][j] = relu(layers[0].preActivatedFeatures[0][j] + layers[0].bias[j]);
   // }
 
 <<<<<<< HEAD
