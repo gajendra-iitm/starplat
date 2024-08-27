@@ -109,10 +109,12 @@ public:
   float **weights;
   float *bias;
   float **aggregatedFeatures;
-  float **outputFeatures;
+  float **preActivatedFeatures;
+  float **postActivatedFeatures;
   float **grad_pre_act_output;
   float **grad_post_act_output;
   float **grad_weights;
+  float *grad_bias;
 };
 
 class GNN
@@ -140,6 +142,7 @@ public:
   void aggregate(int node, int layerNumber);
   void forwardPass(int node, int layerNumber);
   void backPropogation(int layerNumber);
+  void adamOptimizer(int epochNumber, float lr, float beta1, float beta2, float epsilon);
 };
 
 class env

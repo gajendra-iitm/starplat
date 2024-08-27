@@ -1109,7 +1109,13 @@ void GNN::backPropogation(int layerNumber)
 {
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
-    // backPropagation_omp(*this, layerNumber);
+    backPropagation_omp(*this, layerNumber);
+  }
+}
+void GNN::adamOptimizer(int epochNumber, float lr, float beta1, float beta2, float epsilon){
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    adamOptimizer_omp(*this, epochNumber, lr, beta1, beta2, epsilon);
   }
 }
 
