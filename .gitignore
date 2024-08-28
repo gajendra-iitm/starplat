@@ -26,6 +26,8 @@ graphcode/generated_hip/*cc
 graphcode/generated_hip/*h
 graphcode/generated_mpi/output/*
 graphcode/generated_mpi/Makefile
+graphcode/generated_mpi/*.cc
+graphcode/generated_mpi/*.h
 .idea/
 *.o
 **/.DS_Store

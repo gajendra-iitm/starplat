@@ -1,6 +1,7 @@
 #include "bAnalyzer.h"
 #include <iostream>
 #include <sstream>
+#include <set>
 
 #ifndef DEBUG_H
 #define DEBUG_H
@@ -9,9 +10,9 @@
 #define DEBUG
 
 #ifdef DEBUG
-    #define DEBUG_ENABLED 1
+#define DEBUG_ENABLED 1
 #else
-    #define DEBUG_ENABLED 0
+#define DEBUG_ENABLED 0
 #endif
 
 // Basic debug message logging
@@ -19,32 +20,32 @@
     do { \
         if (DEBUG_ENABLED) { \
             std::ostringstream os_; \
-            os_ << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") " << msg << std::endl; \
+      os_ << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") " << msg << std::endl; \
             std::cerr << os_.str(); \
         } \
-    } while (0)
+  } while (0)
 
 // Debug logging with variable information
 #define DEBUG_VAR(var) \
     do { \
         if (DEBUG_ENABLED) { \
             std::ostringstream os_; \
-            os_ << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") " #var " = " << (var) << std::endl; \
+      os_ << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") " #var " = " << (var) << std::endl; \
             std::cerr << os_.str(); \
         } \
-    } while (0)
+  } while (0)
 
 // Assertion with debug
 #define DEBUG_ASSERT(cond, msg) \
     do { \
         if (!(cond)) { \
             std::ostringstream os_; \
-            os_ << "ASSERTION FAILED: " << __FILE__ << "(" << __LINE__ << ") " \
+      os_ << "ASSERTION FAILED: " << __FILE__ << "(" << __LINE__ << ") " \
                 << msg << " [" #cond "]" << std::endl; \
             std::cerr << os_.str(); \
             std::abort(); \
         } \
-    } while (0)
+  } while (0)
 
 #endif // DEBUG_H
 
@@ -66,7 +67,7 @@ bAnalyzer::bAnalyzer () {
 }
 
 void bAnalyzer::TraverseAST (statement * stmt) {
-  
+
   // What all is to be done for the statment .
 
   if (stmt->getTypeofNode() == NODE_BLOCKSTMT) {
@@ -96,7 +97,7 @@ void bAnalyzer::TraverseAST (statement * stmt) {
   }
   if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT) {
     TraverseAST (((fixedPointStmt*) stmt)->getBody ()) ;
-  } 
+  }
   if (stmt->getTypeofNode() == NODE_REDUCTIONCALLSTMT) {
     return ;
   }
@@ -114,7 +115,7 @@ void bAnalyzer::TraverseAST (statement * stmt) {
 }
 
 bool bAnalyzer::checkSignature (forallStmt *forAll) {
-  
+
   if (forAll->isSourceProcCall()) {
     Identifier* sourceGraph = forAll->getSourceGraph();
     Identifier* iterator = forAll->getIterator();
@@ -137,8 +138,8 @@ int bAnalyzer::analyzeForAllStmt (forallStmt * forAll) {
         printf ("entry one = %d, entry two = %p\n", entryOne, (void*)entryTwo) ;
         printf ("done this already\n") ;
         return 0 ;
-      }
     }
+  }
     forAllNesting[counter++] = forAll ;
     bool reArrangedV = false ;
   if (forAll->isSourceProcCall()) {
@@ -180,7 +181,7 @@ int bAnalyzer::analyzeForAllStmt (forallStmt * forAll) {
       unary_stmt* incrementer = (unary_stmt*)Util::createNodeForUnaryStatements(Util::createNodeForUnaryExpr(idxExpr, OPERATOR_INC)); 
       incrementer->setTypeofNode (NODE_UNARYSTMT) ;
       newStatement->addStmtToBlock ((statement*)incrementer) ;
-    } 
+    }
     if (!iterVar.empty())
     strcpy (this->lastIter, iterVar.top ()) ;
     this->lastIter[9]='\0' ; // To prevent stack smashing.
@@ -211,7 +212,7 @@ statement * bAnalyzer::createNewV (declaration * stmt, Identifier * u,  Identifi
   newArgList.push_back (a2) ;  
   proc_callExpr * newExpression = proc_callExpr::nodeForProc_Call(proc->getId1(), proc->getId2(),  newMethodId, newArgList, proc->getIndexExpr()) ;
   ASTNode * newStmt = Util::createAssignmentNode ((ASTNode*) v, (ASTNode*) newExpression) ;
-  // Make symbol Table entry 
+  // Make symbol Table entry
   Type *typeNode = Type::createForPrimitive (TYPE_INT, 1) ;
   TableEntry newEntry (v, typeNode) ;
   // declaration * newStmt = declaration::assign_Declaration((Type*)Util::createNodeEdgeTypeNode(TYPE_NODE), v, newExpression) ;
@@ -219,7 +220,7 @@ statement * bAnalyzer::createNewV (declaration * stmt, Identifier * u,  Identifi
 }
 
 statement * bAnalyzer::createFrontierPopStatement () {
-  // Barenya : Hard coding g. Remove later. 
+  // Barenya : Hard coding g. Remove later.
   std::string graphName = "g" ;
   const char * graphNameChar = graphName.c_str () ;
   Identifier * graphNameId = (Identifier *) Util::createIdentifierNode (graphNameChar) ;
@@ -245,7 +246,7 @@ void bAnalyzer::generateNewRelationCheck (blockStatement * oldBlockChunk) {
   }
   for (auto &stmt:oldBlockChunk->returnStatements()) {
     if (stmt->getTypeofNode() == NODE_ASSIGN) {
-      // check if propId.  
+      // check if propId.
       if (((assignment *)stmt)->lhs_isProp()) {
         PropAccess * id = ((assignment*)stmt)->getPropId() ;
         Identifier * concernedId = id->getIdentifier1 () ;
@@ -264,7 +265,7 @@ void bAnalyzer::generateNewRelationCheck (blockStatement * oldBlockChunk) {
     }
     else if (stmt->getTypeofNode() == NODE_REDUCTIONCALLSTMT) {
       if (((reductionCallStmt*)stmt)->is_reducCall()) {
-        // Need to fail analysis if this happens. 
+        // Need to fail analysis if this happens.
       } else if (((reductionCallStmt*)stmt)->isLeftIdentifier()){
 
       } else if (((reductionCallStmt*)stmt)->isContainerReduc()) {
@@ -303,7 +304,7 @@ void bAnalyzer::generateNewRelationCheck (blockStatement * oldBlockChunk) {
           newPusher->addStmtToBlock (pusher) ;
           generateNewRelationCheck (newPusher);
         } else {*/
-        if (pusher != NULL) 
+        if (pusher != NULL)
           generateNewRelationCheck ((blockStatement*)pusher) ;
         // }
       }
@@ -347,7 +348,7 @@ Expression * bAnalyzer::filterExprDeepCopy (Expression * condition, const char *
 
 
 statement * createFrontierPushStatement (const char* vertexNameChar) {
-  
+
   std::string graphName = "g" ;
   const char * graphNameChar = graphName.c_str () ;
   Identifier * graphNameId = (Identifier *) Util::createIdentifierNode (graphNameChar) ;
@@ -371,7 +372,7 @@ statement * createFrontierPushStatement (const char* vertexNameChar) {
 }
 
 void bAnalyzer::createNewFrontierStatement (Expression * filterExpr, blockStatement * oldBlockChunk) {
-  // Traverse the entire block till for changes in all property methods encountered. 
+  // Traverse the entire block till for changes in all property methods encountered.
   generateNewRelationCheck (oldBlockChunk) ;
   for (auto &node:trackNodes) {
     printf ("Generating expression copies for %s\n", node.c_str()) ;
@@ -388,7 +389,7 @@ void bAnalyzer::createNewFrontierStatement (Expression * filterExpr, blockStatem
 
 
 void bAnalyzer::createNewForAllStmtBlock () {
-  // generate just g.frontier_push (all v values) 
+  // generate just g.frontier_push (all v values)
   // Hardcoding name of the graph.
   std::string graphName = "g" ;
   const char * graphNameChar = graphName.c_str () ;
@@ -418,7 +419,7 @@ void bAnalyzer::createNewForAllStmtBlock () {
 
 void bAnalyzer::setFilterAnalysisStatement1 (blockStatement * forAllLoopBlock) {
   // New class variable
-  
+
   return ;
 }
 void bAnalyzer::setFilterAnalysisStatement2 (whileStmt * forAllLoopBlock) {
@@ -446,7 +447,7 @@ void bAnalyzer::evaluateFilter (forallStmt * oldStmt, blockStatement * oldBlockC
     statementForAll = (blockStatement *) oldStmt->getBody() ;
   }
 }
-  
+
 bool bAnalyzer::filterAnalysis (Expression * condition) {
   // traverse the expression and be sure all rhs are constants.
   if (condition->isRelational ()) {
@@ -457,7 +458,7 @@ bool bAnalyzer::filterAnalysis (Expression * condition) {
       PropAccess * propId = leftExpr->getPropId() ;
       Identifier * methodId = propId->getIdentifier2 () ;
       const char * methodName = methodId->getIdentifier () ;
-      std::string methodName1 = methodName; 
+      std::string methodName1 = methodName;
       if (std::find(updatedNodes.begin (), updatedNodes.end(), methodName1) == updatedNodes.end()) {
         updatedNodes.push_back (methodName1) ;
       }
@@ -474,7 +475,7 @@ bool bAnalyzer::filterAnalysis (Expression * condition) {
 }
 
 statement * bAnalyzer::createNewEdgeStatement (declaration * stmt, int status, const char * vIdx)  {
-  
+
   DEBUG_LOG ("Call to createNewEdgeStatement atleast\n") ;
   assert (status == 1 || status == 2) ;
 
@@ -488,7 +489,7 @@ statement * bAnalyzer::createNewEdgeStatement (declaration * stmt, int status, c
   Identifier * newMethodId ;
   Identifier * src = argList.front()->getExpr()->getId() ;
   Identifier * dest = argList.back()->getExpr()->getId() ;
-  
+
   Identifier * newIdx = Identifier::createIdNode (vIdx) ;
   Expression * idxExpr = Expression::nodeForIdentifier (newIdx) ;
   list<argument *> newArgList ;
@@ -511,7 +512,7 @@ statement * bAnalyzer::createNewEdgeStatement (declaration * stmt, int status, c
   }
   newArgList.push_back (a1) ;  
   newArgList.push_back (a2) ;  
-//   argListList.emplace_back(newArgList) ;
+  //   argListList.emplace_back(newArgList) ;
   proc_callExpr * newExpression = proc_callExpr::nodeForProc_Call(proc->getId1(), proc->getId2(),  newMethodId, newArgList, proc->getIndexExpr()) ;
   stmt = declaration::assign_Declaration(stmt->getType(), stmt->getdeclId(), newExpression) ;
 
@@ -528,14 +529,14 @@ int bAnalyzer::canImproveEdge (declaration* decl, char * u, char * v) {
 
       Expression * expr = decl->getExpressionAssigned();
       if (expr->isProcCallExpr()) {
-      
+
         proc_callExpr* proc = (proc_callExpr*)expr;
         string methodId(proc->getMethodId()->getIdentifier());
         if (methodId == "get_edge") {
-                
+
           list<argument*> argList = proc->getArgList();
           assert(argList.size() == 2);
-      
+
           Identifier* srcId = argList.front()->getExpr()->getId();
           Identifier* destId = argList.back()->getExpr()->getId();
           Identifier* objectId = proc->getId1();
@@ -577,4 +578,137 @@ void bAnalyzer::clearAllAnalysis () {
   newArgList.clear () ;
   iterVar = stack<char*> ();
   lastIter[0] = '\0';
+}
+
+std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *stmt)
+{
+  DEBUG_LOG("GET NODES WITH ATOMIC OPS");
+  std::set<Identifier *> propsWithAtomicOps;
+
+  if (stmt == nullptr)
+  {
+    return propsWithAtomicOps;
+  }
+
+  switch (stmt->getTypeofNode())
+  {
+  case NODE_BLOCKSTMT:
+  {
+    blockStatement *blockStmt = static_cast<blockStatement *>(stmt);
+    for (auto &s : blockStmt->returnStatements())
+    {
+      auto properties = getPropertiesModifiedWithAtomicOps(s);
+      propsWithAtomicOps.insert(properties.begin(), properties.end());
+    }
+    break;
+  }
+  case NODE_ASSIGN:
+  {
+    DEBUG_LOG("ASSIGN");
+    assignment *assignStmt = static_cast<assignment *>(stmt);
+      PropAccess *propAccess = assignStmt->getPropId();
+      if (propAccess != nullptr)
+      {
+        DEBUG_LOG("ASSIGN PROP ID");
+        Identifier *identifier = propAccess->getIdentifier2();
+        propsWithAtomicOps.insert(identifier);
+      }
+    break;
+  }
+  case NODE_UNARYSTMT:
+  {
+    unary_stmt *unaryStmt = static_cast<unary_stmt *>(stmt);
+    Expression *unaryExpr = unaryStmt->getUnaryExpr();
+    if (unaryExpr->isPropIdExpr())
+    {
+      PropAccess *propAccess = unaryExpr->getPropId();
+      Identifier *identifier = propAccess->getIdentifier1();
+      propsWithAtomicOps.insert(identifier);
+    }
+    break;
+  }
+  case NODE_WHILESTMT:
+  {
+    whileStmt *whileStatement = static_cast<whileStmt *>(stmt);
+    auto whileNodes = getPropertiesModifiedWithAtomicOps(whileStatement->getBody());
+    propsWithAtomicOps.insert(whileNodes.begin(), whileNodes.end());
+    break;
+  }
+  case NODE_DOWHILESTMT:
+  {
+    DEBUG_LOG("DOWHILESTMT");
+    dowhileStmt *doWhileStatement = static_cast<dowhileStmt *>(stmt);
+    auto doWhileNodes = getPropertiesModifiedWithAtomicOps(doWhileStatement->getBody());
+    propsWithAtomicOps.insert(doWhileNodes.begin(), doWhileNodes.end());
+    break;
+  }
+  case NODE_FIXEDPTSTMT:
+  {
+    fixedPointStmt *fixedPointStatement = static_cast<fixedPointStmt *>(stmt);
+    auto fixedPointNodes = getPropertiesModifiedWithAtomicOps(fixedPointStatement->getBody());
+    propsWithAtomicOps.insert(fixedPointNodes.begin(), fixedPointNodes.end());
+    break;
+  }
+  case NODE_IFSTMT:
+  {
+    DEBUG_LOG("IFSTMT");
+    ifStmt *ifStatement = static_cast<ifStmt *>(stmt);
+    auto ifNodes = getPropertiesModifiedWithAtomicOps(ifStatement->getIfBody());
+    propsWithAtomicOps.insert(ifNodes.begin(), ifNodes.end());
+    if (ifStatement->getElseBody() != nullptr)
+    {
+      auto elseNodes = getPropertiesModifiedWithAtomicOps(ifStatement->getElseBody());
+      propsWithAtomicOps.insert(elseNodes.begin(), elseNodes.end());
+    }
+    break;
+  }
+  case NODE_ITRBFS:
+  {
+    DEBUG_LOG("ITERATE BFS");
+    iterateBFS *iterateBFSStatement = static_cast<iterateBFS *>(stmt);
+    auto iterateBFSNodes = getPropertiesModifiedWithAtomicOps(iterateBFSStatement->getBody());
+    propsWithAtomicOps.insert(iterateBFSNodes.begin(), iterateBFSNodes.end());
+    break;
+  }
+  case NODE_ITRRBFS:
+  {
+    DEBUG_LOG("ITERATE REVERSE BFS");
+    iterateReverseBFS *iterateReverseBFSStatement = static_cast<iterateReverseBFS *>(stmt);
+    auto iterateReverseBFSNodes = getPropertiesModifiedWithAtomicOps(iterateReverseBFSStatement->getBody());
+    propsWithAtomicOps.insert(iterateReverseBFSNodes.begin(), iterateReverseBFSNodes.end());
+    break;
+  }
+  case NODE_EXPR:
+    DEBUG_LOG("EXPR");
+    break;
+  case NODE_PROCCALLEXPR:
+  case NODE_PROCCALLSTMT:
+    DEBUG_LOG("PROCCALL EXPR or STMT");
+    break;
+  case NODE_FORALLSTMT:
+  {
+    DEBUG_LOG("FORALLSTMT");
+    forallStmt *forAllStatement = static_cast<forallStmt *>(stmt);
+    auto forAllNodes = getPropertiesModifiedWithAtomicOps(forAllStatement->getBody());
+    propsWithAtomicOps.insert(forAllNodes.begin(), forAllNodes.end());
+    break;
+  }
+  case NODE_REDUCTIONCALL:
+  case NODE_REDUCTIONCALLSTMT:
+  {
+    DEBUG_LOG("REDUCTION CALL STMT");
+    reductionCallStmt *reductionStmt = static_cast<reductionCallStmt *>(stmt);
+    PropAccess *propAccess = reductionStmt->getPropAccess();
+    if (propAccess != nullptr)
+    {
+      propsWithAtomicOps.insert(propAccess->getIdentifier2());
+    }
+    break;
+  }
+  default:
+    DEBUG_LOG("Unhandled node type: " + std::to_string(stmt->getTypeofNode()));
+    break;
+  }
+
+  return propsWithAtomicOps;
 }
