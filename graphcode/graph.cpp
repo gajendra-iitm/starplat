@@ -1118,7 +1118,13 @@ void GNN::adamOptimizer(int epochNumber, float lr, float beta1, float beta2, flo
     adamOptimizer_omp(*this, epochNumber, lr, beta1, beta2, epsilon);
   }
 }
-
+void GNN::predict()
+{
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    predict_omp(*this);
+  }
+}
 env::env(char *backend, char *algoType, char *filename)
 {
   // use strdup for deep copy
