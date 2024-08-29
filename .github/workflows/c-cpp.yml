@@ -44,7 +44,7 @@ jobs:
       run: |
         cd src
         ./StarPlat -s -f ../graphcode/staticDSLCodes/triangle_counting_dsl -b mpi
-        if [ -f graphcode/generated_mpi/output/triangle_counting_dsl.h ] && [ -f graphcode/generated_mpi/output/triangle_counting_dsl.cc ]; then
+        if [ -f ../graphcode/generated_mpi/output/triangle_counting_dsl.h ] && [ -f ../graphcode/generated_mpi/output/triangle_counting_dsl.cc ]; then
           echo "Triangle counting code generated successfully"
         else
           echo "triangle_counting_dsl.cc OR triangle_counting_dsl.h file not found."
@@ -57,7 +57,7 @@ jobs:
         cd graphcode/generated_mpi
         mkdir -p output
         make triangle_counting.out
-        if [ -f graphcode/generated_mpi/output/triangle_counting_dsl.out ]; then
+        if [ -f output/triangle_counting_dsl.out ]; then
           echo "Triangle counting executable built successfully"
         else
           echo "Triangle counting executable not found. Build failed."
