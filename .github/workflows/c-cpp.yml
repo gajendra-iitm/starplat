@@ -20,9 +20,9 @@ jobs:
 
     - name: Check if executable exists
       run: |
-        if [ -f src/starplat ]; then
-          echo "Starplat executable built successfully"
-        else
-          echo "Starplat executable not found"
-          exit 1
-        fi
+         if [ -f src/StarPlat ]; then
+           echo "Starplat executable built successfully"
+         else
+           echo "Starplat executable not found in src directory. Build failed."
+           exit 1
+         fi
