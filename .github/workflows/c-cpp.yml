@@ -1,0 +1,28 @@
+name: Starplat CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Starplat
+      run: |
+        cd src
+        make
+
+    - name: Check if executable exists
+      run: |
+        if [ -f src/StarPlat ]; then
+          echo "Starplat executable built successfully"
+        else
+          echo "Starplat executable not found in src directory. Build failed."
+          exit 1
+        fi
