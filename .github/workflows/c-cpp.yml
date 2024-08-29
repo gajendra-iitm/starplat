@@ -2,9 +2,9 @@ name: Starplat CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]  # This will run on all branches
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]  # This will run on pull requests to all branches
 
 jobs:
   build:
@@ -20,9 +20,9 @@ jobs:
 
     - name: Check if executable exists
       run: |
-        if [ -f src/StarPlat ]; then
+        if [ -f src/starplat ]; then
           echo "Starplat executable built successfully"
         else
-          echo "Starplat executable not found in src directory. Build failed."
+          echo "Starplat executable not found"
           exit 1
         fi
