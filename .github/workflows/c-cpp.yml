@@ -2,9 +2,9 @@ name: Starplat CI
 
 on:
   push:
-    branches: [ "**" ]  # This will run on all branches
+    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]  # This will run on pull requests to all branches
+    branches: [ "**" ]
 
 jobs:
   build:
@@ -12,17 +12,59 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openmpi-bin libopenmpi-dev
+
+    - name: Install Boost
+      run: |
+        wget https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.gz
+        tar -xzf boost_1_85_0.tar.gz
+        cd boost_1_85_0
+        ./bootstrap.sh --with-libraries=mpi,serialization
+        sudo ./b2 install
 
     - name: Build Starplat
       run: |
         cd src
         make
 
-    - name: Check if executable exists
+    - name: Check if Starplat executable exists
       run: |
-         if [ -f src/StarPlat ]; then
-           echo "Starplat executable built successfully"
-         else
-           echo "Starplat executable not found in src directory. Build failed."
-           exit 1
-         fi
+        if [ -f src/StarPlat ]; then
+          echo "Starplat executable built successfully"
+        else
+          echo "Starplat executable not found in src directory. Build failed."
+          exit 1
+        fi
+
+    - name: Generate TC Code from TC DSL
+      run: |
+        cd src
+        ./StarPlat -s -f ../graphcode/staticDSLCodes/triangle_counting_dsl -b mpi
+        if [ -f graphcode/generated_mpi/output/triangle_counting_dsl.h ] && [ -f graphcode/generated_mpi/output/triangle_counting_dsl.cc ]; then
+          echo "Triangle counting code generated successfully"
+        else
+          echo "triangle_counting_dsl.cc OR triangle_counting_dsl.h file not found."
+          exit 1
+        fi
+
+
+    - name: Build triangle counting code
+      run: |
+        cd graphcode/generated_mpi
+        mkdir -p output
+        make triangle_counting.out
+        if [ -f graphcode/generated_mpi/output/triangle_counting_dsl.out ]; then
+          echo "Triangle counting executable built successfully"
+        else
+          echo "Triangle counting executable not found. Build failed."
+          exit 1
+        fi
+
+    - name: Run triangle counting on sample graph
+      run: |
+        cd graphcode/generated_mpi
+        mpirun -np 4 ./output/triangle_counting_dsl.out ../sample_graphs/sample_graph.txt
