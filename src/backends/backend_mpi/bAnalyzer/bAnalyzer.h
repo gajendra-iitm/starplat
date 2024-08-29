@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <vector>
 #include <list>
+#include <set>
+#include <string>
 class bAnalyzer
 {
 private:
@@ -58,7 +60,7 @@ public:
   statement *getStatementWithinWhileLoop();
   bool checkSignature(forallStmt *);
   bool getFilterAnalysisStatus();
-  std::set<Identifier *> getPropertiesModifiedWithAtomicOps(statement *);
+  set<string> getPropertiesModifiedWithAtomicOps(statement *);
 };
 
 #endif

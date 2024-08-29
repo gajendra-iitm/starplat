@@ -1,7 +1,6 @@
 #include "bAnalyzer.h"
 #include <iostream>
 #include <sstream>
-#include <set>
 
 #ifndef DEBUG_H
 #define DEBUG_H
@@ -580,10 +579,9 @@ void bAnalyzer::clearAllAnalysis () {
   lastIter[0] = '\0';
 }
 
-std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *stmt)
+std::set<string> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *stmt)
 {
-  DEBUG_LOG("GET NODES WITH ATOMIC OPS");
-  std::set<Identifier *> propsWithAtomicOps;
+  std::set<string> propsWithAtomicOps;
 
   if (stmt == nullptr)
   {
@@ -604,14 +602,11 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   }
   case NODE_ASSIGN:
   {
-    DEBUG_LOG("ASSIGN");
     assignment *assignStmt = static_cast<assignment *>(stmt);
       PropAccess *propAccess = assignStmt->getPropId();
       if (propAccess != nullptr)
-      {
-        DEBUG_LOG("ASSIGN PROP ID");
-        Identifier *identifier = propAccess->getIdentifier2();
-        propsWithAtomicOps.insert(identifier);
+      {;
+        propsWithAtomicOps.insert(propAccess->getIdentifier2()->getIdentifier());
       }
     break;
   }
@@ -622,8 +617,7 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
     if (unaryExpr->isPropIdExpr())
     {
       PropAccess *propAccess = unaryExpr->getPropId();
-      Identifier *identifier = propAccess->getIdentifier1();
-      propsWithAtomicOps.insert(identifier);
+      propsWithAtomicOps.insert(propAccess->getIdentifier1()->getIdentifier());
     }
     break;
   }
@@ -636,7 +630,6 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   }
   case NODE_DOWHILESTMT:
   {
-    DEBUG_LOG("DOWHILESTMT");
     dowhileStmt *doWhileStatement = static_cast<dowhileStmt *>(stmt);
     auto doWhileNodes = getPropertiesModifiedWithAtomicOps(doWhileStatement->getBody());
     propsWithAtomicOps.insert(doWhileNodes.begin(), doWhileNodes.end());
@@ -651,7 +644,6 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   }
   case NODE_IFSTMT:
   {
-    DEBUG_LOG("IFSTMT");
     ifStmt *ifStatement = static_cast<ifStmt *>(stmt);
     auto ifNodes = getPropertiesModifiedWithAtomicOps(ifStatement->getIfBody());
     propsWithAtomicOps.insert(ifNodes.begin(), ifNodes.end());
@@ -664,7 +656,6 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   }
   case NODE_ITRBFS:
   {
-    DEBUG_LOG("ITERATE BFS");
     iterateBFS *iterateBFSStatement = static_cast<iterateBFS *>(stmt);
     auto iterateBFSNodes = getPropertiesModifiedWithAtomicOps(iterateBFSStatement->getBody());
     propsWithAtomicOps.insert(iterateBFSNodes.begin(), iterateBFSNodes.end());
@@ -672,22 +663,13 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   }
   case NODE_ITRRBFS:
   {
-    DEBUG_LOG("ITERATE REVERSE BFS");
     iterateReverseBFS *iterateReverseBFSStatement = static_cast<iterateReverseBFS *>(stmt);
     auto iterateReverseBFSNodes = getPropertiesModifiedWithAtomicOps(iterateReverseBFSStatement->getBody());
     propsWithAtomicOps.insert(iterateReverseBFSNodes.begin(), iterateReverseBFSNodes.end());
     break;
   }
-  case NODE_EXPR:
-    DEBUG_LOG("EXPR");
-    break;
-  case NODE_PROCCALLEXPR:
-  case NODE_PROCCALLSTMT:
-    DEBUG_LOG("PROCCALL EXPR or STMT");
-    break;
   case NODE_FORALLSTMT:
   {
-    DEBUG_LOG("FORALLSTMT");
     forallStmt *forAllStatement = static_cast<forallStmt *>(stmt);
     auto forAllNodes = getPropertiesModifiedWithAtomicOps(forAllStatement->getBody());
     propsWithAtomicOps.insert(forAllNodes.begin(), forAllNodes.end());
@@ -696,17 +678,16 @@ std::set<Identifier *> bAnalyzer::getPropertiesModifiedWithAtomicOps(statement *
   case NODE_REDUCTIONCALL:
   case NODE_REDUCTIONCALLSTMT:
   {
-    DEBUG_LOG("REDUCTION CALL STMT");
     reductionCallStmt *reductionStmt = static_cast<reductionCallStmt *>(stmt);
     PropAccess *propAccess = reductionStmt->getPropAccess();
     if (propAccess != nullptr)
     {
-      propsWithAtomicOps.insert(propAccess->getIdentifier2());
+      propsWithAtomicOps.insert(propAccess->getIdentifier2()->getIdentifier());
     }
     break;
   }
   default:
-    DEBUG_LOG("Unhandled node type: " + std::to_string(stmt->getTypeofNode()));
+    // DEBUG_LOG("Unhandled node type: " + std::to_string(stmt->getTypeofNode()));
     break;
   }
 

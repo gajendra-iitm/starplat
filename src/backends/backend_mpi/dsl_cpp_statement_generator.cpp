@@ -35,7 +35,7 @@ namespace spmpi
         bAnalyzer analyser;
 
         // Collect properties that are modified with atomicAdds
-        auto propsResponsibleByBFS = std::set<Identifier *>();
+        auto propsResponsibleByBFS = set<string>();
         for (statement *stmt : statementList)
         {
             generateStatement(stmt);
@@ -53,9 +53,9 @@ namespace spmpi
         main.pushstr_newL("}");
 
         // Add fat barriers to sync the atomicAdds on the properties
-        for (Identifier *node : propsResponsibleByBFS)
+        for (string prop : propsResponsibleByBFS)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", node->getIdentifier());
+            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
         main.pushstr_newL("world.barrier();");
@@ -72,7 +72,7 @@ namespace spmpi
         list<statement *> revStmtList = revBlock->returnStatements();
 
         // Collect properties that are modified with atomicAdds
-        auto propsResponsibleByRBFS = std::set<Identifier *>();
+        auto propsResponsibleByRBFS = set<string>();
         for (statement *stmt : revStmtList)
         {
             generateStatement(stmt);
@@ -89,9 +89,9 @@ namespace spmpi
         main.pushstr_newL("}");
 
         // Add fat barriers to sync the atomicAdds on the properties
-        for (Identifier *node : propsResponsibleByRBFS)
+        for (string prop : propsResponsibleByRBFS)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", node->getIdentifier());
+            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
         main.pushstr_newL("world.barrier();");
@@ -1082,7 +1082,7 @@ namespace spmpi
         auto subset = analysisForAll->getPropertiesModifiedWithAtomicOps(forAll);
         for (auto prop : subset)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", prop->getIdentifier());
+            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
 
