@@ -45,7 +45,7 @@ namespace spmpi
         auto propsResponsibleByBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(body);
         for (string prop : propsResponsibleByBFS)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
+            sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
         main.pushstr_newL("world.barrier();");
@@ -72,7 +72,7 @@ namespace spmpi
         auto propsResponsibleByRBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(revBlock);
         for (string prop : propsResponsibleByBFS)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
+            sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
         main.pushstr_newL("world.barrier();");
@@ -1063,7 +1063,7 @@ namespace spmpi
         auto subset = analysisForAll->getPropertiesModifiedWithAtomicOps(forAll);
         for (auto prop : subset)
         {
-            sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
+            sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
 
@@ -1384,8 +1384,16 @@ namespace spmpi
 
     void dsl_cpp_generator::generateDoWhileStmt(dowhileStmt* doWhile)
     {
+        char strBuffer[1024];
         main.pushstr_newL("do");
         generateStatement(doWhile->getBody());
+        // Add fat barriers to sync the atomicAdds on the properties
+        auto subset = analysisForAll->getPropertiesModifiedWithAtomicOps(doWhile->getBody());
+        for (auto prop : subset)
+        {
+            sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
+            main.pushstr_newL(strBuffer);
+        }
         main.pushString("while(");
         generateExpr(doWhile->getCondition());
         main.pushString(");");
@@ -1394,9 +1402,16 @@ namespace spmpi
 
     void dsl_cpp_generator::generateWhileStmt(whileStmt* whilestmt)
     {
+        char strBuffer[1024];
         Expression* conditionExpr = whilestmt->getCondition();
         main.pushString("while (");
         generateExpr(conditionExpr);
+        auto subset = analysisForAll->getPropertiesModifiedWithAtomicOps(whilestmt->getBody());
+        for (auto prop : subset)
+        {
+            sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
+            main.pushstr_newL(strBuffer);
+        }
         main.pushString(" )");
         generateStatement(whilestmt->getBody());
     }

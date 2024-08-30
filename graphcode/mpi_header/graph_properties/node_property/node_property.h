@@ -3,8 +3,10 @@
 
 #include "../property.h"
 #include "../../rma_datatype/rma_datatype.h"
-#include <set>
+#include <unordered_set>
 #include <vector>
+#include <set>
+#include <boost/functional/hash.hpp>
 
 class Graph;
 
@@ -23,14 +25,25 @@ private:
     std::vector<bool> already_locked_processors_shared;
     std::vector<std::vector<std::pair<int32_t, T>>> reduction_queue;
 
-    // State variables for buffering atomic adds
+    // State variables for buffering atomic adds and write operations
     bool atomic_add_buffer_ready;
-    std::vector<std::vector<T>> atomic_add_buffer;
-    std::set<std::pair<int, int>> change_log;
+    // std::vector<std::vector<T>> atomic_add_buffer;
 
+    bool write_buffer_ready;
+
+    // Replace with map
+    // std::unordered_map<int, std::unordered_map<int, T>> atomic_add_buffer;
+    // std::unordered_map<int, std::unordered_map<int, T>> write_buffer;
+
+    // Replace with array
+    std::vector<std::vector<T>> atomic_add_buffer;
+    std::vector<std::vector<T>> write_buffer;
+
+    std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> atomic_add_change_log;
+    std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> write_change_log;
 public:
     Rma_Datatype<T> propList;
-    void fatBarrier();
+    void syncAtomicAddsAndWrites();
     void leaveAllSharedLocks();
     NodeProperty() : Property(true)
     {
