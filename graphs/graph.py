@@ -229,6 +229,11 @@ class Graph:
     def attachNodeProperty(self, **kwargs):
         for key,value in kwargs.items():
             setattr(self, key, {i:value for i in range(self.__nodesTotal+1)})
+
+    def attachEdgeProperty(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, {i: value for i in range(self.__edgesTotal + 1)})
+
     
     
     def add_edge(self, src, dest, weight = 0):

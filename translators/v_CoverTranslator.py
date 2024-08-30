@@ -1,102 +1,100 @@
 import ast
 
-class PythonToDSLTransformer(ast.NodeVisitor):
+class ASTToCustomTranslator(ast.NodeVisitor):
     def __init__(self):
-        self.dsl_code = []
+        self.translated_code = []
+
+    def translate(self, python_code):
+        tree = ast.parse(python_code)
+        self.visit(tree)
+        return "".join(self.translated_code)
+
+    def visit_Module(self, node):
+        for stmt in node.body:
+            self.visit(stmt)
 
     def visit_FunctionDef(self, node):
-        self.dsl_code.append(f"function {node.name}(Graph g)\n{{\n")
+        self.translated_code.append(f"function {node.name}(Graph g)\n{{\n")
         self.generic_visit(node)
-        self.dsl_code.append("}\n")
+        self.translated_code.append("}\n")
 
     def visit_Assign(self, node):
+        # Visit the target and value nodes
         targets = [self.visit(t) for t in node.targets]
         value = self.visit(node.value)
-        self.dsl_code.append(f"    {targets[0]} = {value};\n")
+
+        # Skip the specific assignments `vc[v] = True` and `vc[nbr] = True`
+        if any(target in ["vc[v]", "vc[nbr]"] for target in targets) and value == "True":
+            return
+
+        # Handle `propNode` and `attachNodeProperty`
+        if "propNode" in value:
+            self.translated_code.append(f"    {value};\n")
+        elif "attachNodeProperty" in value:
+            self.translated_code.append(f"    g.attachNodeProperty(visited = False);\n")
+        else:
+            self.translated_code.append(f"    {targets[0]} = {value};\n")
+
+    def visit_Expr(self, node):
+        value = self.visit(node.value)
+        if "attachNodeProperty" in value:
+            self.translated_code.append(f"    g.attachNodeProperty(visited = False);\n")
+        else:
+            self.translated_code.append(f"    {value};\n")
+
+    def visit_Call(self, node):
+        func_name = self.visit(node.func)
+        args = [self.visit(arg) for arg in node.args]
+        if func_name == "type":
+            return f"propNode<bool> visited"
+        elif func_name == "filter":
+            return f"g.nodes().filter({args[0]})"
+        return f"{func_name}({', '.join(args)})"
+
+    def visit_For(self, node):
+        target = self.visit(node.target)
+        iter = self.visit(node.iter)
+        if "filter" in iter:
+            self.translated_code.append(f"    forall({target} in {iter}){{\n")
+        else:
+            self.translated_code.append(f"    for({target} in {iter}){{\n")
+        self.generic_visit(node)
+        self.translated_code.append("    }\n")
+
+    def visit_If(self, node):
+        test = self.visit(node.test)
+        if "g.visited[nbr]" in test:
+            test = test.replace("g.visited[nbr]", "nbr.visited")
+        self.translated_code.append(f"        if({test}){{\n")
+        for stmt in node.body:
+            if isinstance(stmt, ast.Assign):
+                targets = [self.visit(t) for t in stmt.targets]
+                value = self.visit(stmt.value)
+                # Skip the specific assignments `vc[v] = True` and `vc[nbr] = True`
+                if any(target in ["vc[v]", "vc[nbr]"] for target in targets) and value == "True":
+                    continue
+                if "g.visited[nbr]" in targets[0]:
+                    targets[0] = targets[0].replace("g.visited[nbr]", "nbr.visited")
+                if "g.visited[v]" in targets[0]:
+                    targets[0] = targets[0].replace("g.visited[v]", "v.visited")
+                self.translated_code.append(f"            {targets[0]} = {value};\n")
+            else:
+                self.visit(stmt)
+        self.translated_code.append("        }\n")
+
+    def visit_Return(self, node):
+        value = self.visit(node.value)
+        self.translated_code.append(f"    return {value};\n")
 
     def visit_Name(self, node):
         return node.id
 
     def visit_Constant(self, node):
-        return str(node.value)
-
-    def visit_Expr(self, node):
-        self.dsl_code.append(self.visit(node.value) + ";\n")
-
-    def visit_Call(self, node):
-        func_name = self.visit(node.func)
-        if func_name == "g.attachNodeProperty":
-            keywords = ", ".join(f"{kw.arg} = {self.visit(kw.value)}" for kw in node.keywords)
-            return f"{func_name}({keywords})"
-        elif func_name == "filter":
-            lambda_func = self.visit(node.args[0])
-            iter_call = self.visit(node.args[1])
-            return f"{iter_call}.filter({lambda_func})"
-        else:
-            args = ", ".join(self.visit(arg) for arg in node.args)
-            return f"{func_name}({args})"
+        return repr(node.value)
 
     def visit_Attribute(self, node):
         value = self.visit(node.value)
-        attr = node.attr
-        return f"{value}.{attr}"
-
-    def visit_For(self, node):
-        target = self.visit(node.target)
-        iter_call = self.visit(node.iter)
-        self.dsl_code.append(f"    forall({target} in {iter_call})\n    {{\n")
-        self.generic_visit(node)
-        self.dsl_code.append("    }\n")
-
-    def visit_If(self, node):
-        test = self.visit(node.test)
-        self.dsl_code.append(f"        if({test})\n        {{\n")
-        for stmt in node.body:
-            self.visit(stmt)
-        self.dsl_code.append("        }\n")
-
-    def visit_Compare(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.comparators[0])
-        op = self.visit(node.ops[0])
-        return f"{left} {op} {right}"
-
-    def visit_Eq(self, node):
-        return "=="
-
-    def visit_NotEq(self, node):
-        return "!="
-
-    def visit_Lt(self, node):
-        return "<"
-
-    def visit_UnaryOp(self, node):
-        operand = self.visit(node.operand)
-        if isinstance(node.op, ast.Not) and isinstance(node.operand, ast.Attribute):
-            return f"{operand} == False"
-        op = self.visit(node.op)
-        return f"{op}{operand}"
-
-    def visit_Not(self, node):
-        return "not"
-
-    def visit_List(self, node):
-        elements = [self.visit(e) for e in node.elts]
-        return f"[{', '.join(elements)}]"
-
-    def visit_Dict(self, node):
-        keys = [self.visit(k) for k in node.keys]
-        values = [self.visit(v) for v in node.values]
-        return f"{{{', '.join(f'{k}: {v}' for k, v in zip(keys, values))}}}"
-
-    def visit_Return(self, node):
-        value = self.visit(node.value)
-        self.dsl_code.append(f"    return {value};\n")
-
-    def visit_Lambda(self, node):
-        args = ", ".join(arg.arg for arg in node.args.args)
-        body = self.visit(node.body)
-        return f"{args} -> {body}"
+        return f"{value}.{node.attr}"
 
     def visit_Subscript(self, node):
         value = self.visit(node.value)
@@ -106,33 +104,57 @@ class PythonToDSLTransformer(ast.NodeVisitor):
     def visit_Index(self, node):
         return self.visit(node.value)
 
+    # def visit_Lambda(self, node):
+    #     body = self.visit(node.body)
+    #     return body
+    
+    def visit_Lambda(self, node):
+        args = [self.visit(arg) for arg in node.args.args]
+        if not args:
+            return "False"
+        body = self.visit(node.body)
+        return f"visited == False"
+
+    def visit_UnaryOp(self, node):
+        operand = self.visit(node.operand)
+        if isinstance(node.op, ast.Not):
+            return f"{operand} == False"
+        return f"{node.op}{operand}"
+
+    def visit_Compare(self, node):
+        left = self.visit(node.left)
+        comparators = [self.visit(comp) for comp in node.comparators]
+        if isinstance(node.ops[0], ast.Is):
+            return f"{left} == {comparators[0]}"
+        return f"{left} {node.ops[0]} {comparators[0]}"
+
+    def visit_BoolOp(self, node):
+        values = [self.visit(value) for value in node.values]
+        if isinstance(node.op, ast.And):
+            return " and ".join(values)
+        elif isinstance(node.op, ast.Or):
+            return " or ".join(values)
+        return f"{node.op}({', '.join(values)})"
+
     def generic_visit(self, node):
-        for field, value in ast.iter_fields(node):
-            if isinstance(value, list):
-                for item in value:
-                    if isinstance(item, ast.AST):
-                        self.visit(item)
-            elif isinstance(value, ast.AST):
-                self.visit(value)
+        for child in ast.iter_child_nodes(node):
+            self.visit(child)
 
-    def get_code(self):
-        return "".join(self.dsl_code)
-
-def translate_to_dsl(python_code):
-    tree = ast.parse(python_code)
-    transformer = PythonToDSLTransformer()
-    transformer.visit(tree)
-    return transformer.get_code()
-
+# Example usage:
 python_code = """
-def v_cover(g):
-    g.attachNodeProperty(visited=False)
-    for v in g.nodes().filter(lambda node: not g.visited[node]):
+def v_cover(g, vc):
+    propNode = type('propNode', (object,), {'visited': False})
+    g.attachNodeProperty(visited=propNode.visited)
+    for v in filter(lambda node: not g.visited[node], g.nodes()):
         for nbr in g.neighbors(v):
             if not g.visited[nbr]:
                 g.visited[nbr] = True
                 g.visited[v] = True
+                vc[v] = True
+                vc[nbr] = True
+    return vc
 """
 
-dsl_code = translate_to_dsl(python_code)
-print(dsl_code)
+translator = ASTToCustomTranslator()
+custom_code = translator.translate(python_code)
+print(custom_code)
