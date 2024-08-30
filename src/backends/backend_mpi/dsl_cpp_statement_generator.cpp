@@ -70,7 +70,7 @@ namespace spmpi
 
         // Add fat barriers to sync the atomicAdds on the properties
         auto propsResponsibleByRBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(revBlock);
-        for (string prop : propsResponsibleByBFS)
+        for (string prop : propsResponsibleByRBFS)
         {
             sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);

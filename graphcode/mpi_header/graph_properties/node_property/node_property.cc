@@ -5,31 +5,12 @@ template <typename T>
 void NodeProperty<T>::syncAtomicAddsAndWrites()
 {
   propList.get_lock(0, SHARED_ALL_PROCESS_LOCK);
-  
-  // Flush write_buffer
-  // for (auto& [proc, proc_writes] : write_buffer) {
-  //   for (auto& [local_node_id, value] : proc_writes) {
-  //     T temp = value;  // Create a non-const copy
-  //     propList.put_data(proc, &temp, local_node_id, 1, EXCLUSIVE_LOCK);
-  //   }
-  // }
-  // write_buffer.clear();
-
   for (const auto& [proc, local_node_id] : write_change_log) {
     propList.put_data(proc, &write_buffer[proc][local_node_id], local_node_id, 1, SHARED_LOCK);
     write_buffer[proc][local_node_id] = 0;
   }
   write_change_log.clear();
   
-  // // Flush atomic_add_buffer
-  // for (auto& [proc, proc_adds] : atomic_add_buffer) {
-  //   for (auto& [local_node_id, value] : proc_adds) {
-  //     T temp = value;  // Create a non-const copy
-  //     propList.accumulate(proc, &temp, local_node_id, 1, MPI_SUM, SHARED_LOCK);
-  //   }
-  // }
-  // atomic_add_buffer.clear();
-
   for (const auto& [proc, local_node_id] : atomic_add_change_log) {
     propList.accumulate(proc, &atomic_add_buffer[proc][local_node_id], local_node_id, 1, MPI_SUM, SHARED_LOCK);
     atomic_add_buffer[proc][local_node_id] = 0;
