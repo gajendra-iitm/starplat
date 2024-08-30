@@ -34,25 +34,15 @@ namespace spmpi
 
         bAnalyzer analyser;
 
-        // Collect properties that are modified with atomicAdds
-        auto propsResponsibleByBFS = set<string>();
         for (statement *stmt : statementList)
         {
             generateStatement(stmt);
-
-            if (stmt->getTypeofNode() == NODE_REDUCTIONCALL || 
-                stmt->getTypeofNode() == NODE_REDUCTIONCALLSTMT ||
-                stmt->getTypeofNode() == NODE_UNARYSTMT ||
-                stmt->getTypeofNode() == NODE_ASSIGN)
-            {
-                auto subset = analyser.getPropertiesModifiedWithAtomicOps(stmt);
-                propsResponsibleByBFS.insert(subset.begin(), subset.end());
-            }
         }
 
         main.pushstr_newL("}");
 
         // Add fat barriers to sync the atomicAdds on the properties
+        auto propsResponsibleByBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(body);
         for (string prop : propsResponsibleByBFS)
         {
             sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
@@ -71,25 +61,16 @@ namespace spmpi
         blockStatement *revBlock = (blockStatement *)bfsAbstraction->getRBFS()->getBody();
         list<statement *> revStmtList = revBlock->returnStatements();
 
-        // Collect properties that are modified with atomicAdds
-        auto propsResponsibleByRBFS = set<string>();
         for (statement *stmt : revStmtList)
         {
             generateStatement(stmt);
-            if (stmt->getTypeofNode() == NODE_REDUCTIONCALL || 
-                stmt->getTypeofNode() == NODE_REDUCTIONCALLSTMT ||
-                stmt->getTypeofNode() == NODE_UNARYSTMT ||
-                stmt->getTypeofNode() == NODE_ASSIGN)
-            {
-                auto subset = analyser.getPropertiesModifiedWithAtomicOps(stmt);
-                propsResponsibleByRBFS.insert(subset.begin(), subset.end());
-            }
         }
 
         main.pushstr_newL("}");
 
         // Add fat barriers to sync the atomicAdds on the properties
-        for (string prop : propsResponsibleByRBFS)
+        auto propsResponsibleByRBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(revBlock);
+        for (string prop : propsResponsibleByBFS)
         {
             sprintf(strBuffer, "%s.fatBarrier();", prop.c_str());
             main.pushstr_newL(strBuffer);

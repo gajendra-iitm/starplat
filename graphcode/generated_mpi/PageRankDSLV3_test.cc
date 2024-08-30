@@ -29,8 +29,7 @@ int main(int argc, char *argv[])
             sum += v;
             printf("Node %d: %.6g\n", i, v);
         }
-//        std::cout << "Sum: " << sum << std::endl;
-//        std::cout << "TIME:[" << (t2 - t1) << "]" << std::endl;
+       std::cout << "TIME:[" << (t2 - t1) << "]" << std::endl;
     }
 
     // world.barrier();
