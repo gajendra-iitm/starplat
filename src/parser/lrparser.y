@@ -58,7 +58,7 @@
 %token T_ADD_ASSIGN T_SUB_ASSIGN T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_AND_ASSIGN T_XOR_ASSIGN
 %token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP
 %token T_AND T_OR T_SUM T_AVG T_COUNT T_PRODUCT T_MAX T_MIN
-%token T_GRAPH T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET
+%token T_GRAPH T_GNN T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET
 %token T_NP  T_EP
 %token T_LIST T_SET_NODES T_SET_EDGES  T_FROM
 %token T_BFS T_REVERSE
@@ -78,7 +78,7 @@
 %type <pList> paramList
 %type <node> statement blockstatements assignment declaration proc_call control_flow reduction return_stmt batch_blockstmt on_add_blockstmt on_delete_blockstmt
 %type <node> type type1 type2 type3
-%type <node> primitive graph collections property container nodemap vector hashmap hashset
+%type <node> primitive graph gnn collections property container nodemap vector hashmap hashset
 %type <node> id leftSide rhs expression oid val boolean_expr unary_expr indexExpr tid  
 %type <node> bfs_abstraction filterExpr reverse_abstraction
 %type <nodeList> leftList rightList
@@ -165,6 +165,11 @@ param : type1 id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($2)
 							 tempIds.push_back(id);
 						   
 							}
+						 if(type->isGNNType())
+						    {
+							 tempIds.push_back(id);
+						   
+							}
 					printf("\n");
                     $$=Util::createParamNode($1,$2); } ;
                | type2 id { // Identifier* id=(Identifier*)Util::createIdentifierNode($2);
@@ -222,6 +227,7 @@ declaration : type1 id   {
 						 if(type->isGraphType())
 						    Util::storeGraphId(id);
 
+
                          $$=Util::createNormalDeclNode($1,$2);};
 	| type1 id '=' rhs  {//Identifier* id=(Identifier*)Util::createIdentifierNode($2);
 	                    
@@ -239,6 +245,7 @@ declaration : type1 id   {
 type1: primitive {$$=$1; };
 	| graph {$$=$1;};
 	| collections { $$=$1;};
+	| gnn {$$=$1;};
 
 
 primitive: T_INT { $$=Util::createPrimitiveTypeNode(TYPE_INT);};
@@ -252,6 +259,8 @@ type3: T_AUTOREF { $$=Util::createPrimitiveTypeNode(TYPE_AUTOREF);};
 
 graph : T_GRAPH { $$=Util::createGraphTypeNode(TYPE_GRAPH,NULL);};
 	|T_DIR_GRAPH {$$=Util::createGraphTypeNode(TYPE_DIRGRAPH,NULL);};
+
+gnn : T_GNN { $$=Util::createGNNTypeNode(TYPE_GNN,NULL);};
 
 collections : T_LIST { $$=Util::createCollectionTypeNode(TYPE_LIST,NULL);};
 		| T_SET_NODES '<' id '>' {//Identifier* id=(Identifier*)Util::createIdentifierNode($3);

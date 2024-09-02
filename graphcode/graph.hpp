@@ -22,7 +22,7 @@ class edge
 public:
   int32_t source;
   int32_t destination;
-  float weight;
+  double weight;
   int32_t id; /* -unique Id for each edge.
                  -useful in adding properties to edges. */
   int dir;
@@ -84,8 +84,8 @@ public:
   int getInDegree(int v);
   void addEdge(int src, int dest, int aks);
   void delEdge(int src, int dest);
-  float getWeight(int src, int dest);
-  void changeWeight(int src, int dest, float weight);
+  double getWeight(int src, int dest);
+  void changeWeight(int src, int dest, double weight);
   std::vector<update> parseUpdates(char *updateFile);
   std::vector<update> getDeletesFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
   std::vector<update> getAddsFromBatch(int updateIndex, int batchSize, std::vector<update> updateVec);
@@ -106,19 +106,18 @@ class layer
 {
 public:
   int32_t num_features;
-  float **weights;
-  float *bias;
-  float **aggregatedFeatures;
-  float **preActivatedFeatures;
-  float **postActivatedFeatures;
-  float **grad_pre_act_output;
-  float **grad_post_act_output;
-  float **grad_weights;
-  float *grad_bias;
-  float **m_weights;
-  float *m_biases;
-  float **v_weights;
-  float *v_biases;
+  double **weights;
+  double *bias;
+  double **aggregatedFeatures;
+  double **preActivatedFeatures;
+  double **postActivatedFeatures;
+  double **grad_pre_act_output;
+  double **grad_weights;
+  double *grad_bias;
+  double **m_weights;
+  double *m_biases;
+  double **v_weights;
+  double *v_biases;
 };
 
 class GNN
@@ -126,7 +125,7 @@ class GNN
   graph &g;
   std::vector<layer> layers;
   std::vector<int32_t> labels;
-  std::vector<std::vector<float>> features;
+  std::vector<std::vector<double>> features;
   char *feat_file, *lab_file;
   int num_features, num_classes;
   // std::vector<std::string> activationFunctions;
@@ -138,7 +137,7 @@ public:
   void loadLabels();
   void gcnPreprocessing();
   int numFeatures();
-  std::vector<std::vector<float>> &getFeatures();
+  std::vector<std::vector<double>> &getFeatures();
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
   std::vector<layer> &getLayers();
@@ -146,7 +145,7 @@ public:
   void aggregate(int node, int layerNumber);
   void forwardPass(int node, int layerNumber);
   void backPropogation(int layerNumber);
-  void adamOptimizer(int epochNumber, float lr, float beta1, float beta2, float epsilon);
+  void adamOptimizer(int epochNumber, double lr, double beta1, double beta2, double epsilon, double decay = 0.0);
   void predict();
 };
 

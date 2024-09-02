@@ -255,6 +255,14 @@ static ASTNode* createGraphTypeNode(int typeId,Identifier* targetGraph)
     return typeNode;
 
 }
+
+static ASTNode* createGNNTypeNode(int typeId, Identifier* targetGraph)
+{
+    Type* typeNode=Type::createForGNNType(typeId,2,targetGraph);
+    return typeNode;
+
+}
+
 static ASTNode* createCollectionTypeNode(int typeId,ASTNode* targetGraph)
 {
     Type* typeNode=Type::createForCollectionType(typeId,3,(Identifier*)targetGraph);

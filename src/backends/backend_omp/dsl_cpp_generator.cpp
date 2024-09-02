@@ -2756,6 +2756,10 @@ namespace spomp
     {
       return "graph&";
     }
+    else if (type->isGNNType())
+    {
+      return "GNN ";
+    }
     else if (type->isCollectionType())
     {
 

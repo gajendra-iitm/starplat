@@ -10,7 +10,7 @@ A_PROGRAM = bin/attachPropAnalyser.o bin/dataRaceAnalyser.o bin/deviceVarsAnalys
 # CC = g++ -std=c++11 #-Wall # -Wno-unused-variable #-fsanitize=address
 
 CFLAGS  = -g -std=c++11
-CC = /usr/local/bin/g++ #-Wall # -Wno-unused-variable #-fsanitize=address
+CC = /usr/bin/g++ #-Wall # -Wno-unused-variable #-fsanitize=address
 
 all: starplat
 

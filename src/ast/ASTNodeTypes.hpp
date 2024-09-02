@@ -687,6 +687,15 @@ public:
     return type;
   }
 
+  static Type *createForGNNType(int typeIdSent, int rootTypeSent, Identifier *TargetGraphSent)
+  {
+    Type *type = new Type();
+    type->typeId = typeIdSent;
+    type->rootType = rootTypeSent;
+    type->TargetGraph = TargetGraphSent;
+    return type;
+  }
+
   static Type *createForCollectionType(int typeIdSent, int rootTypeSent, Identifier *TargetGraphSent)
   {
     Type *type = new Type();
@@ -807,6 +816,12 @@ public:
   {
     return check_isGraphType(typeId);
   }
+
+  bool isGNNType()
+  {
+    return check_isGNNType(typeId);
+  }
+
   bool isPrimitiveType()
   {
     return check_isPrimitiveType(typeId);

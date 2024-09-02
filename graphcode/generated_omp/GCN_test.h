@@ -1,5 +1,5 @@
-#ifndef GENCPP_TEST_H
-#define GENCPP_TEST_H
+#ifndef GENCPP_GCN_TEST_H
+#define GENCPP_GCN_TEST_H
 #include<stdio.h>
 #include<stdlib.h>
 #include<limits.h>
@@ -9,7 +9,7 @@
 #include"../atomicUtil.h"
 
 using namespace std;
-env environment("omp", "static", "test");
-void test1(graph& g , float* features , int* labels);
+env environment("omp", "static", "GCN_test");
+void GCN(graph& g , string gnn , vector<int> neuronsPerHiddenLayer);
 
 #endif

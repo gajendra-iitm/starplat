@@ -1,12 +1,12 @@
 #include "graph.hpp"
 
-void xaviersInit_omp(float **weights, int num_neurons_current, int num_features_next)
+void xaviersInit_omp(double **weights, int num_neurons_current, int num_features_next)
 {
   // xaiver's initialization
-  double xavier = sqrt(6.0 / (num_neurons_current + num_features_next));
+  double xavier = sqrt(6.0 / (num_neurons_current ));
   std::random_device rd;  // Obtain a random number from hardware
   std::mt19937 gen(rd()); // Seed the generator
-  std::uniform_real_distribution<> dist(-xavier, xavier);
+  std::uniform_real_distribution<> dist(0, xavier);
   std::cout << "xavier distribution with input neurons : " << num_neurons_current << " and output neurons : " << num_features_next << std::endl;
   for (int i = 0; i < num_neurons_current; i++)
   {
@@ -19,7 +19,7 @@ void xaviersInit_omp(float **weights, int num_neurons_current, int num_features_
   }
 }
 
-void normalDistributionInit_omp(float **weights, int num_neurons_current, int num_features_next)
+void normalDistributionInit_omp(double **weights, int num_neurons_current, int num_features_next)
 {
   double mean = 0.0;
   double std = 0.02;
@@ -35,7 +35,7 @@ void normalDistributionInit_omp(float **weights, int num_neurons_current, int nu
   //   }
   // }
 }
-void uniformDistributionInit_omp(float **weights, int num_neurons_current, int num_features_next)
+void uniformDistributionInit_omp(double **weights, int num_neurons_current, int num_features_next)
 {
   // uniform distribution
   double min = -0.5;
@@ -77,7 +77,7 @@ void gcn_preprocessing_omp(GNN &gnn)
   }
 
   // calculate degree matrix
-  std::vector<float> degree(num_nodes, 0);
+  std::vector<double> degree(num_nodes, 0);
 #pragma omp parallel for
   for (int nod = 0; nod < num_nodes; nod++)
   {
@@ -88,7 +88,7 @@ void gcn_preprocessing_omp(GNN &gnn)
   }
 
   // calculate inverse of degree matrix
-  std::vector<float> inv_degree(num_nodes, 0);
+  std::vector<double> inv_degree(num_nodes, 0);
 #pragma omp parallel for
   for (int nod = 0; nod < num_nodes; nod++)
   {
@@ -106,37 +106,19 @@ void gcn_preprocessing_omp(GNN &gnn)
   }
 }
 
-float relu(float x)
+double relu(double x)
 {
   return x > 0 ? x : 0;
 }
 
-float derivative_relu(float x)
+double derivative_relu(double x)
 {
   return x > 0 ? 1 : 0;
 }
 
-void softmax(float *x, int size, float *y)
+void softmax(double *x, int size, double *y)
 {
-  // float max = x[0];
-  // for (int i = 1; i < size; i++)
-  // {
-  //   if (x[i] > max)
-  //   {
-  //     max = x[i];
-  //   }
-  // }
-  // float sum = 0;
-  // for (int i = 0; i < size; i++)
-  // {
-  //   x[i] = exp(x[i] - max);
-  //   sum += x[i];
-  // }
-  // for (int i = 0; i < size; i++)
-  // {
-  //   x[i] = x[i] / sum;
-  // }
-  float sum = 0;
+  double sum = 0;
   for (int i = 0; i < size; i++)
   {
     sum += exp(x[i] - 1);
@@ -160,27 +142,27 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
   std::vector<layer> &layers = gnn.getLayers();
   layers.resize(neuronsPerLayer.size());
   layers[0].num_features = neuronsPerLayer[0];
-  layers[0].preActivatedFeatures = new float *[gnn.getGraph().num_nodes()];
-  layers[0].postActivatedFeatures = new float *[gnn.getGraph().num_nodes()];
+  layers[0].preActivatedFeatures = new double *[gnn.getGraph().num_nodes()];
+  layers[0].postActivatedFeatures = new double *[gnn.getGraph().num_nodes()];
   for (int i = 0; i < gnn.getGraph().num_nodes(); i++)
   {
-    layers[0].preActivatedFeatures[i] = new float[neuronsPerLayer[0]];
-    layers[0].postActivatedFeatures[i] = new float[neuronsPerLayer[0]];
+    layers[0].preActivatedFeatures[i] = new double[neuronsPerLayer[0]];
+    layers[0].postActivatedFeatures[i] = new double[neuronsPerLayer[0]];
   }
 
   for (int i = 1; i < neuronsPerLayer.size(); i++)
   {
     layers[i].num_features = neuronsPerLayer[i];
-    layers[i].weights = new float *[neuronsPerLayer[i - 1]];
-    layers[i].m_weights = new float *[neuronsPerLayer[i - 1]];
-    layers[i].m_biases = new float[neuronsPerLayer[i]];
-    layers[i].v_weights = new float *[neuronsPerLayer[i - 1]];
-    layers[i].v_biases = new float[neuronsPerLayer[i]];
+    layers[i].weights = new double *[neuronsPerLayer[i - 1]];
+    layers[i].m_weights = new double *[neuronsPerLayer[i - 1]];
+    layers[i].m_biases = new double[neuronsPerLayer[i]];
+    layers[i].v_weights = new double *[neuronsPerLayer[i - 1]];
+    layers[i].v_biases = new double[neuronsPerLayer[i]];
     for (int j = 0; j < neuronsPerLayer[i - 1]; j++)
     {
-      layers[i].weights[j] = new float[neuronsPerLayer[i]];
-      layers[i].m_weights[j] = new float[neuronsPerLayer[i]];
-      layers[i].v_weights[j] = new float[neuronsPerLayer[i]];
+      layers[i].weights[j] = new double[neuronsPerLayer[i]];
+      layers[i].m_weights[j] = new double[neuronsPerLayer[i]];
+      layers[i].v_weights[j] = new double[neuronsPerLayer[i]];
     }
 
     for (int j = 0; j < neuronsPerLayer[i - 1]; j++)
@@ -198,36 +180,34 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
       layers[i].v_biases[j] = 0;
     }
 
-    layers[i].aggregatedFeatures = new float *[gnn.getGraph().num_nodes()];
-    layers[i].preActivatedFeatures = new float *[gnn.getGraph().num_nodes()];
-    layers[i].postActivatedFeatures = new float *[gnn.getGraph().num_nodes()];
+    layers[i].aggregatedFeatures = new double *[gnn.getGraph().num_nodes()];
+    layers[i].preActivatedFeatures = new double *[gnn.getGraph().num_nodes()];
+    layers[i].postActivatedFeatures = new double *[gnn.getGraph().num_nodes()];
     for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
     {
-      layers[i].aggregatedFeatures[j] = new float[neuronsPerLayer[i - 1]];
-      layers[i].preActivatedFeatures[j] = new float[neuronsPerLayer[i]];
-      layers[i].postActivatedFeatures[j] = new float[neuronsPerLayer[i]];
+      layers[i].aggregatedFeatures[j] = new double[neuronsPerLayer[i - 1]];
+      layers[i].preActivatedFeatures[j] = new double[neuronsPerLayer[i]];
+      layers[i].postActivatedFeatures[j] = new double[neuronsPerLayer[i]];
     }
 
-    layers[i].bias = new float[neuronsPerLayer[i]];
-    layers[i].grad_bias = new float[neuronsPerLayer[i]];
-    layers[i].grad_weights = new float *[neuronsPerLayer[i - 1]];
+    layers[i].bias = new double[neuronsPerLayer[i]];
+    layers[i].grad_bias = new double[neuronsPerLayer[i]];
+    layers[i].grad_weights = new double *[neuronsPerLayer[i - 1]];
     for (int j = 0; j < neuronsPerLayer[i - 1]; j++)
     {
-      layers[i].grad_weights[j] = new float[neuronsPerLayer[i]];
+      layers[i].grad_weights[j] = new double[neuronsPerLayer[i]];
     }
 
-    layers[i].grad_pre_act_output = new float *[gnn.getGraph().num_nodes()];
-    layers[i].grad_post_act_output = new float *[gnn.getGraph().num_nodes()];
+    layers[i].grad_pre_act_output = new double *[gnn.getGraph().num_nodes()];
     for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
     {
-      layers[i].grad_pre_act_output[j] = new float[neuronsPerLayer[i]];
-      layers[i].grad_post_act_output[j] = new float[neuronsPerLayer[i]];
+      layers[i].grad_pre_act_output[j] = new double[neuronsPerLayer[i]];
     }
 
     std::cout << "layer with size " << layers[i].num_features << " initialized" << std::endl;
   }
-  // layers[neuronsPerLayer.size() - 1].grad_output = new float[neuronsPerLayer[neuronsPerLayer.size() - 1]];
-  std::vector<std::vector<float>> features = gnn.getFeatures();
+  // layers[neuronsPerLayer.size() - 1].grad_output = new double[neuronsPerLayer[neuronsPerLayer.size() - 1]];
+  std::vector<std::vector<double>> features = gnn.getFeatures();
 
   for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
   {
@@ -270,69 +250,55 @@ void initializeLayers_omp(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer, 
   std::cout << "Layers initialized" << std::endl;
 }
 
-// void calculategradinput_omp(GNN &gnn, int layerNumber)
+
+// void aggregate_omp(GNN &gnn, int node, int layerNumber)
 // {
-//   std::vector<layer> layers = gnn.getLayers();
-//   for (int nod = 0; nod < gnn.getGraph().num_nodes(); nod++)
+//   graph &g = gnn.getGraph();
+//   std::vector<layer> &layers = gnn.getLayers();
+
+//   for (int i = 0; i < layers[layerNumber].num_features; i++)
 //   {
-//     for (auto edge : gnn.getGraph().getNeighbors(nod))
+//     layers[layerNumber].aggregatedFeatures[node][i] = 0;
+//   }
+
+//   for (auto edge : g.getNeighbors(node))
+//   {
+//     // int c = 0;
+//     for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
 //     {
-//       for (int i = 0; i < layers[layerNumber].num_features; i++)
-//       {
-//         layers[layerNumber].grad_input[nod][i] += layers[layerNumber].grad_output[edge.destination][i] * layers[layerNumber + 1].weights[i][edge.destination];
-//       }
+//       layers[layerNumber].aggregatedFeatures[node][i] += layers[layerNumber - 1].postActivatedFeatures[edge.destination][i] * edge.weight;
 //     }
 //   }
 // }
 
-void aggregate_omp(GNN &gnn, int node, int layerNumber)
-{
-  graph &g = gnn.getGraph();
-  std::vector<layer> &layers = gnn.getLayers();
+// void forwardPass_omp(GNN &gnn, int node, int layerNumber) //, char *aggregationType)
+// {
+//   std::vector<layer> &layers = gnn.getLayers();
+//   graph &g = gnn.getGraph();
 
-  for (int i = 0; i < layers[layerNumber].num_features; i++)
-  {
-    layers[layerNumber].aggregatedFeatures[node][i] = 0;
-  }
+//   if (layerNumber == 0)
+//   {
+//     return;
+//   }
 
-  for (auto edge : g.getNeighbors(node))
-  {
-    // int c = 0;
-    for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
-    {
-      layers[layerNumber].aggregatedFeatures[node][i] += layers[layerNumber - 1].postActivatedFeatures[edge.destination][i] * edge.weight;
-    }
-  }
-}
+//   aggregate_omp(gnn, node, layerNumber);
 
-void forwardPass_omp(GNN &gnn, int node, int layerNumber) //, char *aggregationType)
-{
-  std::vector<layer> &layers = gnn.getLayers();
-  graph &g = gnn.getGraph();
-
-  if (layerNumber == 0)
-  {
-    return;
-  }
-
-  aggregate_omp(gnn, node, layerNumber);
-
-  for (int i = 0; i < layers[layerNumber].num_features; i++)
-  {
-    layers[layerNumber].preActivatedFeatures[node][i] = 0;
-    for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
-    {
-      layers[layerNumber].preActivatedFeatures[node][i] += (layers[layerNumber].aggregatedFeatures[node][j] * layers[layerNumber].weights[j][i]);
-    }
-    layers[layerNumber].preActivatedFeatures[node][i] += layers[layerNumber].bias[i];
-    if (layerNumber == layers.size() - 1)
-    {
-      softmax(layers[layerNumber].preActivatedFeatures[node], layers[layerNumber].num_features, layers[layerNumber].postActivatedFeatures[node]);
-      return;
-    }
-    layers[layerNumber].postActivatedFeatures[node][i] = relu(layers[layerNumber].preActivatedFeatures[node][i]);
-  }
-}
+//   for (int i = 0; i < layers[layerNumber].num_features; i++)
+//   {
+//     layers[layerNumber].preActivatedFeatures[node][i] = 0;
+//     for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
+//     {
+//       layers[layerNumber].preActivatedFeatures[node][i] += (layers[layerNumber].aggregatedFeatures[node][j] * layers[layerNumber].weights[j][i]);
+//     }
+//     layers[layerNumber].preActivatedFeatures[node][i] += layers[layerNumber].bias[i];
+//     if (layerNumber == layers.size() - 1)
+//     {
+//       softmax(layers[layerNumber].preActivatedFeatures[node], layers[layerNumber].num_features, layers[layerNumber].postActivatedFeatures[node]);
+//       return;
+//     }
+//     layers[layerNumber].postActivatedFeatures[node][i] = relu(layers[layerNumber].preActivatedFeatures[node][i]);
+//   }
+// }
 
 /*
 Forward Pass
@@ -375,139 +341,430 @@ Forward Pass
     W1 -= learning_rate * dW1;
     b1 -= learning_rate * db1;
  */
+void aggregate_omp(GNN &gnn, int node, int layerNumber)
+{
+    graph &g = gnn.getGraph();
+    std::vector<layer> &layers = gnn.getLayers();
+  //get labels
+    std::vector<int32_t> y_true = gnn.getLabels();
+
+    // Initialize the aggregated features to zero
+    for (int i = 0; i < layers[layerNumber-1].num_features; i++)
+    {
+        layers[layerNumber].aggregatedFeatures[node][i] = 0.0f;
+    }
+
+    // Aggregating features from neighboring nodes
+    for (auto edge : g.getNeighbors(node))
+    {
+      // if(y_true[edge] == y_true[node]){
+        for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
+        {
+            layers[layerNumber].aggregatedFeatures[node][i] += layers[layerNumber - 1].postActivatedFeatures[edge.destination][i] * edge.weight;
+        // }
+      }
+    }
+}
+
+void forwardPass_omp(GNN &gnn, int node, int layerNumber)
+{
+    std::vector<layer> &layers = gnn.getLayers();
+    graph &g = gnn.getGraph();
+
+    if (layerNumber == 0)
+    {
+        return;
+    }
+
+    // Aggregate the features from the previous layer
+    aggregate_omp(gnn, node, layerNumber);
+
+    // Initialize the pre-activated features to zero
+    for (int i = 0; i < layers[layerNumber].num_features; i++)
+    {
+        layers[layerNumber].preActivatedFeatures[node][i] = 0.0f;
+    }
+
+    // Perform the linear transformation and activation
+    for (int i = 0; i < layers[layerNumber].num_features; i++)
+    {
+        for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
+        {
+            layers[layerNumber].preActivatedFeatures[node][i] += layers[layerNumber].aggregatedFeatures[node][j] * layers[layerNumber].weights[j][i];
+        }
+        layers[layerNumber].preActivatedFeatures[node][i] += layers[layerNumber].bias[i];
+
+        // Apply ReLU activation function
+        layers[layerNumber].postActivatedFeatures[node][i] = relu(layers[layerNumber].preActivatedFeatures[node][i]);
+    }
+
+    // If this is the last layer, apply softmax
+    if (layerNumber == layers.size() - 1)
+    {
+        softmax(layers[layerNumber].postActivatedFeatures[node], layers[layerNumber].num_features, layers[layerNumber].postActivatedFeatures[node]);
+    }
+}
+
+// void backPropagation_omp(GNN &gnn, int layerNumber)
+// {
+//     graph &g = gnn.getGraph();
+//     std::vector<layer> &layers = gnn.getLayers();
+
+//     if (layerNumber == 0)
+//         return;
+
+//     std::vector<int32_t> y_true = gnn.getLabels();
+//     double **y_pred = layers[layers.size() - 1].postActivatedFeatures; // Changed to post-activated features
+
+//     if (layerNumber == layers.size() - 1)
+//     {
+//         // Calculate the gradient of the loss with respect to the output
+//         for (int i = 0; i < y_true.size(); i++)
+//         {
+//             for (int j = 0; j < gnn.numClasses(); j++)
+//             {
+//                 layers[layerNumber].grad_pre_act_output[i][j] = y_pred[i][j] - (y_true[i] == j ? 1.0f : 0.0f);
+//             }
+//         }
+//     }
+//     else
+//     {
+//         // Calculate the gradient for hidden layers
+//         for (int nod = 0; nod < g.num_nodes(); nod++)
+//         {
+//             for (int j = 0; j < layers[layerNumber].num_features; j++)
+//             {
+//                 layers[layerNumber].grad_pre_act_output[nod][j] = 0;
+//                 for (int i = 0; i < layers[layerNumber + 1].num_features; i++)
+//                 {
+//                     layers[layerNumber].grad_pre_act_output[nod][j] += layers[layerNumber + 1].grad_pre_act_output[nod][i] * layers[layerNumber + 1].weights[j][i];
+//                 }
+
+//                 // Apply the derivative of ReLU to the gradient
+//                 layers[layerNumber].grad_pre_act_output[nod][j] *= derivative_relu(layers[layerNumber].preActivatedFeatures[nod][j]);
+//             }
+//         }
+//     }
+
+//     // Calculate gradients for weights
+//     for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
+//     {
+//         for (int j = 0; j < layers[layerNumber].num_features; j++)
+//         {
+//             layers[layerNumber].grad_weights[i][j] = 0;
+//             for (int nod = 0; nod < g.num_nodes(); nod++)
+//             {
+//                 layers[layerNumber].grad_weights[i][j] += layers[layerNumber - 1].postActivatedFeatures[nod][i] * layers[layerNumber].grad_pre_act_output[nod][j];
+//             }
+//             // layers[layerNumber].grad_weights[i][j] /= g.num_nodes(); // Average over nodes
+//         }
+//     }
+
+//     // Calculate gradients for biases
+//     for (int i = 0; i < layers[layerNumber].num_features; i++)
+//     {
+//         layers[layerNumber].grad_bias[i] = 0;
+//         for (int nod = 0; nod < g.num_nodes(); nod++)
+//         {
+//             layers[layerNumber].grad_bias[i] += layers[layerNumber].grad_pre_act_output[nod][i];
+//         }
+//         // layers[layerNumber].grad_bias[i] /= g.num_nodes(); // Average over nodes
+//     }
+
+//     // // Uncomment this section if you need to update weights and biases within this function
+//     // for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
+//     // {
+//     //     for (int i = 0; i < layers[layerNumber].num_features; i++)
+//     //     {
+//     //         layers[layerNumber].weights[j][i] -= (0.001 * layers[layerNumber].grad_weights[j][i]);
+//     //     }
+//     // }
+//     // for (int i = 0; i < layers[layerNumber].num_features; i++)
+//     // {
+//     //     layers[layerNumber].bias[i] -= (0.001 * layers[layerNumber].grad_bias[i]);
+//     // }
+// }
+
+#include <cmath> // For std::sqrt and std::pow
+
+#define GRADIENT_NORM_CLIP_VALUE 3.0 // Example norm clipping value
 
 void backPropagation_omp(GNN &gnn, int layerNumber)
 {
-  graph &g = gnn.getGraph();
-  std::vector<layer> &layers = gnn.getLayers();
-  // std::cout << "Backpropagation" << std::endl;
-  if (layerNumber == 0)
-    return;
+    graph &g = gnn.getGraph();
+    std::vector<layer> &layers = gnn.getLayers();
+    
+    if (layerNumber == 0)
+        return;
 
-  std::vector<int32_t> y_true = gnn.getLabels();
+    std::vector<int32_t> y_true = gnn.getLabels();
+    double **y_pred = layers[layers.size() - 1].preActivatedFeatures;
 
-  float **y_pred = layers[layers.size() - 1].preActivatedFeatures;
-
-  if (layerNumber == layers.size() - 1)
-  {
-    for (int i = 0; i < y_true.size(); i++)
+    if (layerNumber == layers.size() - 1)
     {
-      int c = y_true[i];
-      std::cout << "y_pred : "<< c<< std::endl; 
-      for (int j = 0; j < gnn.numClasses(); j++)
-      {
-        layers[layerNumber].grad_pre_act_output[i][j] = y_pred[i][j] - (c == j ? 1 : 0);
-      }
-    }
-  }
-  else
-  {
-    // grad_pre_act_output [layer != last] = (grad_pre_act_output [layer + 1] * W[layer + 1]^T) * relu_derivative(pre_act_output[layer])
-
-    for (int nod = 0; nod < g.num_nodes(); nod++)
-    {
-      for (int i = 0; i < layers[layerNumber].num_features; i++)
-      {
-        layers[layerNumber].grad_pre_act_output[nod][i] = 0;
-        for (int j = 0; j < layers[layerNumber + 1].num_features; j++)
+        for (int i = 0; i < y_true.size(); i++)
         {
-          layers[layerNumber].grad_pre_act_output[nod][i] += layers[layerNumber + 1].grad_pre_act_output[nod][j] * layers[layerNumber + 1].weights[i][j];
+            int c = y_true[i];
+            for (int j = 0; j < gnn.numClasses(); j++)
+            {
+                layers[layerNumber].grad_pre_act_output[i][j] = (y_pred[i][j] - (c == j ? 1 : 0));
+            }
         }
-      }
     }
+    else
+    {
+        for (int nod = 0; nod < g.num_nodes(); nod++)
+        {
+            for (int i = 0; i < layers[layerNumber].num_features; i++)
+            {
+                layers[layerNumber].grad_pre_act_output[nod][i] = 0;
+                for (int j = 0; j < layers[layerNumber + 1].num_features; j++)
+                {
+                    layers[layerNumber].grad_pre_act_output[nod][i] += layers[layerNumber + 1].grad_pre_act_output[nod][j] * layers[layerNumber + 1].weights[i][j];
+                }
+            }
+        }
+
+        for (int i = 0; i < layers[layerNumber].num_features; i++)
+        {
+            for (int nod = 0; nod < g.num_nodes(); nod++)
+            {
+                layers[layerNumber].grad_pre_act_output[nod][i] *= derivative_relu(layers[layerNumber].preActivatedFeatures[nod][i]);
+            }
+        }
+    }
+
+    // Compute weight gradients and normalize
+    double weight_norm = 0.0;
+    for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
+    {
+        for (int j = 0; j < layers[layerNumber].num_features; j++)
+        {
+            layers[layerNumber].grad_weights[i][j] = 0;
+            for (int nod = 0; nod < g.num_nodes(); nod++)
+            {
+                layers[layerNumber].grad_weights[i][j] += layers[layerNumber].aggregatedFeatures[nod][i] * layers[layerNumber].grad_pre_act_output[nod][j];
+            }
+            weight_norm += std::pow(layers[layerNumber].grad_weights[i][j], 2);
+        }
+    }
+    weight_norm = std::sqrt(weight_norm);
+    if (weight_norm > GRADIENT_NORM_CLIP_VALUE)
+    {
+        for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
+        {
+            for (int j = 0; j < layers[layerNumber].num_features; j++)
+            {
+                layers[layerNumber].grad_weights[i][j] *= GRADIENT_NORM_CLIP_VALUE / weight_norm;
+                // std::cout << layers[layerNumber].grad_weights[i][j] << "\t";
+            }
+            // std::cout << std::endl; 
+        }
+    }
+
+    // Compute bias gradients and normalize
+    double bias_norm = 0.0;
     for (int i = 0; i < layers[layerNumber].num_features; i++)
     {
-      for (int nod = 0; nod < g.num_nodes(); nod++)
-      {
-        layers[layerNumber].grad_pre_act_output[nod][i] *= derivative_relu(layers[layerNumber].preActivatedFeatures[nod][i]);
-      }
+        layers[layerNumber].grad_bias[i] = 0;  // Reset to zero before accumulation
+        for (int nod = 0; nod < g.num_nodes(); nod++)
+        {
+            layers[layerNumber].grad_bias[i] += layers[layerNumber].grad_pre_act_output[nod][i];
+        }
+        bias_norm += std::pow(layers[layerNumber].grad_bias[i], 2);
     }
-  }
-
-  // grad_weights [layer] = (aggregatedFeatures[layer]^T * grad_pre_act_output[layer])
-  for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
-  {
-    for (int j = 0; j < layers[layerNumber].num_features; j++)
+    bias_norm = std::sqrt(bias_norm);
+    if (bias_norm > GRADIENT_NORM_CLIP_VALUE)
     {
-      layers[layerNumber].grad_weights[i][j] = 0;
-      for (int nod = 0; nod < g.num_nodes(); nod++)
-      {
-        layers[layerNumber].grad_weights[i][j] += layers[layerNumber].aggregatedFeatures[nod][i] * layers[layerNumber].grad_pre_act_output[nod][j];
-        // if(layers[layerNumber].grad_weights[i][j] <-2)
-        // {
-        //   layers[layerNumber].grad_weights[i][j] = -2;
-        // }
-        // else if(layers[layerNumber].grad_weights[i][j] >2)
-        // {
-        //   layers[layerNumber].grad_weights[i][j] = 2;
-        // }
-      }
-      layers[layerNumber].grad_weights[i][j] /= g.num_nodes();
+        for (int i = 0; i < layers[layerNumber].num_features; i++)
+        {
+            layers[layerNumber].grad_bias[i] *= GRADIENT_NORM_CLIP_VALUE / bias_norm;
+        }
     }
-  }
 
-  // grad_bias [layer] = sum(grad_pre_act_output[layer])
-  for (int i = 0; i < layers[layerNumber].num_features; i++)
-  {
-    for (int nod = 0; nod < g.num_nodes(); nod++)
+    // Update weights and biases
+    for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
     {
-      layers[layerNumber].grad_bias[i] += layers[layerNumber].grad_pre_act_output[nod][i];
+        for (int i = 0; i < layers[layerNumber].num_features; i++)
+        {
+            layers[layerNumber].weights[j][i] -= (0.001 * layers[layerNumber].grad_weights[j][i]);
+        }
     }
-    layers[layerNumber].grad_bias[i] /= g.num_nodes();
-  }
 
-  // L1 norm
-  // std::cout << "L1 norm for layer " << layerNumber << " : ";
-  // for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
-  // {
-  //   for (int i = 0; i < layers[layerNumber].num_features; i++)
-  //   {
-  //     layers[layerNumber].weights[j][i] -= (0.001 * layers[layerNumber].grad_weights[j][i]);
-  //     // std::cout << layers[layerNumber].grad_weights[j][i] << " ";
-  //   }
-  //   // std::cout << std::endl;
-  // }
-  // // for bias
-  // for (int i = 0; i < layers[layerNumber].num_features; i++)
-  // {
-  //   layers[layerNumber].bias[i] -= (0.001 * layers[layerNumber].grad_bias[i]);
-  // }
+    for (int i = 0; i < layers[layerNumber].num_features; i++)
+    {
+        layers[layerNumber].bias[i] -= (0.001 * layers[layerNumber].grad_bias[i]);
+    }
 }
 
-void adamOptimizer_omp(GNN &gnn, int epochNumber, float lr, float beta1, float beta2, float epsilon)
+// void backPropagation_omp(GNN &gnn, int layerNumber)
+// {
+//   graph &g = gnn.getGraph();
+//   std::vector<layer> &layers = gnn.getLayers();
+//   // std::cout << "Backpropagation" << std::endl;
+//   if (layerNumber == 0)
+//     return;
+//   std::vector<int32_t> y_true = gnn.getLabels();
+//   double **y_pred = layers[layers.size() - 1].preActivatedFeatures;
+//   if (layerNumber == layers.size() - 1)
+//   {
+//     for (int i = 0; i < y_true.size(); i++)
+//     {
+//       int c = y_true[i];
+//       // std::cout << "y_pred : "<< c<< std::endl; 
+//       for (int j = 0; j < gnn.numClasses(); j++)
+//       {
+//         layers[layerNumber].grad_pre_act_output[i][j] = (y_pred[i][j] - (c == j ? 1 : 0));
+//       }
+//     }
+//   }
+//   else
+//   {
+//     // grad_pre_act_output [layer != last] = (grad_pre_act_output [layer + 1] * W[layer + 1]^T) * relu_derivative(pre_act_output[layer])
+//     for (int nod = 0; nod < g.num_nodes(); nod++)
+//     {
+//       for (int i = 0; i < layers[layerNumber].num_features; i++)
+//       {
+//         layers[layerNumber].grad_pre_act_output[nod][i] = 0;
+//         for (int j = 0; j < layers[layerNumber + 1].num_features; j++)
+//         {
+//           layers[layerNumber].grad_pre_act_output[nod][i] += layers[layerNumber + 1].grad_pre_act_output[nod][j] * layers[layerNumber + 1].weights[i][j];
+//         }
+//       }
+//     }
+//     for (int i = 0; i < layers[layerNumber].num_features; i++)
+//     {
+//       for (int nod = 0; nod < g.num_nodes(); nod++)
+//       {
+//         layers[layerNumber].grad_pre_act_output[nod][i] *= derivative_relu(layers[layerNumber].preActivatedFeatures[nod][i]);
+//       }
+//     }
+//   }
+//   // grad_weights [layer] = (aggregatedFeatures[layer]^T * grad_pre_act_output[layer])
+//   for (int i = 0; i < layers[layerNumber - 1].num_features; i++)
+//   {
+//     for (int j = 0; j < layers[layerNumber].num_features; j++)
+//     {
+//       layers[layerNumber].grad_weights[i][j] = 0;
+//       for (int nod = 0; nod < g.num_nodes(); nod++)
+//       {
+//         layers[layerNumber].grad_weights[i][j] += layers[layerNumber].aggregatedFeatures[nod][i] * layers[layerNumber].grad_pre_act_output[nod][j];
+//       }
+//       // layers[layerNumber].grad_weights[i][j] /= g.num_nodes();
+//     }
+//   }
+//   // grad_bias [layer] = sum(grad_pre_act_output[layer])
+//   for (int i = 0; i < layers[layerNumber].num_features; i++)
+//   {
+//     layers[layerNumber].grad_bias[i] = 0;
+//     for (int nod = 0; nod < g.num_nodes(); nod++)
+//     {
+//       layers[layerNumber].grad_bias[i] += layers[layerNumber].grad_pre_act_output[nod][i];
+//     }
+//     // layers[layerNumber].grad_bias[i] /= g.num_nodes();
+//   }
+//   // L1 norm
+//   // std::cout << "L1 norm for layer " << layerNumber << " : ";
+//   for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
+//   {
+//     for (int i = 0; i < layers[layerNumber].num_features; i++)
+//     {
+//       // layers[layerNumber].weights[j][i] -= (0.001 * layers[layerNumber].grad_weights[j][i]);
+//       std::cout << layers[layerNumber].grad_weights[j][i] << " ";
+//     }
+//     std::cout << std::endl;
+//   }
+//   // // for bias
+//   // for (int i = 0; i < layers[layerNumber].num_features; i++)
+//   // {
+//   //   layers[layerNumber].bias[i] -= (0.001 * layers[layerNumber].grad_bias[i]);
+//   // }
+// }
+
+void adamOptimizer_omp(GNN &gnn, int epochNumber, double lr, double beta1, double beta2, double epsilon, double weight_decay)
 {
-  int t = epochNumber;
-  std::vector<layer> &layers = gnn.getLayers();
-  // std::cout << "OPTIMIZER STARTED" << std::endl;
-  for (int i = 1; i < layers.size(); i++)
-  {
-    // std::cout << "OPTIMIZING LAYER " << i << std::endl;
-    // adam optimizer
-    // #pragma omp parallel for schedule(dynamic)
-    for (int j = 0; j < layers[i - 1].num_features; j++)
+    int t = epochNumber;
+    std::vector<layer> &layers = gnn.getLayers();
+    for (int i = 1; i < layers.size(); i++)
     {
-      for (int k = 0; k < layers[i].num_features; k++)
-      {
-        layers[i].m_weights[j][k] = beta1 * layers[i].m_weights[j][k] + (1 - beta1) * layers[i].grad_weights[j][k];
-        layers[i].v_weights[j][k] = beta2 * layers[i].v_weights[j][k] + (1 - beta2) * layers[i].grad_weights[j][k] * layers[i].grad_weights[j][k];
-        float m_hat = layers[i].m_weights[j][k] / (1 - pow(beta1, t));
-        float v_hat = layers[i].v_weights[j][k] / (1 - pow(beta2, t));
-        layers[i].weights[j][k] += lr * m_hat / (sqrt(v_hat) + epsilon);
-      }
+        for (int j = 0; j < layers[i - 1].num_features; j++)
+        {
+            for (int k = 0; k < layers[i].num_features; k++)
+            {
+                layers[i].m_weights[j][k] = beta1 * layers[i].m_weights[j][k] + (1 - beta1) * layers[i].grad_weights[j][k];
+                layers[i].v_weights[j][k] = beta2 * layers[i].v_weights[j][k] + (1 - beta2) * layers[i].grad_weights[j][k] * layers[i].grad_weights[j][k];
+                double m_hat = layers[i].m_weights[j][k] / (1 - pow(beta1, t));
+                double v_hat = layers[i].v_weights[j][k] / (1 - pow(beta2, t));
+
+                // Update weights with weight decay
+                layers[i].weights[j][k] -= lr * (m_hat / (sqrt(v_hat) + epsilon) + weight_decay * layers[i].weights[j][k]);
+            }
+        }
+        for (int j = 0; j < layers[i].num_features; j++)
+        {
+            layers[i].m_biases[j] = beta1 * layers[i].m_biases[j] + (1 - beta1) * layers[i].grad_bias[j];
+            layers[i].v_biases[j] = beta2 * layers[i].v_biases[j] + (1 - beta2) * layers[i].grad_bias[j] * layers[i].grad_bias[j];
+            double m_hat = layers[i].m_biases[j] / (1 - pow(beta1, t));
+            double v_hat = layers[i].v_biases[j] / (1 - pow(beta2, t));
+
+            // Update biases (typically, weight decay is not applied to biases)
+            layers[i].bias[j] -= lr * (m_hat / (sqrt(v_hat) + epsilon));
+        }
     }
-    // std::cout << "WEIGHTS FOR LAYER " << i << " DONE" << std::endl;
-    // #pragma omp parallel for schedule(dynamic)
-    for (int j = 0; j < layers[j].num_features; j++)
-    {
-      layers[i].m_biases[j] = beta1 * layers[i].m_biases[j] + (1 - beta1) * layers[i].grad_bias[j];
-      layers[i].v_biases[j] = beta2 * layers[i].v_biases[j] + (1 - beta2) * layers[i].grad_bias[j] * layers[i].grad_bias[j];
-      float m_hat = layers[i].m_biases[j] / (1 - pow(beta1, t));
-      float v_hat = layers[i].v_biases[j] / (1 - pow(beta2, t));
-      layers[i].bias[j] += lr * m_hat / (sqrt(v_hat) + epsilon);
-    }
-    // std::cout << "BIASES FOR LAYER " << i << " DONE" << std::endl;
-  }
 }
+
+
+// void adamOptimizer_omp(GNN &gnn, int epochNumber, double lr, double beta1, double beta2, double epsilon)
+// {
+//     int t = epochNumber; // Current time step
+//     std::vector<layer> &layers = gnn.getLayers();
+
+//     for (int i = 1; i < layers.size(); i++)
+//     {
+//         // Update weights
+//         // #pragma omp parallel for schedule(dynamic)
+//         for (int j = 0; j < layers[i - 1].num_features; j++)
+//         {
+//             for (int k = 0; k < layers[i].num_features; k++)
+//             {
+//                 // Update biased first moment estimate
+//                 layers[i].m_weights[j][k] = beta1 * layers[i].m_weights[j][k] + (1 - beta1) * layers[i].grad_weights[j][k];
+                
+//                 // Update biased second moment estimate
+//                 layers[i].v_weights[j][k] = beta2 * layers[i].v_weights[j][k] + (1 - beta2) * layers[i].grad_weights[j][k] * layers[i].grad_weights[j][k];
+                
+//                 // Compute bias-corrected first moment estimate
+//                 double m_hat = layers[i].m_weights[j][k] / (1 - pow(beta1, t));
+                
+//                 // Compute bias-corrected second moment estimate
+//                 double v_hat = layers[i].v_weights[j][k] / (1 - pow(beta2, t));
+                
+//                 // Update weights
+//                 layers[i].weights[j][k] -= lr * m_hat / (sqrt(v_hat) + epsilon);
+//             }
+//         }
+
+//         // Update biases
+//         // #pragma omp parallel for schedule(dynamic)
+//         for (int j = 0; j < layers[i].num_features; j++) // Corrected indexing here
+//         {
+//             // Update biased first moment estimate
+//             layers[i].m_biases[j] = beta1 * layers[i].m_biases[j] + (1 - beta1) * layers[i].grad_bias[j];
+            
+//             // Update biased second moment estimate
+//             layers[i].v_biases[j] = beta2 * layers[i].v_biases[j] + (1 - beta2) * layers[i].grad_bias[j] * layers[i].grad_bias[j];
+            
+//             // Compute bias-corrected first moment estimate
+//             double m_hat = layers[i].m_biases[j] / (1 - pow(beta1, t));
+            
+//             // Compute bias-corrected second moment estimate
+//             double v_hat = layers[i].v_biases[j] / (1 - pow(beta2, t));
+            
+//             // Update biases
+//             layers[i].bias[j] -= lr * m_hat / (sqrt(v_hat) + epsilon);
+//         }
+//     }
+// }
 
 void predict_omp(GNN &gnn)
 {
@@ -531,5 +788,5 @@ void predict_omp(GNN &gnn)
       correct++;
     }
   }
-  std::cout << "Accuracy: " << (float)correct / g.num_nodes() << std::endl;
+  std::cout << "Accuracy: " << (double)correct / g.num_nodes() << std::endl;
 }

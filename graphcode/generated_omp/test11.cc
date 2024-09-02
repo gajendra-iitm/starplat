@@ -39,11 +39,11 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  graph G("/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_graph/sample_graph.txt");
+  graph G("../sample_graphs/Amazon/amazon_edgelist.txt");
 
   G.parseGraph();
 
-  GNN gnn(G, "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_graph/sample_graph_feat.txt", "/Users/s.tharun_dyanish/Documents/vscode/StarPlat_Updated/graphcode/sample_graphs/sample_graph/sample_graph_labels.txt");
+  GNN gnn(G, "../sample_graphs/Amazon/amazon_features.txt", "../sample_graphs/Amazon/amazon_labels.txt");
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
@@ -58,7 +58,8 @@ int main()
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
-  neuronsPerHiddenLayer.push_back(8);
+  neuronsPerHiddenLayer.push_back(64);
+  neuronsPerHiddenLayer.push_back(16);
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
@@ -73,7 +74,7 @@ int main()
   //   }
   //   std::cout << std::endl;
   // }
-  int num_epochs = 10;
+  int num_epochs = 100;
   for (int epoch = 1; epoch < num_epochs; epoch++)
   {
     for (int j = 0; j < layers.size(); j++)
@@ -83,11 +84,11 @@ int main()
         gnn.forwardPass(k, j);
       }
     }
-    for (int j = layers.size() - 1; j >= 0; j--)
+    for (int j = layers.size() - 1; j > 0; j--)
     {
       gnn.backPropogation(j);
     }
-    gnn.adamOptimizer(epoch, 0.0001, 0.9, 0.999, 1e-8);
+    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
     gnn.predict();
 
     cout << epoch << endl;
@@ -103,75 +104,75 @@ int main()
   gnn.predict();
 
   // print all the matrices associated with all the layers
-  for (int j = 1; j < layers.size(); j++)
-  {
-    cout << "Layer " << j << " weights" << endl;
-    for (int k = 0; k < layers[j - 1].num_features; k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].weights[k][l] << "\t";
-      }
-      cout << endl;
-    }
-    cout << "Layer " << j << " aggregated features" << endl;
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      for (int l = 0; l < layers[j - 1].num_features; l++)
-      {
-        cout << layers[j].aggregatedFeatures[k][l] << "\t";
-      }
-      cout << endl;
-    }
-    cout << "Layer " << j << " pre activated features" << endl;
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].preActivatedFeatures[k][l] << "\t";
-      }
-      cout << endl;
-    }
-    cout << "Layer " << j << " post activated features" << endl;
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].postActivatedFeatures[k][l] << "\t";
-      }
-      cout << endl;
-    }
+  // for (int j = 1; j < layers.size(); j++)
+  // {
+  //   cout << "Layer " << j << " weights" << endl;
+  //   for (int k = 0; k < layers[j - 1].num_features; k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].weights[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
+  //   cout << "Layer " << j << " aggregated features" << endl;
+  //   for (int k = 0; k < g.num_nodes(); k++)
+  //   {
+  //     for (int l = 0; l < layers[j - 1].num_features; l++)
+  //     {
+  //       cout << layers[j].aggregatedFeatures[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
+  //   cout << "Layer " << j << " pre activated features" << endl;
+  //   for (int k = 0; k < g.num_nodes(); k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].preActivatedFeatures[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
+  //   cout << "Layer " << j << " post activated features" << endl;
+  //   for (int k = 0; k < g.num_nodes(); k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].postActivatedFeatures[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
 
-    cout << "Layer " << j << " grad pre act output" << endl;
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].grad_pre_act_output[k][l] << "\t";
-      }
-      cout << endl;
-    }
+  //   cout << "Layer " << j << " grad pre act output" << endl;
+  //   for (int k = 0; k < g.num_nodes(); k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].grad_pre_act_output[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
 
-    cout << "Layer " << j << " grad post act output" << endl;
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].grad_post_act_output[k][l] << "\t";
-      }
-      cout << endl;
-    }
+  //   cout << "Layer " << j << " grad post act output" << endl;
+  //   for (int k = 0; k < g.num_nodes(); k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].grad_post_act_output[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
 
-    cout << "Layer " << j << " grad weights" << endl;
-    for (int k = 0; k < layers[j - 1].num_features; k++)
-    {
-      for (int l = 0; l < layers[j].num_features; l++)
-      {
-        cout << layers[j].grad_weights[k][l] << "\t";
-      }
-      cout << endl;
-    }
-  }
+  //   cout << "Layer " << j << " grad weights" << endl;
+  //   for (int k = 0; k < layers[j - 1].num_features; k++)
+  //   {
+  //     for (int l = 0; l < layers[j].num_features; l++)
+  //     {
+  //       cout << layers[j].grad_weights[k][l] << "\t";
+  //     }
+  //     cout << endl;
+  //   }
+  // }
 
   // print all outputfeatures of all nodes of layer 2
   // for (int j = 0; j < g.num_nodes(); j++)
@@ -193,62 +194,4 @@ int main()
   //   std::cout<<std::endl;
   //   // layers[0].preActivatedFeatures[0][j] = relu(layers[0].preActivatedFeatures[0][j] + layers[0].bias[j]);
   // }
-
-<<<<<<< HEAD
-  printf("%s\n", environment.get_backend());
-
-  std::vector<int32_t> neuronsPerHiddenLayer;
-  neuronsPerHiddenLayer.push_back(8);
-  neuronsPerHiddenLayer.push_back(2);
-  // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
-  gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
-  std::vector<layer> layers = gnn.getLayers();
-
-  graph &g = gnn.getGraph();
-    for(int j = 0; j < gnn.getGraph().num_nodes(); j++)
-    {
-      for(int i = 0; i < gnn.numFeatures(); i++){
-      std::cout << layers[0].inputFeatures[j][i] << " ";
-      }
-    std::cout << std::endl;
-  }
-  //std::cout <<  "This is a partitioning beetween aggregated features and forward propagation"<< std::endl;
-  
-  gnn.forwardPass(0, 0);
-  int num_nodes = g.num_nodes();
-  for(int i = 0;i< layers[1].num_features;i++){
-    std::cout << layers[0].outputFeatures[0][i] << " ";
-  }
-  // for (int j = 0; j < num_nodes; j++)
-  // {
-  //   //layers[0].outputFeatures[0][j] = 0;
-  //   for (int i = 0; i < layers[0].num_features; i++)
-  //   {
-  //     std::cout<<layers[0].outputFeatures[0][j]<<" ";
-  //   }
-  //   std::cout<<std::endl;
-  //   // layers[0].outputFeatures[0][j] = relu(layers[0].outputFeatures[0][j] + layers[0].bias[j]);
-  // }
-
-=======
->>>>>>> 94533d186e608c0cf7d2ba58ee7f6c9fa53f7fda
-  // for (int i = 0; i < layers.size() - 1; i++)
-  // {
-  //   cout << layers[i].num_features << endl;
-  //   // print weights
-  //   for (int j = 0; j < layers[i].num_features; j++)
-  //   {
-  //     for (int k = 0; k < layers[i + 1].num_features; k++)
-  //     {
-  //       cout << i << "$" << j << "$" << k << "\t";
-  //     }
-  //     cout << endl;
-  //   }
-  // }
-<<<<<<< HEAD
-
-
 }
-=======
-}
->>>>>>> 94533d186e608c0cf7d2ba58ee7f6c9fa53f7fda

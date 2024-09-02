@@ -282,7 +282,7 @@ void graph::delEdge(int src, int dest)
   // printf("src %d dest %d mid %d\n", src, dest, mid);
 }
 
-float graph::getWeight(int src, int dest)
+double graph::getWeight(int src, int dest)
 {
   int startEdge = indexofNodes[src];
   int endEdge = indexofNodes[src + 1] - 1;
@@ -304,7 +304,7 @@ float graph::getWeight(int src, int dest)
   return edgeLen[mid];
 }
 
-void graph::changeWeight(int src, int dest, float weight)
+void graph::changeWeight(int src, int dest, double weight)
 {
   int startEdge = indexofNodes[src];
   int endEdge = indexofNodes[src + 1] - 1;
@@ -383,7 +383,7 @@ void graph::parseEdges()
     edge e;
     int32_t source;
     int32_t destination;
-    float weightVal;
+    double weightVal;
 
     ss >> source;
     if (source > nodesTotal)
@@ -436,7 +436,7 @@ void graph::parseEdgesResidual()
     edge e;
     int32_t source;
     int32_t destination;
-    float weightVal;
+    double weightVal;
 
     ss >> source;
     if (source > nodesTotal)
@@ -995,7 +995,7 @@ int GNN::numFeatures()
   return num_features;
 }
 // return the  features of the graph
-std::vector<std::vector<float>> &GNN::getFeatures()
+std::vector<std::vector<double>> &GNN::getFeatures()
 {
   return features;
 }
@@ -1011,7 +1011,7 @@ void GNN::loadFeatures()
   std::ifstream infile;
   infile.open(feat_file);
   std::string line;
-  std::vector<float> raw_features;
+  std::vector<double> raw_features;
   while (std::getline(infile, line))
   {
 
@@ -1021,7 +1021,7 @@ void GNN::loadFeatures()
     }
 
     std::stringstream ss(line);
-    float feat;
+    double feat;
     while (ss >> feat)
     {
       raw_features.push_back(feat);
@@ -1034,7 +1034,7 @@ void GNN::loadFeatures()
   // push num_feature number of elements from raw_features onto a temp_feat and then push the temp_feat onto features
   for (int i = 0; i < raw_features.size(); i += num_features)
   {
-    std::vector<float> temp_feat;
+    std::vector<double> temp_feat;
     for (int j = 0; j < num_features; j++)
     {
       temp_feat.push_back(raw_features[i + j]);
@@ -1112,10 +1112,10 @@ void GNN::backPropogation(int layerNumber)
     backPropagation_omp(*this, layerNumber);
   }
 }
-void GNN::adamOptimizer(int epochNumber, float lr, float beta1, float beta2, float epsilon){
+void GNN::adamOptimizer(int epochNumber, double lr, double beta1, double beta2, double epsilon,double decay){
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
-    adamOptimizer_omp(*this, epochNumber, lr, beta1, beta2, epsilon);
+    adamOptimizer_omp(*this, epochNumber, lr, beta1, beta2, epsilon,decay);
   }
 }
 void GNN::predict()
