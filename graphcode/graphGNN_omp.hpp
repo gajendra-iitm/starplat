@@ -1,9 +1,13 @@
 #include "graph.hpp"
 
+#include <cmath> // For std::sqrt and std::pow
+
+#define GRADIENT_NORM_CLIP_VALUE 3.0 //clipping value
+
 void xaviersInit_omp(double **weights, int num_neurons_current, int num_features_next)
 {
   // xaiver's initialization
-  double xavier = sqrt(6.0 / (num_neurons_current ));
+  double xavier = sqrt(6.0 / (num_neurons_current + num_features_next));
   std::random_device rd;  // Obtain a random number from hardware
   std::mt19937 gen(rd()); // Seed the generator
   std::uniform_real_distribution<> dist(0, xavier);
@@ -368,13 +372,13 @@ void aggregate_omp(GNN &gnn, int node, int layerNumber)
 
 void forwardPass_omp(GNN &gnn, int node, int layerNumber)
 {
-    std::vector<layer> &layers = gnn.getLayers();
-    graph &g = gnn.getGraph();
-
     if (layerNumber == 0)
     {
         return;
     }
+    std::vector<layer> &layers = gnn.getLayers();
+    graph &g = gnn.getGraph();
+    // printf("Forward pass for node %d in layer %d\n", node, layerNumber);
 
     // Aggregate the features from the previous layer
     aggregate_omp(gnn, node, layerNumber);
@@ -485,15 +489,10 @@ void forwardPass_omp(GNN &gnn, int node, int layerNumber)
 //     // }
 // }
 
-#include <cmath> // For std::sqrt and std::pow
-
-#define GRADIENT_NORM_CLIP_VALUE 3.0 // Example norm clipping value
-
 void backPropagation_omp(GNN &gnn, int layerNumber)
 {
     graph &g = gnn.getGraph();
     std::vector<layer> &layers = gnn.getLayers();
-    
     if (layerNumber == 0)
         return;
 
@@ -513,6 +512,7 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
     }
     else
     {
+
         for (int nod = 0; nod < g.num_nodes(); nod++)
         {
             for (int i = 0; i < layers[layerNumber].num_features; i++)
@@ -582,18 +582,20 @@ void backPropagation_omp(GNN &gnn, int layerNumber)
         }
     }
 
-    // Update weights and biases
+    // // Update weights and biases
     for (int j = 0; j < layers[layerNumber - 1].num_features; j++)
     {
         for (int i = 0; i < layers[layerNumber].num_features; i++)
         {
-            layers[layerNumber].weights[j][i] -= (0.001 * layers[layerNumber].grad_weights[j][i]);
+          // std::cout << layers[layerNumber].grad_weights[j][i] << " ";
+            layers[layerNumber].weights[j][i] -= (0.01 * layers[layerNumber].grad_weights[j][i]);
         }
+        // std::cout << std::endl;
     }
 
     for (int i = 0; i < layers[layerNumber].num_features; i++)
     {
-        layers[layerNumber].bias[i] -= (0.001 * layers[layerNumber].grad_bias[i]);
+        layers[layerNumber].bias[i] -= (0.01 * layers[layerNumber].grad_bias[i]);
     }
 }
 

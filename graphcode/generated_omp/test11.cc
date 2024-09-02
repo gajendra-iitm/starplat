@@ -39,11 +39,11 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  graph G("../sample_graphs/Amazon/amazon_edgelist.txt");
+  graph G("../sample_graphs/Cora/cora_edgelist.txt");
 
   G.parseGraph();
 
-  GNN gnn(G, "../sample_graphs/Amazon/amazon_features.txt", "../sample_graphs/Amazon/amazon_labels.txt");
+  GNN gnn(G, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
@@ -58,14 +58,14 @@ int main()
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
-  neuronsPerHiddenLayer.push_back(64);
+  // neuronsPerHiddenLayer.push_back(64);
   neuronsPerHiddenLayer.push_back(16);
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
   std::vector<layer> &layers = gnn.getLayers();
 
-  graph &g = gnn.getGraph();
+  // graph &g = gnn.getGraph();
   // for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
   // {
   //   for (int i = 0; i < gnn.numFeatures(); i++)
@@ -74,6 +74,7 @@ int main()
   //   }
   //   std::cout << std::endl;
   // }
+  graph &g = gnn.getGraph();
   int num_epochs = 100;
   for (int epoch = 1; epoch < num_epochs; epoch++)
   {
@@ -88,7 +89,7 @@ int main()
     {
       gnn.backPropogation(j);
     }
-    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
+    // gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
     gnn.predict();
 
     cout << epoch << endl;

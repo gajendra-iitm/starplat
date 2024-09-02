@@ -10,6 +10,6 @@
 
 using namespace std;
 env environment("omp", "static", "GCN_test");
-void GCN(graph& g , string gnn , vector<int> neuronsPerHiddenLayer);
+void GCN(graph& g , vector<int> neuronsPerHiddenLayer);
 
 #endif
