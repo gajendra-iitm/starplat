@@ -25,22 +25,16 @@ private:
     std::vector<bool> already_locked_processors_shared;
     std::vector<std::vector<std::pair<int32_t, T>>> reduction_queue;
 
-    // State variables for buffering atomic adds and write operations
+    // TODO(Rohan): Experiment with better choices of data structures for the following buffer variables
     bool atomic_add_buffer_ready;
-    // std::vector<std::vector<T>> atomic_add_buffer;
-
     bool write_buffer_ready;
-
-    // Replace with map
-    // std::unordered_map<int, std::unordered_map<int, T>> atomic_add_buffer;
-    // std::unordered_map<int, std::unordered_map<int, T>> write_buffer;
-
-    // Replace with array
     std::vector<std::vector<T>> atomic_add_buffer;
     std::vector<std::vector<T>> write_buffer;
+    std::set<std::pair<int,int>> atomic_add_change_log;
+    std::set<std::pair<int,int>> write_change_log;
 
-    std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> atomic_add_change_log;
-    std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> write_change_log;
+    // std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> atomic_add_change_log;
+    // std::unordered_set<std::pair<int,int>, boost::hash<std::pair<int,int>>> write_change_log;
 public:
     Rma_Datatype<T> propList;
     void syncAtomicAddsAndWrites();
