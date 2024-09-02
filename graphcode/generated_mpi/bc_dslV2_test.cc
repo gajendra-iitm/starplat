@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
     // BC
     std::set<int> sourceSet;
-    sourceSet.insert(0);
+    sourceSet.insert(20);
     NodeProperty<float> BC;
     // MPI time start
     double start = MPI_Wtime();
