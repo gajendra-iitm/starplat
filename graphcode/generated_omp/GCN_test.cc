@@ -2,14 +2,16 @@
 
 void GCN(graph& g , vector<int> neuronsPerHiddenLayer)
 {
-   GNN gnn(g, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
+   GNN gnn(g, "../sample_graphs/Amazon/amazon_features.txt", "../sample_graphs/Amazon/amazon_labels.txt");
   gnn.gcnPreprocessing();
   gnn.initializeLayers(neuronsPerHiddenLayer,"xaviers");
 
   int num_epoch = 0;
   bool x = true;
+  
+double start =  omp_get_wtime();
   while (x){
-    if (num_epoch == 100 )
+    if (num_epoch == 300 )
       {
       x = false;
     }
@@ -18,7 +20,7 @@ void GCN(graph& g , vector<int> neuronsPerHiddenLayer)
     bool y = true;
     while (y){
       layerr = layerr + 1;
-      #pragma omp parallel for
+      #pragma omp parallel for num_threads(omp_get_max_threads()) schedule(dynamic)
       for (int nod = 0; nod < g.num_nodes(); nod ++) 
       {
         if (layerr == neuronsPerHiddenLayer.size() + 1 )
@@ -33,12 +35,15 @@ void GCN(graph& g , vector<int> neuronsPerHiddenLayer)
         gnn.backPropogation(layerr);
         layerr--;
     }
+    gnn.adamOptimizer(num_epoch,0.01,0.9,0.999,1e-8);
+    cout << "Epoch number is : "<<num_epoch << " with " ;
     gnn.predict();
   }
-
+double end =  omp_get_wtime();
+cout << "Time taken: " << end-start << endl;
 }
 int main(){
-    graph G("../sample_graphs/Cora/cora_edgelist.txt");
+    graph G("../sample_graphs/Amazon/amazon_edgelist.txt");
 
   G.parseGraph();
   vector<int> neuronsPerHiddenLayer;
@@ -48,67 +53,3 @@ int main(){
 
 }
 
-
-/*#include "GCN_test.h"
-
-void GCN(graph &g, vector<int> neuronsPerHiddenLayer)
-{
-  GNN gnn(g, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
-  gnn.gcnPreprocessing();
-
-  gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
-
-  int num_epoch = 0;
-  bool x = true;
-  while (x)
-  {
-    if (num_epoch == 100)
-    {
-      x = false;
-    }
-    num_epoch = num_epoch + 1;
-    int layerr = 0;
-    bool y = true;
-
-    while (y)
-    {
-      layerr = layerr + 1;
-      #pragma omp parllel for
-      for (int nod = 0; nod < g.num_nodes(); nod++)
-      {
-        if (layerr == neuronsPerHiddenLayer.size() + 1)
-        {
-          y = false;
-        }
-        gnn.forwardPass(nod, layerr);
-      }
-    }
-    cout << "Backpropogation" << endl;
-    // cout << layerr << endl;
-    while (layerr)
-    {
-
-      // printf("layerr = %d\n",layerr);
-      gnn.backPropogation(layerr);
-      layerr--;
-    }
-    gnn.adamOptimizer(num_epoch, 0.01, 0.9, 0.999, 1e-8, 0.001);
-    gnn.predict();
-    cout << num_epoch << endl;
-  }
-}
-int main()
-{
-  graph G("../sample_graphs/Cora/cora_edgelist.txt");
-
-  G.parseGraph();
-  ;
-
-  std::vector<int32_t> neuronsPerHiddenLayer;
-  // neuronsPerHiddenLayer.push_back(64);
-  neuronsPerHiddenLayer.push_back(16);
-
-  // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
-  GCN(G, neuronsPerHiddenLayer);
-  return 0;
-}*/

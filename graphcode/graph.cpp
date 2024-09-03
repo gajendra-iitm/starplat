@@ -994,6 +994,11 @@ int GNN::numFeatures()
 {
   return num_features;
 }
+int GNN::initType()
+{
+  return init;
+}
+
 // return the  features of the graph
 std::vector<std::vector<double>> &GNN::getFeatures()
 {
@@ -1085,7 +1090,15 @@ void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
     initializeLayers_omp(*this, neuronsPerLayer, initType);
+    if(initType == "xavier"){
+      init = 1;
+    }
+    else if(initType == "he"){
+      init = 2;
+    }
   }
+
+  
 }
 
 void GNN::aggregate(int node, int layerNumber)

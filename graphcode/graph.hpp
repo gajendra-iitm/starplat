@@ -127,7 +127,7 @@ class GNN
   std::vector<int32_t> labels;
   std::vector<std::vector<double>> features;
   char *feat_file, *lab_file;
-  int num_features, num_classes;
+  int num_features, num_classes,init;
   // std::vector<std::string> activationFunctions;
 
 public:
@@ -137,6 +137,7 @@ public:
   void loadLabels();
   void gcnPreprocessing();
   int numFeatures();
+  int initType();
   std::vector<std::vector<double>> &getFeatures();
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
