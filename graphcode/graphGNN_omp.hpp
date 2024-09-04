@@ -1,8 +1,7 @@
 #include "graph.hpp"
+ 
 
-#include <cmath> // For std::sqrt and std::pow
-
-#define GRADIENT_NORM_CLIP_VALUE 3.0 //clipping value
+#define GRADIENT_NORM_CLIP_VALUE 3.0 
 const int init_layer_type = 0;
 void xaviersInit_omp(double **weights, int num_neurons_current, int num_features_next)
 {
