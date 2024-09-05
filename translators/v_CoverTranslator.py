@@ -1,5 +1,5 @@
 import ast
-
+import os
 class ASTToCustomTranslator(ast.NodeVisitor):
     def __init__(self):
         self.translated_code = []
@@ -157,4 +157,8 @@ def v_cover(g, vc):
 
 translator = ASTToCustomTranslator()
 custom_code = translator.translate(python_code)
-print(custom_code)
+os.makedirs('output', exist_ok=True)
+
+# Save the DSL code to a file in the output directory
+with open('output/v_CoverDSL', 'w') as file:
+    file.write(custom_code)

@@ -1,4 +1,5 @@
 import ast
+import os
 
 class PythonToStarPlatTranslator(ast.NodeVisitor):
     def __init__(self):
@@ -115,4 +116,9 @@ def Compute_TC(g):
 """
 
 dsl_code = translate_to_starplat(python_code)
-print(dsl_code)
+# Create the output directory if it doesn't exist
+os.makedirs('output', exist_ok=True)
+
+# Save the DSL code to a file in the output directory
+with open('output/triangleCountingDSL', 'w') as file:
+    file.write(dsl_code)
