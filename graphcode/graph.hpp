@@ -5,7 +5,6 @@
 #include <vector>
 #include <set>
 #include <map>
-#include <cmath>
 #include <algorithm>
 #include <string.h>
 #include <climits>
@@ -109,6 +108,8 @@ public:
   int32_t num_features;
   double **weights;
   double *bias;
+  double epsilon = 0.001;
+  double  grad_epsilon;
   double **aggregatedFeatures;
   double **preActivatedFeatures;
   double **postActivatedFeatures;
@@ -117,6 +118,8 @@ public:
   double *grad_bias;
   double **m_weights;
   double *m_biases;
+  double m_epsilon = 0.0f;
+  double v_epsilon = 0.0f;
   double **v_weights;
   double *v_biases;
 };
@@ -128,7 +131,7 @@ class GNN
   std::vector<int32_t> labels;
   std::vector<std::vector<double>> features;
   char *feat_file, *lab_file;
-  int num_features, num_classes,init;
+  int num_features, num_classes,init,aggregation_type ;
   // std::vector<std::string> activationFunctions;
 
 public:
@@ -139,13 +142,15 @@ public:
   void gcnPreprocessing();
   int numFeatures();
   int initType();
+  int aggregationType();
   std::vector<std::vector<double>> &getFeatures();
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
   std::vector<layer> &getLayers();
   std::vector<int32_t> &getLabels();
-  void aggregate(int node, int layerNumber);
-  void forwardPass(int node, int layerNumber);
+  void GCN_aggregate(int node, int layerNumber);
+  void GIN_aggregate(int node, int layerNumber);
+  void forwardPass(int node, int layerNumber,int aggregationtype);
   void backPropogation(int layerNumber);
   void adamOptimizer(int epochNumber, double lr, double beta1, double beta2, double epsilon, double decay = 0.0);
   void predict();
