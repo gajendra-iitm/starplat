@@ -999,6 +999,11 @@ int GNN::initType()
   return init;
 }
 
+int GNN::aggregationType()
+{
+  return aggregation_type;
+}
+
 // return the  features of the graph
 std::vector<std::vector<double>> &GNN::getFeatures()
 {
@@ -1101,20 +1106,38 @@ void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   
 }
 
-void GNN::aggregate(int node, int layerNumber)
+void GNN::GCN_aggregate(int node, int layerNumber)
 {
 
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
-    aggregate_omp(*this, node, layerNumber);
+    GCN_aggregate_omp(*this, node, layerNumber);
+    aggregation_type = 1;
   }
 }
 
-void GNN::forwardPass(int node, int layerNumber)
+void GNN::GIN_aggregate(int node, int layerNumber)
+{
+
+  if (strcmp(environment.get_backend(), "omp") == 0)
+  {
+    GIN_aggregate_omp(*this, node, layerNumber);
+    aggregation_type = 2;
+  }
+}
+
+
+void GNN::forwardPass(int node, int layerNumber, int aggType)
 {
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
-    forwardPass_omp(*this, node, layerNumber);
+    forwardPass_omp(*this, node, layerNumber, aggType);
+    if(aggType == 1){
+      aggregation_type = 1;
+    }
+    else if(aggType == 2){
+      aggregation_type = 2;
+    }
   }
 }
 
