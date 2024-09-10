@@ -144,3 +144,24 @@ __device__ bool findNeighborSorted(int s, int d, int *d_meta, int *d_data)  //we
       exit(0);                                                                         \
     }                                                                                  \
   }
+
+class __device__ Layer {
+public:
+    int32_t num_features;
+    double *weights; 
+    double *bias;
+    double epsilon;
+    double grad_epsilon;
+    double *aggregatedFeatures;
+    double *preActivatedFeatures;
+    double *postActivatedFeatures;
+    double *grad_pre_act_output;
+    double *grad_weights;
+    double *grad_bias;
+    double *m_weights;
+    double *m_biases;
+    double m_epsilon;
+    double v_epsilon;
+    double *v_weights;
+    double *v_biases;
+};

@@ -703,7 +703,7 @@ namespace spomp
   void dsl_cpp_generator::generateProcCall(proc_callStmt *proc_callStmt)
   { // cout<<"INSIDE PROCCALL OF GENERATION"<<"\n";
     proc_callExpr *procedure = proc_callStmt->getProcCallExpr();
-    // cout<<"FUNCTION NAME"<<procedure->getMethodId()->getIdentifier();
+    cout << "FUNCTION NAME" << procedure->getMethodId()->getIdentifier();
     string methodID(procedure->getMethodId()->getIdentifier());
     string nodeCall("attachNodeProperty");
     string edgeCall("attachEdgeProperty");
@@ -2323,7 +2323,17 @@ namespace spomp
         else
         {
           cout << "objectID   " << objectId->getIdentifier() << endl;
-          sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), getProcName(proc).c_str());
+          string obj = "GNN ";
+          
+          if (objectId->getSymbolInfo()->getType()->isGNNType())
+          {
+            cout << "objectID   " << objectId->getIdentifier() << endl;
+            sprintf(strBuffer, "%s_omp", getProcName(proc).c_str());
+          }
+          else
+          {
+            sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), getProcName(proc).c_str());
+          }
         }
       }
       else if (indexExpr != NULL)

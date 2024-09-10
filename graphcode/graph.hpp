@@ -63,7 +63,7 @@ public:
 
   std::map<int, std::vector<edge>> getEdges();
 
-  float *getEdgeLen();
+  int *getEdgeLen();
 
   int num_nodes();
 

@@ -21,7 +21,7 @@ std::map<int, std::vector<edge>> graph::getEdges()
   return edges;
 }
 
-float *graph::getEdgeLen()
+int *graph::getEdgeLen()
 {
   return edgeLen;
 }

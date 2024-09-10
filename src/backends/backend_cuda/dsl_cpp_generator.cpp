@@ -2732,8 +2732,18 @@ namespace spcuda
         }
         else
         {
-          cout << "object identifier    " << objectId->getIdentifier() << endl;
-          sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), getProcName(proc).c_str());
+          cout << "objectID   " << objectId->getIdentifier() << endl;
+          string obj = "GNN ";
+          
+          if (objectId->getSymbolInfo()->getType()->isGNNType())
+          {
+            cout << "objectID   " << objectId->getIdentifier() << endl;
+            sprintf(strBuffer, "%s_cuda", getProcName(proc).c_str());
+          }
+          else
+          {
+            sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), getProcName(proc).c_str());
+          }
         }
         cout << "BUFFFER---    " << strBuffer << endl;
 
@@ -3412,6 +3422,10 @@ namespace spcuda
     else if (type->isGraphType())
     {
       return "graph&";
+    }
+    else if(type->isGNNType())
+    {
+      return "GNN ";
     }
     else if (type->isCollectionType())
     {
