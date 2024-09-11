@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         for (int i = 0; i < graph.num_nodes(); i++) {
             float v = pageRank.getValue(i);
             sum += v;
-            printf("Node %d: %.6g\n", i, v);
+//            printf("Node %d: %.6g\n", i, v);
         }
 //        std::cout << "Sum: " << sum << std::endl;
         std::cout << "TIME:[" << (t2 - t1) << "]" << std::endl;

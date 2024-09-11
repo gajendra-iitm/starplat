@@ -4,11 +4,15 @@
 INCDIR = /lfs/usrhome/oth/rnintern/scratch/MPI_Comparison/boost/install_dir/include
 LIBDIR = /lfs/usrhome/oth/rnintern/scratch/MPI_Comparison/boost/install_dir/lib
 
+# Set Boost Include and Boost library directory (Assuming boost is installed one directory above StarPlat root directory)
+#INCDIR = ../../../boost_1_85_0/include
+#LIBDIR = ../../../boost_1_85_0/lib
+
+
 # Define compiler and flags
-# CXX = OMPI_CXX=g++ mpicxx
+ # Tells OpenMPI which compiler to use if there's more than one compiler (Comment out if not required)
 CXX = mpicxx
-CXXFLAGS = -O3 -std=c++17 -I$(INCDIR)
-#CXXFLAGS = -g -O3 -fno-inline -fno-optimize-sibling-calls -std=c++17 -I$(INCDIR)
+CXXFLAGS = -g -std=c++17 -I$(INCDIR)
 LDFLAGS = -L$(LIBDIR)
 
 # Boost libraries
