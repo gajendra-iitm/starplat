@@ -59,3 +59,11 @@ void initializeLayers_cuda(vector<int> numnodespreLayer, char *transformation){
 	
 
 }
+
+void forwardProp_cuda(int32_t layer){
+	GraphNeuralNetworks *layers;
+	aggregatedGCN_cuda<<<numNodes, numFeatures>>>(layers, layer);
+	cudaDeviceSynchronize();
+	GCN_NN<<<numNodes, numFeatures>>>(layers, layer);
+	cudaDeviceSynchronize();
+}

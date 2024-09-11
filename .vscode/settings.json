@@ -73,7 +73,8 @@
     "unordered_set": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "gcn_test": "c"
   },
   "cph.general.saveLocation": ""
 }
