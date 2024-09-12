@@ -716,6 +716,23 @@ class Type:public ASTNode
        return type;
   }
 
+  static Type* createForHeapType(int typeIdSent,int rootTypeSent)
+  {
+       Type* type=new Type();
+       type->typeId=typeIdSent;
+       type->rootType=rootTypeSent;
+       type->setTypeofNode(NODE_TYPE);
+       return type;
+  }
+
+  static Type* createForMapType(int typeIdSent,int rootTypeSent)
+  {
+       Type* type=new Type();
+       type->typeId=typeIdSent;
+       type->rootType=rootTypeSent;
+       type->setTypeofNode(NODE_TYPE);
+       return type;
+  }
 
   static Type* createForCollectionType(int typeIdSent,int rootTypeSent, Identifier* TargetGraphSent)
   {
@@ -837,6 +854,16 @@ class Type:public ASTNode
    bool isPrimitiveType()
    {
      return check_isPrimitiveType(typeId);
+   }
+
+   bool isHeapType()
+   {
+     return check_isHeapType(typeId);
+   }
+
+    bool isMapType()
+   {
+     return check_isMapType(typeId);
    }
 
    bool isPropNodeType()
