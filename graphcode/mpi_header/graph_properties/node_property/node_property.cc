@@ -7,13 +7,6 @@ template <typename T>
 void NodeProperty<T>::syncAtomicAddsAndWrites()
 {
   propList.get_lock(0, SHARED_ALL_PROCESS_LOCK);
-  for (const auto &[proc, local_node_id] : write_change_log)
-  {
-    propList.put_data(proc, &write_buffer[proc][local_node_id], local_node_id, 1, SHARED_LOCK);
-    write_buffer[proc][local_node_id] = 0;
-  }
-  write_change_log.clear();
-
   for (const auto &[proc, local_node_id] : atomic_add_change_log)
   {
     propList.accumulate(proc, &atomic_add_buffer[proc][local_node_id], local_node_id, 1, MPI_SUM, SHARED_LOCK);
@@ -180,25 +173,10 @@ void NodeProperty<T>::setValue(int node_id, T value, bool check_concurrency)
 {
   int owner_proc = graph->get_node_owner(node_id);
   int local_node_id = graph->get_node_local_index(node_id);
-
-  if (!write_buffer_ready)
-  {
-    write_buffer.resize(world.size());
-    for (int i = 0; i < world.size(); i++)
-    {
-      write_buffer[i].resize(length);
-    }
-    write_buffer_ready = true;
-  }
-
-  if (atomic_add_buffer_ready)
-  {
-    atomic_add_buffer[owner_proc][local_node_id] = 0;
-    atomic_add_change_log.erase({owner_proc, local_node_id});
-  }
-
-  write_buffer[owner_proc][local_node_id] = value;
-  write_change_log.insert({owner_proc, local_node_id});
+  bool no_checks_needed = !check_concurrency;
+  propList.get_lock(owner_proc, SHARED_LOCK, no_checks_needed);
+  propList.put_data(owner_proc, &value, local_node_id, 1, SHARED_LOCK);
+  propList.unlock(owner_proc, SHARED_LOCK);
 }
 
 template <typename T>
