@@ -365,6 +365,15 @@ void NodeProperty<T>::atomicAdd(int node_id, T value)
   int owner_proc = graph->get_node_owner(node_id);
   int local_node_id = graph->get_node_local_index(node_id);
 
+  // If you own the node, do the atomic add directly
+  if (owner_proc == world.rank())
+  {
+    propList.get_lock(owner_proc, SHARED_LOCK);
+    propList.accumulate(owner_proc, &value, local_node_id, 1, MPI_SUM, SHARED_LOCK);
+    propList.unlock(owner_proc, SHARED_LOCK);
+    return;
+  }
+
   if (!atomic_add_buffer_ready)
   {
     atomic_add_buffer.resize(world.size());
