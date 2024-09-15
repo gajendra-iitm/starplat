@@ -12,13 +12,13 @@ class update
   int32_t weight;
 };
  
-  std::vector<update> parseUpdateFile(char* updateFile)
+  std::vector<update> parseUpdateFile(char* updateFile,int parcentage)
     { 
      std::vector<update> updates;
      std::ifstream infile;
      infile.open(updateFile);
      std::string line;
-
+    
      while (std::getline(infile,line))
      {
       

@@ -1,0 +1,13 @@
+function compute_static_TC(Graph g){
+    long staic_triangle_count=0;
+    forall(v in g.nodes()){
+        forall(u in g.neighbors(v).filter(v<u)){
+            forall(w in g.neighbors(v).filter(v<w)){
+                if(g.is_an_edge(u,w) && u<w){
+                    staic_triangle_count+=1;
+                }
+            }
+        }
+    }
+    return staic_triangle_count;
+}
