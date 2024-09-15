@@ -25,5 +25,6 @@ testcases/testAMD/*
 graphcode/generated_hip/*cc
 graphcode/generated_hip/*h
 graphcode/sample_graph_loaded
+graphcode/fetched_graphs
 .idea/
 *.o

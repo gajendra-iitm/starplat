@@ -357,10 +357,10 @@ class graph
      }
 
 
-   std::vector<update> parseUpdates(char* updateFile)
+   std::vector<update> parseUpdates(char* updateFile,double percentage)
     {
 
-        std::vector<update> update_vec = parseUpdateFile(updateFile);  
+        std::vector<update> update_vec = parseUpdateFile(updateFile,percentage);  
         return update_vec;
        
     }
