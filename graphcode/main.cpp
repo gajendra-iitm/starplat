@@ -11,7 +11,7 @@
 // #include "./update.hpp"
 // #include"./atomicUtil.h"
 // #include "./generated_omp/v_cover.cc"
-#include "./generated_omp/test_abhirup.cc"
+#include "./generated_omp/APFB_Matching.cc"
 // #include "header.h"
 // #include "./garph.hpp"
 // void DynTC(graph& g , std::vector<update> updateBatch , int batchSize);
@@ -51,13 +51,13 @@ int main(int argc, char*argv[]) {
      std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
      std::cout << "Number of edges: " << g.num_edges() << std::endl;
     double starttime = omp_get_wtime();
-    long triangle_count=compute_static_TC(g);
+    APFB(g, g.num_nodes()/2);
     // DynTC(g,parseUpdates,batchSize);
     double endtime = omp_get_wtime();
     // for (int i = 0; i < g.num_nodes(); i++) {
     //     std::cout<< vc[i] << std::endl;
     // }
-    std::cout << "Number of triangles present: " << triangle_count << std::endl;
+    // std::cout << "Number of triangles present: " << triangle_count << std::endl;
     std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
     return 0;
     }
