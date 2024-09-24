@@ -28,4 +28,5 @@ graphcode/generated_omp/*cc
 graphcode/generated_omp/*h
 graphcode/generated_cuda/*
 .idea/
+RandomCode.cpp
 *.o

@@ -1,5 +1,5 @@
 #include <string.h>
-
+#include <utility>
 #include <cassert>
 
 #include "../../ast/ASTHelper.cpp"
@@ -8,6 +8,9 @@
 #include "getUsedVars.cpp"
 
 bool flag_for_device_var = 0; // temporary fix to accomodate device variable and
+
+#define debug false
+#define MAX_STREAM_COUNT 16
 
 //~ using namespace spcuda;
 namespace spcuda
@@ -589,6 +592,25 @@ namespace spcuda
 
     void dsl_cpp_generator::generateStatement(statement *stmt, bool isMainFile)
     {
+        if (stmt->getTypeofNode() != NODE_FORALLSTMT && isMainFile)
+        {
+            for (auto i = 0; i < forAllCount; i++)
+            {
+                main.pushString(("cudaStreamDestroy(stream" + std::to_string(i) + ");").c_str());
+                main.NewLine();
+            }
+
+            if (forAllCount != 0) {
+                main.NewLine();
+                main.pushString("cudaDeviceSynchronize();");
+                main.NewLine();
+            }
+
+            forAllSet.clear();
+
+            forAllCount = 0;
+        }
+
         if (stmt->getTypeofNode() == NODE_BLOCKSTMT)
         {
             generateBlock((blockStatement *)stmt, false, isMainFile);
@@ -1808,9 +1830,6 @@ namespace spcuda
 
     void dsl_cpp_generator::generateForAll(forallStmt *forAll, bool isMainFile)
     {
-        std::cout << "---------------------------------------------------------------------------------" << std::endl;
-        liveVarsAnalyser::printLiveVarsNode(forAll);
-        std::cout << "---------------------------------------------------------------------------------" << std::endl;
         dslCodePad &targetFile = isMainFile ? main : header;
         //~ cout << "inside the forall the value of ismainfile =" << isMainFile;
         proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
@@ -1855,6 +1874,71 @@ namespace spcuda
             */
             printf("Entered here for forall \n");
 
+            auto uses = liveVarsAnalyser::getAllUses(forAll);
+            auto defs = liveVarsAnalyser::getAllDefs(forAll);
+            auto decls = Util::getAllDeclaredVars(forAll);
+
+            for (auto decl : decls)
+            {
+                uses.erase(decl);
+                defs.erase(decl);
+            }
+
+            forAll->setUses(uses);
+            forAll->setDefs(defs);
+            forAll->setDecls(decls);
+
+            if(debug)
+            {
+                for (auto use : uses)
+                {
+                    std::cout << "USE: " << use << std::endl;
+                }
+                std::cout << "---------------------------------------------------------------------------------" << std::endl;
+                for (auto def : defs)
+                {
+                    std::cout << "DEF: " << def << std::endl;
+                }
+                std::cout << "---------------------------------------------------------------------------------" << std::endl;
+                for (auto decl : decls)
+                {
+                    std::cout << "DECLARED: " << decl << std::endl;
+                }
+                std::cout << "---------------------------------------------------------------------------------" << std::endl;
+            }
+
+            std::vector<int> streamDependencies;
+
+            for(auto dep : forAllSet)
+            {
+                auto depUses = dep->getUses();
+                auto depDefs = dep->getDefs();
+
+                for(auto use : uses)
+                {
+                    if(depDefs.find(use) != depDefs.end())
+                    {
+                        // read-write dependency
+                        streamDependencies.push_back(dep->getEventId());
+                        break;
+                    }
+                }
+
+                for(auto def : defs)
+                {
+                    if(depUses.find(def) != depUses.end() || depDefs.find(def) != depDefs.end())
+                    {
+                        // write-read or write-write dependency
+                        streamDependencies.push_back(dep->getEventId());
+                        break;
+                    }
+                }
+            }
+
+            forAllSet.insert(forAll);
+            forAllCount++;
+
+
             if (!isOptimized)
             {
                 std::cout << "============EARLIER NOT OPT=============" << '\n';
@@ -1878,11 +1962,29 @@ namespace spcuda
             }
             /*memcpy to symbol*/
 
+            main.pushString(("cudaStream_t stream" + std::to_string(forAllCount - 1) + ";").c_str());
+            main.NewLine();
+            main.pushString(("if(cudaStreamCreate(&stream" + std::to_string(forAllCount - 1) + ") > 0){").c_str());
+            main.NewLine();
+            main.pushString("\tprintf(\"Error in creating stream\");");
+            main.NewLine();
+            main.pushString("\texit(1);");
+            main.NewLine();
+            main.pushString("}");
+            main.NewLine();
+
+            for(auto event : streamDependencies)
+            {
+                main.pushString(("cudaStreamWaitEvent(stream" + std::to_string(forAllCount - 1) + ", event" + std::to_string(event) + ", 0);").c_str());
+                main.NewLine();
+            }
+
+
             main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
             main.pushString("_kernel");
             main.pushString("<<<");
             main.pushString("numBlocks, threadsPerBlock");
-            main.pushString(">>>");
+            main.pushString(("0, stream" + std::to_string(forAllCount - 1) + ">>>").c_str());
             main.push('(');
             main.pushString("V,E");
             if (forAll->getIsMetaUsed()) // if d_meta is used
@@ -1919,7 +2021,6 @@ namespace spcuda
                 std::cout << "INN OPTIMESED ---------------" << '\n';
                 for (Identifier *iden : forAll->getUsedVariables())
                 {
-                    std::cout << "_" << '\n';
                     Type *type = iden->getSymbolInfo()->getType();
                     if (type->isPropType())
                     {
@@ -1939,8 +2040,17 @@ namespace spcuda
             main.push(';');
             main.NewLine();
 
-            main.pushString("cudaDeviceSynchronize();");
+            main.pushString(("cudaEvent_t event" + std::to_string(forAllCount - 1) + ";").c_str());
             main.NewLine();
+            main.pushString(("cudaEventCreate(&event" + std::to_string(forAllCount - 1) + ");").c_str());
+            main.NewLine();
+            main.pushString(("cudaEventRecord(event" + std::to_string(forAllCount - 1) + ", stream" + std::to_string(forAllCount - 1) + ");").c_str());
+            main.NewLine();
+
+            forAll->setEventId(forAllCount - 1);
+
+            // main.pushString("cudaDeviceSynchronize();");
+            // main.NewLine();
 
             if (!isOptimized)
             {
@@ -4086,6 +4196,7 @@ namespace spcuda
         list<Function *> funcList = frontEndContext.getFuncList();
         for (Function *func : funcList)
         {
+            std::cout << "Generating " << func->getIdentifier()->getIdentifier() << '\n';
             setCurrentFunc(func);
             generateFunc(func);
         }

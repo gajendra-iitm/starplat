@@ -2,6 +2,7 @@
 #define ASTNODE_H
 
 #include <string>
+#include <set>
 #include "../maincontext/enum_def.hpp"
 #include "../symbolutil/SymbolTable.h"
 #include <assert.h>
@@ -22,6 +23,7 @@ protected:
     SymbolTable *prop_symbTab;
     NodeBlockData *blockData;
     liveVarsNode *liveVarData;
+    set<string> uses, defs, decls;
 
 public:
     ASTNode()
@@ -78,6 +80,39 @@ public:
     liveVarsNode *getLiveVarsNode()
     {
         return liveVarData;
+    }
+
+    void setUses(set<string> uses)
+    {
+        this->uses.clear();
+        this->uses.insert(uses.begin(), uses.end());
+    }
+
+    void setDefs(set<string> defs)
+    {
+        this->defs.clear();
+        this->defs.insert(defs.begin(), defs.end());
+    }
+
+    void setDecls(set<string> decls)
+    {
+        this->decls.clear();
+        this->decls.insert(decls.begin(), decls.end());
+    }
+
+    set<string> getUses()
+    {
+        return uses;
+    }
+
+    set<string> getDefs()
+    {
+        return defs;
+    }
+
+    set<string> getDecls()
+    {
+        return decls;
     }
 };
 

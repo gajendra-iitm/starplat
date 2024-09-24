@@ -659,6 +659,135 @@ static ASTNode* createIterateInBFSNode(ASTNode* iterator,ASTNode* graphId,ASTNod
       iterateBFSNode=iterateBFS::nodeForIterateBFS(id1,id2,nodeCall,id3,(Expression*)filterExpr,(statement*)body, NULL); 
     return iterateBFSNode;
 }
+
+static set<string> getAllDeclaredVars(ASTNode *stmt)
+{
+    if (stmt == nullptr)
+    {
+        cout << "Error: null ASTNode*" << endl;
+    }
+
+    set<string> decls;
+
+    switch (stmt->getTypeofNode())
+    {
+    case NODE_BLOCKSTMT:
+    {
+        list<statement *> stmtlist = ((blockStatement *)stmt)->returnStatements();
+        for (auto s = stmtlist.begin(); s != stmtlist.end(); s++)
+        {
+            auto decls1 = getAllDeclaredVars(*s);
+            decls.insert(decls1.begin(), decls1.end());
+        }
+        break;
+    }
+    case NODE_DOWHILESTMT:
+    {
+        auto decls1 = getAllDeclaredVars(((dowhileStmt *)stmt)->getBody());
+        auto decls2 = getAllDeclaredVars(((dowhileStmt *)stmt)->getCondition());
+
+        decls.insert(decls1.begin(), decls1.end());
+        decls.insert(decls2.begin(), decls2.end());
+
+        break;
+    }
+    case NODE_FIXEDPTSTMT:
+    {
+        auto decls1 = getAllDeclaredVars(((fixedPointStmt *)stmt)->getFixedPointId());
+        auto decls2 = getAllDeclaredVars(((fixedPointStmt *)stmt)->getBody());
+
+        decls.insert(decls1.begin(), decls1.end());
+        decls.insert(decls2.begin(), decls2.end());
+
+        break;
+    }
+    case NODE_FORALLSTMT:
+    {
+        auto decls1 = getAllDeclaredVars(((forallStmt *)stmt)->getIterator());
+        auto decls2 = getAllDeclaredVars(((forallStmt *)stmt)->getBody());
+
+        decls.insert(decls1.begin(), decls1.end());
+        decls.insert(decls2.begin(), decls2.end());
+
+        break;
+    }
+    case NODE_IFSTMT:
+    {
+        auto decls1 = getAllDeclaredVars(((ifStmt *)stmt)->getCondition());
+        auto decls2 = getAllDeclaredVars(((ifStmt *)stmt)->getIfBody());
+
+        decls.insert(decls1.begin(), decls1.end());
+        decls.insert(decls2.begin(), decls2.end());
+
+        if (((ifStmt *)stmt)->getElseBody())
+        {
+            auto decls3 = getAllDeclaredVars(((ifStmt *)stmt)->getElseBody());
+            decls.insert(decls3.begin(), decls3.end());
+        }
+
+        break;
+    }
+    case NODE_ITRBFS:
+    {
+        auto decls1 = getAllDeclaredVars(((iterateBFS *)stmt)->getIteratorNode());
+        decls.insert(decls1.begin(), decls1.end());
+
+        Expression *filter = ((iterateBFS *)stmt)->getBFSFilter();
+        if (filter != nullptr)
+        {
+            auto decls2 = getAllDeclaredVars(filter);
+            decls.insert(decls2.begin(), decls2.end());
+        }
+
+        auto decls3 = getAllDeclaredVars(((iterateBFS *)stmt)->getBody());
+        decls.insert(decls3.begin(), decls3.end());
+
+        iterateReverseBFS *reverse = ((iterateBFS *)stmt)->getRBFS();
+        if (reverse != nullptr)
+        {
+            auto decls4 = getAllDeclaredVars(reverse);
+            decls.insert(decls4.begin(), decls4.end());
+        }
+
+        break;
+    }
+    case NODE_ITRRBFS:
+    {
+        Expression *filter = ((iterateReverseBFS *)stmt)->getBFSFilter();
+        if (filter != nullptr)
+        {
+            auto decls1 = getAllDeclaredVars(filter);
+            decls.insert(decls1.begin(), decls1.end());
+        }
+
+        auto decls2 = getAllDeclaredVars(((iterateReverseBFS *)stmt)->getBody());
+        decls.insert(decls2.begin(), decls2.end());
+
+        break;
+    }
+    case NODE_WHILESTMT:
+    {
+        auto decls1 = getAllDeclaredVars(((whileStmt *)stmt)->getCondition());
+        auto decls2 = getAllDeclaredVars(((whileStmt *)stmt)->getBody());
+
+        decls.insert(decls1.begin(), decls1.end());
+        decls.insert(decls2.begin(), decls2.end());
+
+        break;
+    }
+    case NODE_DECL:
+    {
+        declaration *decl = (declaration *)stmt;
+        decls.insert(decl->getdeclId()->getIdentifier());
+    }
+    default:
+    {
+        
+    }
+    }
+
+    return decls;
+}
 };
 
 
