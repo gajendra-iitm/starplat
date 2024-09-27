@@ -1063,6 +1063,7 @@ public:
     Expression *integerConstantExpr = new Expression();
     integerConstantExpr->integerConstant = integerValue;
     integerConstantExpr->typeofExpr = EXPR_INTCONSTANT;
+    integerConstantExpr->overallType = TYPE_INT;
     return integerConstantExpr;
   }
 
@@ -1071,6 +1072,7 @@ public:
     Expression *doubleConstantExpr = new Expression();
     doubleConstantExpr->floatConstant = doubleValue;
     doubleConstantExpr->typeofExpr = EXPR_FLOATCONSTANT;
+    doubleConstantExpr->overallType = TYPE_FLOAT;
     return doubleConstantExpr;
   }
   static Expression *nodeForBooleanConstant(bool boolValue)
@@ -1078,6 +1080,7 @@ public:
     Expression *boolExpr = new Expression();
     boolExpr->booleanConstant = boolValue;
     boolExpr->typeofExpr = EXPR_BOOLCONSTANT;
+    boolExpr->overallType = TYPE_BOOL;
     return boolExpr;
   }
 
