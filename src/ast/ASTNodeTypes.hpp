@@ -2237,6 +2237,7 @@ private:
     std::set<TableEntry *> modifiedGlobalVars;
 
     int eventId;
+    int streamId;
 
 public:
     forallStmt()
@@ -2577,6 +2578,16 @@ public:
     int getEventId()
     {
         return eventId;
+    }
+
+    void setStreamId(int id)
+    {
+        this->streamId = id;
+    }
+
+    int getStreamId()
+    {
+        return streamId;
     }
 };
 class reductionCall : public ASTNode

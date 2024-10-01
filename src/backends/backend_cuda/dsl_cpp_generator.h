@@ -65,7 +65,8 @@ namespace spcuda
         bool isHeader;
         bool isOptimized;
 
-        int forAllCount;
+        int streamCount;
+        int eventCount;
         std::unordered_set<forallStmt*> forAllSet;
 
     public:
@@ -87,7 +88,8 @@ namespace spcuda
             staticFuncCount = 0;
             inFuncCount = 0;
             decFuncCount = 0;
-            forAllCount = 0;
+            streamCount = 0;
+            eventCount = 0;
         }
 
         void generateNestedContainer(Type *type, bool isMainFile);
