@@ -1,0 +1,11 @@
+generator*.cpp of the following backends do not have generateParamList() method. 
+
+AMD
+HIP
+Sycl
+
+
+Once added, the following lines need to be added to support passing params by ref.
+
+if((*itr)->isByReference())
+          targetFile.pushString(" &");
