@@ -922,19 +922,22 @@ class formalParam : public ASTNode
 private:
   Type *type;
   Identifier *identifier;
+  bool byReference;
 
 public:
   formalParam()
   {
     type = NULL;
     identifier = NULL;
+    byReference = false;
   }
 
-  static formalParam *createFormalParam(Type *typeSent, Identifier *identifierSent)
+  static formalParam *createFormalParam(Type *typeSent, bool byRef, Identifier *identifierSent)
   {
     formalParam *formalPNode = new formalParam();
     formalPNode->type = typeSent;
     formalPNode->identifier = identifierSent;
+    formalPNode->byReference = byRef;
     formalPNode->setTypeofNode(NODE_FORMALPARAM);
 
     return formalPNode;
@@ -949,6 +952,12 @@ public:
   {
     return identifier;
   }
+
+  bool isByReference()
+  {
+    return byReference;
+  }
+
 };
 
 class Expression : public ASTNode

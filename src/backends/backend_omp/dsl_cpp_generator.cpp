@@ -2800,6 +2800,10 @@ void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodeP
           targetFile.pushString(" ");
          // targetFile.space();
       //}   
+
+      if((*itr)->isByReference())
+          targetFile.pushString("&");
+
       targetFile.pushString(/*createParamName(*/(*itr)->getIdentifier()->getIdentifier());
       if(argumentTotal>0)
          targetFile.pushString(" , ");

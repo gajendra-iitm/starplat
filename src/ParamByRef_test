@@ -1,0 +1,15 @@
+function test(double &arg1,int &arg2)
+{
+    int a = 0;
+    if(a == 0)
+    {
+        arg1 = 1.0;
+        arg2 = 2;
+    }
+    else
+    {
+        arg1 = 2.0;
+        arg2 = 3;
+    }
+
+}

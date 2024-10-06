@@ -1,4 +1,3 @@
-%define parse.trace
 %{
 	#include <stdio.h>
 	#include <string.h>
@@ -82,6 +81,7 @@
 %type <node> reductionCall 
 %type <aList> arg_list
 %type <ival> reduction_calls reduce_op
+%type <bval> by_reference
 
 
 
@@ -152,9 +152,9 @@ type: type1 {$$ = $1;}
     | type2 {$$ = $1;}
 	| type3 {$$ = $1;}
 
-param : type1 id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+param : type1 by_reference id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($3);
                         Type* type=(Type*)$1;
-	                     Identifier* id=(Identifier*)$2;
+	                     Identifier* id=(Identifier*)$3;
 						 
 						 if(type->isGraphType())
 						    {
@@ -162,18 +162,22 @@ param : type1 id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($2)
 						   
 							}
 					printf("\n");
-                    $$=Util::createParamNode($1,$2); } ;
-               | type2 id { // Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+                    $$=Util::createParamNode($1,$2,$3); } ;
+               | type2 by_reference id { // Identifier* id=(Identifier*)Util::createIdentifierNode($3);
 			  
 					
-                             $$=Util::createParamNode($1,$2);};
-			   | type2 id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($4);
-			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+                             $$=Util::createParamNode($1,$2,$3);};
+			   | type2 by_reference id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($4);
+			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($3);
 				                        Type* tempType=(Type*)$1;
 			                            if(tempType->isNodeEdgeType())
-										  tempType->addSourceGraph($4);
-				                         $$=Util::createParamNode(tempType,$2);
+										  tempType->addSourceGraph($5);
+				                         $$=Util::createParamNode(tempType,$2,$3);
 									 };
+
+
+by_reference : /* epsilon */ {$$ = false;};
+		| '&' {$$ = true;};
 
 
 function_body : blockstatements {$$=$1;};
