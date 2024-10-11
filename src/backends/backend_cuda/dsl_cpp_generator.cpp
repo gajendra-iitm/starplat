@@ -1505,6 +1505,9 @@ void dsl_cpp_generator::generateCallList(list<formalParam*> paramList, dslCodePa
 }
 
 void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodePad& targetFile) {
+  
+  cout<<"\nParams Generator...."<<endl;
+  
   int maximum_arginline = 4;
   int arg_currNo = 0;
   int argumentTotal = paramList.size();
@@ -1532,9 +1535,6 @@ void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodeP
     //~ targetFile.pushString("int* d_meta, int* d_data, int* d_weight");
     //~ }
     targetFile.pushString(" ");
-
-    if((*itr)->isByReference())
-          targetFile.pushString("&");
 
     if (type->isPropType()) {
       targetFile.pushString("d_");
@@ -3630,6 +3630,10 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
     char* parName = (*itr)->getIdentifier()->getIdentifier();
 
     targetFile.pushString(" ");
+    
+    if((*itr)->isByReference())
+          targetFile.pushString("&");
+
     char str[80];
     strcpy(str, "d_");
     strcat(str, (*itr)->getIdentifier()->getIdentifier());

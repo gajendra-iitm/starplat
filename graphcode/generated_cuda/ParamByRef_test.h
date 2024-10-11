@@ -11,7 +11,7 @@
 #include "../libcuda.cuh"
 #include <cooperative_groups.h>
 
-void test(double arg1,int arg2);
+void test(double &arg1,int &arg2);
 
 __device__ double arg1 ;
 __device__ int arg2 ;
