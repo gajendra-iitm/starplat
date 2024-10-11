@@ -1506,8 +1506,6 @@ void dsl_cpp_generator::generateCallList(list<formalParam*> paramList, dslCodePa
 
 void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodePad& targetFile) {
   
-  cout<<"\nParams Generator...."<<endl;
-  
   int maximum_arginline = 4;
   int arg_currNo = 0;
   int argumentTotal = paramList.size();
