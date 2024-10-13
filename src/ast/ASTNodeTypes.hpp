@@ -2238,6 +2238,8 @@ private:
 
     int eventId;
     int streamId;
+    bool firstInStream;
+    std::vector<int> eventDeps;
 
 public:
     forallStmt()
@@ -2257,6 +2259,9 @@ public:
         sourceExpr = NULL;
         reductionStatement = NULL;
         containsreductionStatement = false;
+        eventId = -1;
+        streamId = -1;
+        firstInStream = false;
     }
 
     static forallStmt *createforallStmt(Identifier *iterator, Identifier *sourceGraph, proc_callExpr *extractElemFunc, statement *body, Expression *filterExpr, bool isforall)
@@ -2588,6 +2593,26 @@ public:
     int getStreamId()
     {
         return streamId;
+    }
+
+    void setFirstInStream()
+    {
+        firstInStream = true;
+    }
+
+    bool isFirstInStream()
+    {
+        return firstInStream;
+    }
+
+    void addEventDep(int id)
+    {
+        eventDeps.push_back(id);
+    }
+
+    std::vector<int> getEventDeps()
+    {
+        return eventDeps;
     }
 };
 class reductionCall : public ASTNode

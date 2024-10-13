@@ -65,9 +65,7 @@ namespace spcuda
         bool isHeader;
         bool isOptimized;
 
-        int streamCount;
-        int eventCount;
-        std::unordered_set<forallStmt*> forAllSet;
+        std::vector<forallStmt*> forAllVec;
 
     public:
         dsl_cpp_generator()
@@ -88,8 +86,6 @@ namespace spcuda
             staticFuncCount = 0;
             inFuncCount = 0;
             decFuncCount = 0;
-            streamCount = 0;
-            eventCount = 0;
         }
 
         void generateNestedContainer(Type *type, bool isMainFile);

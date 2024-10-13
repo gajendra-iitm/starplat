@@ -593,24 +593,130 @@ namespace spcuda
 
     void dsl_cpp_generator::generateStatement(statement *stmt, bool isMainFile)
     {
-        if (stmt->getTypeofNode() != NODE_FORALLSTMT && isMainFile)
+        if (stmt->getTypeofNode() != NODE_FORALLSTMT && !forAllVec.empty() && isMainFile)
         {
-            for (auto i = 0; i < streamCount; i++)
+            int numForAlls = forAllVec.size();
+            int streamCounter = 0, eventCounter = 0;
+
+            std::map<int, std::vector<forallStmt *>> streamMap;
+
+            forAllVec[0]->setStreamId(streamCounter++);
+            forAllVec[0]->setFirstInStream();
+            streamMap[forAllVec[0]->getStreamId()].push_back(forAllVec[0]);
+
+            for(int i=1; i<numForAlls; i++)
+            {
+                auto forAll = forAllVec[i];
+                std::vector<forallStmt*> deps;
+
+                for(int j=0; j<i; j++)
+                {
+                    auto dep = forAllVec[j];
+
+                    auto depUses = dep->getUses();
+                    auto depDefs = dep->getDefs();
+
+                    bool hasDep = false;
+                    for (auto use : forAll->getUses())
+                    {
+                        if (depDefs.find(use) != depDefs.end())
+                        {
+                            // read-write dependency
+                            deps.push_back(dep);
+                            hasDep = true;
+                            break;
+                        }
+                    }
+
+                    if (hasDep)
+                        continue;
+
+                    for (auto def : forAll->getDefs())
+                    {
+                        if (depUses.find(def) != depUses.end() || depDefs.find(def) != depDefs.end())
+                        {
+                            // write-read or write-write dependency
+                            deps.push_back(dep);
+                            break;
+                        }
+                    }
+                }
+
+                if (deps.empty())
+                {
+                    forAll->setStreamId(streamCounter++);
+                    forAll->setFirstInStream();
+                    streamMap[forAll->getStreamId()].push_back(forAll);
+                    continue;
+                }
+                else
+                {
+                    std::set<int> streamDeps;
+                    std::vector<forallStmt*> realDeps;
+
+                    int numDeps = deps.size();
+
+                    for(int i=numDeps-1; i>=0; i--)
+                    {
+                        if(streamDeps.find(deps[i]->getStreamId()) == streamDeps.end())
+                        {
+                            realDeps.push_back(deps[i]);
+                            streamDeps.insert(deps[i]->getStreamId());
+                        }
+                    }
+
+                    int numRealDeps = realDeps.size();
+
+                    for(int i=0; i<numRealDeps; i++)
+                    {
+                        if (streamMap[realDeps[i]->getStreamId()].back() == realDeps[i])
+                        {
+                            forAll->setStreamId(realDeps[i]->getStreamId());
+                            streamMap[forAll->getStreamId()].push_back(forAll);
+                            realDeps.erase(realDeps.begin() + i);
+                            numRealDeps--;
+                            break;
+                        }
+                    }
+
+                    if(forAll->getStreamId() == -1)
+                    {
+                        forAll->setStreamId(streamCounter++);
+                        forAll->setFirstInStream();
+                        streamMap[forAll->getStreamId()].push_back(forAll);
+                    }
+
+                    for(int i=0; i<numRealDeps; i++)
+                    {
+                        auto dep = realDeps[i];
+                        if(dep->getEventId() == -1)
+                        {
+                            dep->setEventId(eventCounter++);
+                        }
+                        forAll->addEventDep(dep->getEventId());
+                    }
+                }
+            }
+
+            for(auto forAll : forAllVec)
+            {
+                generateForAll(forAll, false);
+            }
+
+            for (auto i = 0; i < streamCounter; i++)
             {
                 main.pushString(("cudaStreamDestroy(stream" + std::to_string(i) + ");").c_str());
                 main.NewLine();
             }
 
-            if (streamCount != 0)
+            if (streamCounter != 0)
             {
                 main.NewLine();
                 main.pushString("cudaDeviceSynchronize();");
                 main.NewLine();
             }
 
-            forAllSet.clear();
-
-            streamCount = 0;
+            forAllVec.clear();
         }
 
         if (stmt->getTypeofNode() == NODE_BLOCKSTMT)
@@ -650,7 +756,48 @@ namespace spcuda
         {
             std::cout << "STMT: For" << '\n';
             printf("isMainFile val %d\n", isMainFile);
-            generateForAll((forallStmt *)stmt, isMainFile);
+            forallStmt* forAll = (forallStmt*)stmt;
+            if(forAll->isForall())
+            {
+                auto uses = liveVarsAnalyser::getAllUses(forAll);
+                auto defs = liveVarsAnalyser::getAllDefs(forAll);
+                auto decls = Util::getAllDeclaredVars(forAll);
+
+                for (auto decl : decls)
+                {
+                    uses.erase(decl);
+                    defs.erase(decl);
+                }
+
+                forAll->setUses(uses);
+                forAll->setDefs(defs);
+                forAll->setDecls(decls);
+
+                forAllVec.push_back((forallStmt *)stmt);
+
+                if (debug)
+                {
+                    for (auto use : uses)
+                    {
+                        std::cout << "USE: " << use << std::endl;
+                    }
+                    std::cout << "---------------------------------------------------------------------------------" << std::endl;
+                    for (auto def : defs)
+                    {
+                        std::cout << "DEF: " << def << std::endl;
+                    }
+                    std::cout << "---------------------------------------------------------------------------------" << std::endl;
+                    for (auto decl : decls)
+                    {
+                        std::cout << "DECLARED: " << decl << std::endl;
+                    }
+                    std::cout << "---------------------------------------------------------------------------------" << std::endl;
+                }
+            }
+            else
+            {
+                generateForAll((forallStmt *)stmt, isMainFile);
+            }
         }
 
         if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT)
@@ -1876,67 +2023,6 @@ namespace spcuda
             */
             printf("Entered here for forall \n");
 
-            auto uses = liveVarsAnalyser::getAllUses(forAll);
-            auto defs = liveVarsAnalyser::getAllDefs(forAll);
-            auto decls = Util::getAllDeclaredVars(forAll);
-
-            for (auto decl : decls)
-            {
-                uses.erase(decl);
-                defs.erase(decl);
-            }
-
-            forAll->setUses(uses);
-            forAll->setDefs(defs);
-            forAll->setDecls(decls);
-
-            if(debug)
-            {
-                for (auto use : uses)
-                {
-                    std::cout << "USE: " << use << std::endl;
-                }
-                std::cout << "---------------------------------------------------------------------------------" << std::endl;
-                for (auto def : defs)
-                {
-                    std::cout << "DEF: " << def << std::endl;
-                }
-                std::cout << "---------------------------------------------------------------------------------" << std::endl;
-                for (auto decl : decls)
-                {
-                    std::cout << "DECLARED: " << decl << std::endl;
-                }
-                std::cout << "---------------------------------------------------------------------------------" << std::endl;
-            }
-
-            std::vector<std::pair<int, int>> streamDependencies;
-
-            for(auto dep : forAllSet)
-            {
-                auto depUses = dep->getUses();
-                auto depDefs = dep->getDefs();
-
-                for(auto use : uses)
-                {
-                    if(depDefs.find(use) != depDefs.end())
-                    {
-                        // read-write dependency
-                        streamDependencies.push_back(std::make_pair(dep->getStreamId(),dep->getEventId()));
-                    }
-                }
-
-                for(auto def : defs)
-                {
-                    if(depUses.find(def) != depUses.end() || depDefs.find(def) != depDefs.end())
-                    {
-                        // write-read or write-write dependency
-                        streamDependencies.push_back(std::make_pair(dep->getStreamId(), dep->getEventId()));
-                    }
-                }
-            }
-
-            forAllSet.insert(forAll);
-
             if (!isOptimized)
             {
                 std::cout << "============EARLIER NOT OPT=============" << '\n';
@@ -1960,12 +2046,11 @@ namespace spcuda
             }
             /*memcpy to symbol*/
 
-            int streamIdForThisForAll;
-            if (streamDependencies.empty())
+            if (forAll->isFirstInStream())
             {
-                main.pushString(("cudaStream_t stream" + std::to_string(streamCount) + ";").c_str());
+                main.pushString(("cudaStream_t stream" + std::to_string(forAll->getStreamId()) + ";").c_str());
                 main.NewLine();
-                main.pushString(("if(cudaStreamCreate(&stream" + std::to_string(streamCount) + ") > 0){").c_str());
+                main.pushString(("if(cudaStreamCreate(&stream" + std::to_string(forAll->getStreamId()) + ") > 0){").c_str());
                 main.NewLine();
                 main.pushString("\tprintf(\"Error in creating stream\");");
                 main.NewLine();
@@ -1973,59 +2058,20 @@ namespace spcuda
                 main.NewLine();
                 main.pushString("}");
                 main.NewLine();
-
-                forAll->setStreamId(streamCount);
-                streamIdForThisForAll = streamCount;
-                streamCount++;
             }
-            else
+
+            auto eventDeps = forAll->getEventDeps();
+            for(int dep : eventDeps)
             {
-                sort(streamDependencies.begin(), streamDependencies.end(), [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
-                    if(a.first == b.first)
-                        return a.second > b.second;
-                    return a.first < b.first;
-                });
-
-                streamIdForThisForAll = streamDependencies[0].first;
-
-                auto itr = streamDependencies.begin();
-                while(itr != streamDependencies.end())
-                {
-                    if(itr->first == streamIdForThisForAll)
-                    {
-                        streamDependencies.erase(itr);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                itr = streamDependencies.begin();
-                int temp = itr->first;
-                main.pushString(("cudaStreamWaitEvent(stream" + std::to_string(streamIdForThisForAll) + ", event" + std::to_string(itr->second) + ", 0);").c_str());
+                main.pushString(("cudaStreamWaitEvent(stream" + std::to_string(forAll->getStreamId()) + ", event" + std::to_string(dep) + ", 0);").c_str());
                 main.NewLine();
-
-                while(itr != streamDependencies.end())
-                {
-                    if(itr->second != temp)
-                    {
-                        main.pushString(("cudaStreamWaitEvent(stream" + std::to_string(streamIdForThisForAll) + ", event" + std::to_string(itr->second) + ", 0);").c_str());
-                        main.NewLine();
-                        temp = itr->second;
-
-                    }
-                    itr++;
-                }
-
-                forAll->setStreamId(streamIdForThisForAll);
             }
 
             main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
             main.pushString("_kernel");
             main.pushString("<<<");
-            main.pushString("numBlocks, threadsPerBlock");
-            main.pushString(("0, stream" + std::to_string(streamIdForThisForAll) + ">>>").c_str());
+            main.pushString("numBlocks, threadsPerBlock, ");
+            main.pushString(("0, stream" + std::to_string(forAll->getStreamId()) + ">>>").c_str());
             main.push('(');
             main.pushString("V,E");
             if (forAll->getIsMetaUsed()) // if d_meta is used
@@ -2081,15 +2127,15 @@ namespace spcuda
             main.push(';');
             main.NewLine();
 
-            main.pushString(("cudaEvent_t event" + std::to_string(eventCount) + ";").c_str());
-            main.NewLine();
-            main.pushString(("cudaEventCreate(&event" + std::to_string(eventCount) + ");").c_str());
-            main.NewLine();
-            main.pushString(("cudaEventRecord(event" + std::to_string(eventCount) + ", stream" + std::to_string(streamIdForThisForAll) + ");").c_str());
-            main.NewLine();
-
-            forAll->setEventId(eventCount);
-            eventCount++;
+            if(forAll->getEventId() != -1)
+            {
+                main.pushString(("cudaEvent_t event" + std::to_string(forAll->getEventId()) + ";").c_str());
+                main.NewLine();
+                main.pushString(("cudaEventCreate(&event" + std::to_string(forAll->getEventId()) + ");").c_str());
+                main.NewLine();
+                main.pushString(("cudaEventRecord(event" + std::to_string(forAll->getEventId()) + ", stream" + std::to_string(forAll->getStreamId()) + ");").c_str());
+                main.NewLine();
+            }
 
             // main.pushString("cudaDeviceSynchronize();");
             // main.NewLine();
