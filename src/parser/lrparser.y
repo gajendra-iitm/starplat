@@ -167,7 +167,7 @@ param : type1 by_reference id {  //Identifier* id=(Identifier*)Util::createIdent
 			  
 					
                              $$=Util::createParamNode($1,$2,$3);};
-			   | type2 by_reference id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($4);
+			   | type2 by_reference id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($5);
 			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($3);
 				                        Type* tempType=(Type*)$1;
 			                            if(tempType->isNodeEdgeType())

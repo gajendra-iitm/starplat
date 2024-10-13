@@ -223,6 +223,12 @@ namespace spsycl
 
             Type *type = (*itr)->getType();
             main.pushString(convertToCppType(type));
+            
+            main.pushString(" ");
+
+            if((*itr)->isByReference())
+                main.pushString("&");
+
             char *parName = (*itr)->getIdentifier()->getIdentifier();
 
             main.pushString(" ");

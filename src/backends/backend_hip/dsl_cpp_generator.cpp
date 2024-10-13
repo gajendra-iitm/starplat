@@ -135,6 +135,9 @@ namespace sphip {
 
             targetFile.pushString(" ");
 
+            if((*itr)->isByReference())
+                targetFile.pushString("&");
+
             if (!isMainFile) {
                 if (type->isGraphType()) {
                     generateCsr = true;
