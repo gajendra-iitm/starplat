@@ -1,5 +1,5 @@
-#ifndef GENCPP_TEST_ABHIRUP_H
-#define GENCPP_TEST_ABHIRUP_H
+#ifndef GENCPP_BC_DSLV2_H
+#define GENCPP_BC_DSLV2_H
 #include<stdio.h>
 #include<stdlib.h>
 #include<limits.h>
@@ -8,6 +8,6 @@
 #include"../graph.hpp"
 #include"../atomicUtil.h"
 
-auto compute_static_TC(graph& g);
+void Compute_BC(graph& g , float* BC , std::set<int>& sourceSet);
 
 #endif

@@ -11,7 +11,7 @@
 // #include "./update.hpp"
 // #include"./atomicUtil.h"
 // #include "./generated_omp/v_cover.cc"
-#include "./generated_omp/APFB_Matching.cc"
+#include "/lfs/usrhome/mtech/cs23m006/new_repo/starplat/graphcode/generated_omp/dynamicAPFB_testing_dyn.cc"
 // #include "header.h"
 // #include "./garph.hpp"
 // void DynTC(graph& g , std::vector<update> updateBatch , int batchSize);
@@ -45,13 +45,13 @@ int main(int argc, char*argv[]) {
     
     float* vc = new float[g.num_nodes()];
     g.parseGraph();
-    std::vector<update> parseUpdates=parseUpdateFile(updateFile,100);
+    std::vector<update> parseUpdates=parseUpdateFile(updateFile,0.0000001);
     int batchSize=parseUpdates.size();
-    std::cout <<"batch size = " <<batchSize << std::endl;
+    std::cout <<"batch size = " <<batchSize/2 << std::endl;
      std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
      std::cout << "Number of edges: " << g.num_edges() << std::endl;
     double starttime = omp_get_wtime();
-    APFB(g, g.num_nodes()/2);
+    // DynAPFB(g, g.num_nodes()/2,parseUpdates,batchSize/2);
     // DynTC(g,parseUpdates,batchSize);
     double endtime = omp_get_wtime();
     // for (int i = 0; i < g.num_nodes(); i++) {

@@ -1,6 +1,11 @@
-#include"APFB_Matching.h"
+#include"APFB_dsl_test.h"
 
-void APFB(graph& g , int nc)
+auto mod(int a , int b)
+{
+  return a - b * (a / b);
+
+}
+auto APFB(graph& g , int nc)
 {
   bool* modified=new bool[g.num_nodes()];
   bool* modified_nxt=new bool[g.num_nodes()];
@@ -27,6 +32,15 @@ void APFB(graph& g , int nc)
   int* predeccesor=new int[g.num_nodes()];
   bool* compress=new bool[g.num_nodes()];
   bool* compress_next=new bool[g.num_nodes()];
+  bool* visited=new bool[g.num_nodes()];
+  #pragma omp parallel for
+  for (int t = 0; t < g.num_nodes(); t ++) 
+  {
+    visited[t] = false;
+  }
+  int evenComponents = 0;
+  int oddComponents = 0;
+  int unmatchedComponents = 0;
   while ( !noNewPaths )
   {
     noNewPaths = true;
@@ -174,18 +188,115 @@ void APFB(graph& g , int nc)
       }
     }
   }
-      std::cout << "Matching Results:\n";
-    
-    long match_count = 0LL;
-    #pragma omp parallel for
-    for (int r = 0; r < g.num_nodes(); r++) {
-        if (r >= nc && rmatch[r] != -1) {
-            ++match_count;
+  bool* in_bfs=new bool[g.num_nodes()];
+  bool* isMatching=new bool[g.num_nodes()];
+  int* bfsDist=new int[g.num_nodes()];
+  #pragma omp parallel for
+  for (int t = 0; t < g.num_nodes(); t ++) 
+  {
+    bfsDist[t] = 0;
+  }
+  #pragma omp parallel for
+  for (int t = 0; t < g.num_nodes(); t ++) 
+  {
+    in_bfs[t] = false;
+  }
+  #pragma omp parallel for
+  for (int t = 0; t < g.num_nodes(); t ++) 
+  {
+    isMatching[t] = false;
+  }
+  int componentSize = 0;
+  int unmatchedCount = 0;
+  int altEdgeCount = 0;
+  #pragma omp parallel for
+  for (int v = 0; v < g.num_nodes(); v ++) 
+  {
+    visited[v] = true;
+    in_bfs[v] = true;
+    isMatching[v] = (cmatch[v] != -1 || rmatch[v] != -1);
+    bfsDist[v] = 0;
+    std::vector<std::vector<int>> levelNodes(g.num_nodes()) ;
+    std::vector<std::vector<int>>  levelNodes_later(omp_get_max_threads()) ;
+    std::vector<int>  levelCount(g.num_nodes()) ;
+    int phase = 0 ;
+    levelNodes[phase].push_back(v) ;
+    int bfsCount = 1 ;
+    levelCount[phase] = bfsCount;
+    while ( bfsCount > 0 )
+    {
+       int prev_count = bfsCount ;
+      bfsCount = 0 ;
+      #pragma omp parallel for
+      for( int l = 0; l < prev_count ; l++)
+      {
+        int u = levelNodes[phase][l] ;
+        for(int edge = g.indexofNodes[u] ; edge < g.indexofNodes[u+1] ; edge++) {
+          int nbr = g.edgeList[edge] ;
+          int dnbr ;
+          if(bfsDist[nbr]<0)
+          {
+            dnbr = __sync_val_compare_and_swap(&bfsDist[nbr],-1,bfsDist[u]+1);
+            if (dnbr < 0)
+            {
+              int num_thread = omp_get_thread_num();
+               levelNodes_later[num_thread].push_back(nbr) ;
+            }
+          }
         }
+        bool isMatchedEdge = (cmatch[u] != -1 || rmatch[u] != -1);
+        for (int edge = g.indexofNodes[u]; edge < g.indexofNodes[u+1]; edge ++) 
+        {int neigh = g.edgeList[edge] ;
+          if(bfsDist[neigh]==bfsDist[u]+1)
+          {
+            if (!visited[neigh] )
+              {
+              bool nextIsMatchedEdge = !isMatchedEdge;
+              if ((isMatchedEdge && (cmatch[u] == neigh || rmatch[u] == neigh)) || (!isMatchedEdge && (cmatch[u] == -1 || rmatch[u] == -1)) )
+                {
+                visited[neigh] = true;
+                altEdgeCount = altEdgeCount + 1;
+                isMatching[neigh] = nextIsMatchedEdge;
+                in_bfs[neigh] = true;
+              }
+            }
+          }
+        }
+      }
+      phase = phase + 1 ;
+      for(int i = 0;i < omp_get_max_threads();i++)
+      {
+         levelNodes[phase].insert(levelNodes[phase].end(),levelNodes_later[i].begin(),levelNodes_later[i].end());
+         bfsCount = bfsCount+levelNodes_later[i].size();
+         levelNodes_later[i].clear();
+      }
+       levelCount[phase] = bfsCount ;
     }
-    // #pragma omp parallel for
-    // for (int c = 0; c < nc; c++) {
-    //     ++ match_count;
-    // }
-    std::cout << "Number of matches: " << match_count << std::endl;
+    phase = phase - 1 ;
+    if (unmatchedCount == 0 && mod(altEdgeCount,2) == 0 )
+      {
+      evenComponents = evenComponents + 1;
+    }
+    else
+    if (mod(altEdgeCount,2) == 1 )
+      {
+      oddComponents = oddComponents + 1;
+    }
+    else
+    {
+      unmatchedComponents = unmatchedComponents + 1;
+    }
+    int* bfsDist=new int[g.num_nodes()];
+  }
+  int totalMatching = 0;
+  #pragma omp parallel for
+  for (int v = 0; v < g.num_nodes(); v ++) 
+  {
+    if (rmatch[v] != -1 )
+      {
+      totalMatching = totalMatching + 1;
+    }
+  }
+  return totalMatching;
+
 }

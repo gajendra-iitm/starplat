@@ -548,9 +548,9 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       buildForStatements(decl);
       blockStmt->insertToBlock(decl, procPos);
       argument *arg = createAssignedArg(id);
-      proc_callStmt *proc = (proc_callStmt *)*itrProc;
-      proc_callExpr *pExpr = proc->getProcCallExpr();
-      pExpr->addToArgList(arg);
+      // proc_callStmt *proc = (proc_callStmt *)*itrProc;
+      // proc_callExpr *pExpr = proc->getProcCallExpr();
+      // pExpr->addToArgList(arg);
       PropAccess *propIdNode = PropAccess::createPropAccessNode(itrbFS->getRootNode(), id);
       Expression *expr = Expression::nodeForIntegerConstant(0);
       assignment *assignmentNode = assignment::prop_assignExpr(propIdNode, expr);

@@ -1,0 +1,331 @@
+function mod(int a,int b){
+    return a - b * (a / b);
+}
+function APFB(Graph g, int nc,propNode<int> rmatch,propNode<int> cmatch){
+    propNode<bool> modified;
+    g.attachNodeProperty(modified = False);
+    g.attachNodeProperty(rmatch = -1);
+    g.attachNodeProperty(cmatch = -1);
+    bool noNewPaths = False;
+    propNode<int> bfsArray;
+    propNode<int> predeccesor;
+    
+    propNode<bool> compress;
+    propNode<bool> compress_next;
+    
+    propNode<bool> visited; 
+    g.attachNodeProperty(visited = False); 
+    
+    int evenComponents = 0;
+    int oddComponents = 0;
+    int unmatchedComponents = 0;
+    
+    fixedPoint until (noNewPaths : !modified) {
+        int L0 = 0; 
+        int NOT_VISITED = L0 - 1;
+        g.attachNodeProperty(bfsArray = NOT_VISITED);
+        forall(c in g.nodes()){
+            if(c < nc){
+                if(c.cmatch == -1){
+                    c.bfsArray = L0;
+                }
+            }
+        }
+        g.attachNodeProperty(predeccesor = -1); 
+        
+        int bfsLevel = L0;
+        bool noNewVertices = False;
+        fixedPoint until (noNewVertices : !modified) {
+            forall(col_vertex in g.nodes()){
+                if(col_vertex < nc){
+                    if(col_vertex.bfsArray == bfsLevel){
+                        for(neigh_row in g.neighbors(col_vertex)){
+                            if(neigh_row >= nc){
+                                int col_match = neigh_row.rmatch;
+                                if(col_match > -1){
+                                    if(col_match.bfsArray == NOT_VISITED){
+                                        noNewVertices = False;
+                                        col_match.bfsArray = bfsLevel + 1;
+                                        neigh_row.predeccesor = col_vertex;
+                                    }
+                                }
+                                if(col_match == -1){
+                                    neigh_row.rmatch = -2;
+                                    neigh_row.predeccesor = col_vertex;
+                                    noNewPaths = False;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            bfsLevel = bfsLevel + 1;
+        }
+        
+        
+        g.attachNodeProperty(compress = False);
+        g.attachNodeProperty(compress_next = False);
+        
+        forall(r in g.nodes()){
+            if(r >= nc && r.rmatch == -2){
+                r.compress = True;
+            }
+        }
+     
+        bool compressed = False;
+        fixedPoint until(compressed : !modified) {
+            forall(row_vertex in g.nodes().filter(compress == True)){
+                if(row_vertex >= nc){
+                    int matched_col = row_vertex.predeccesor;
+                    int matched_row = matched_col.cmatch;
+                    
+                    bool isValid = True;
+                    if(matched_row != -1){
+                        if(matched_row.predeccesor == matched_col){
+                            isValid = False;
+                        }
+                    }
+                    
+                    if(isValid){
+                        matched_col.cmatch = row_vertex;
+                        row_vertex.rmatch = matched_col;
+                        if(matched_row != -1){
+                            matched_row.compress_next = True;
+                            compressed = False;
+                        }
+                    }
+                }
+            }
+            
+            forall(row_vertex in g.nodes()){
+                if(row_vertex >= nc){
+                    row_vertex.compress = row_vertex.compress_next;
+                    row_vertex.compress_next = False;
+                }
+            }
+        }
+   
+        forall(r in g.nodes()){
+            if(r >= nc){
+                int c = r.rmatch;
+                if(c >= 0){
+                    if(c.cmatch != r){
+                        r.rmatch = -1;
+                    }
+                }
+                if(c == -2){ 
+                    r.rmatch = -1;
+                }
+            }
+        }
+
+ 
+}
+    propNode<bool> in_bfs;
+    propNode<bool> isMatching;
+    propNode<int> bfsDist;
+    g.attachNodeProperty(bfsDist = 0);
+    g.attachNodeProperty(in_bfs = False);
+    g.attachNodeProperty(isMatching = False);
+
+        int componentSize = 0;
+        int unmatchedCount = 0;
+        int altEdgeCount = 0;
+
+            
+        forall(v in g.nodes()){
+            v.visited = True;
+            v.in_bfs = True;
+            v.isMatching = (v.cmatch != -1 || v.rmatch != -1);
+        iterateInBFS(u in g.nodes() from v) {
+            bool isMatchedEdge=(u.cmatch != -1 || u.rmatch != -1);
+            for(neigh in g.neighbors(u)){
+                if(!neigh.visited){
+                    bool nextIsMatchedEdge = !isMatchedEdge;
+                    if((isMatchedEdge && (u.cmatch == neigh || u.rmatch == neigh)) || 
+                    (!isMatchedEdge && (u.cmatch == -1 || u.rmatch == -1))){
+                        neigh.visited = True;
+                        altEdgeCount=altEdgeCount+1;
+                        neigh.isMatching = nextIsMatchedEdge;
+                        neigh.in_bfs = True;
+                    }
+                }
+            }
+
+        }       
+
+        if(unmatchedCount == 0 && mod(altEdgeCount, 2) == 0){
+            evenComponents = evenComponents + 1;
+        } else if(mod(altEdgeCount, 2) == 1){
+            oddComponents = oddComponents + 1;
+        } else {
+            unmatchedComponents = unmatchedComponents + 1;
+        }
+}
+    int totalMatching = 0;
+    forall(v in g.nodes()){
+        if(v.rmatch != -1){
+            totalMatching = totalMatching + 1;
+        }
+    }
+    return totalMatching;
+}
+
+Decremental(Graph g, int previouslyMatched, propEdge<bool> modified, updates<g> deleteBatch,propNode<int> rmatch,propNode<int> cmatch){
+    int matchCount = previouslyMatched;
+    int evenComponents = 0;
+    int oddComponents = 0;
+    int unmatchedComponents = 0;
+    int altEdgeCount = 0;
+    int bs=batchSize;
+    int unmatchedCount = 0;
+    int componentSize = 0;
+    forall(update in deleteBatch){
+    propNode<bool> visited;
+    g.attachNodeProperty(visited = False);
+    propNode<bool> in_bfs;
+    propNode<bool> isMatching;
+    g.attachNodeProperty(in_bfs = False);
+    g.attachNodeProperty(isMatching = False);
+        node v=update.source;
+            v.visited = True;
+            v.in_bfs = True;
+            v.isMatching = (v.cmatch != -1 || v.rmatch != -1);
+        iterateInBFS(u in g.nodes() from v) {
+            bool isMatchedEdge=(u.cmatch != -1 || u.rmatch != -1);
+            for(neigh in g.neighbors(u)){
+                if(!neigh.visited){
+                    bool nextIsMatchedEdge = !isMatchedEdge;
+                    if((isMatchedEdge && (u.cmatch == neigh || u.rmatch == neigh)) || 
+                    (!isMatchedEdge && (u.cmatch == -1 || u.rmatch == -1))){
+                        neigh.visited = True;
+                        altEdgeCount=altEdgeCount+1;
+                        neigh.isMatching = nextIsMatchedEdge;
+                        neigh.in_bfs = True;
+                    }
+                    if(neigh.cmatch == -1 && neigh.rmatch == -1) {
+                    unmatchedCount++;
+                }
+                }
+            }
+
+        }       
+        if(unmatchedCount == 0 && mod(altEdgeCount, 2) == 0){
+            evenComponents = evenComponents + 1;
+        } else if(mod(altEdgeCount, 2) == 1){
+            oddComponents = oddComponents + 1;
+        } else {
+            unmatchedComponents = unmatchedComponents + 1;
+        }
+    }
+        matchCount=matchCount-oddComponents-unmatchedComponents/2;
+        return matchCount;
+}
+
+Incremental(Graph g, int previouslyMatched, propEdge<bool> modified, updates<g> addBatch,propNode<int> rmatch,propNode<int> cmatch){
+    int matchCount = previouslyMatched;
+    int evenComponents = 0;
+    int oddComponents = 0;
+    int unmatchedComponents = 0;
+    int altEdgeCount = 0;
+    int unmatchedCount = 0;
+    int componentSize = 0;
+    forall(update in addBatch){
+    propNode<bool> visited;
+    g.attachNodeProperty(visited = False);
+    propNode<bool> in_bfs;
+    propNode<bool> isMatching;
+    g.attachNodeProperty(in_bfs = False);
+    g.attachNodeProperty(isMatching = False);
+    node v=update.source;
+    v=update.source;
+        v.visited = True;
+        v.in_bfs = True;
+        v.isMatching = (v.cmatch != -1 || v.rmatch != -1);
+        iterateInBFS(u in g.nodes() from v) {
+            bool isMatchedEdge=(u.cmatch != -1 || u.rmatch != -1);
+            for(neigh in g.neighbors(u)){
+                if(!neigh.visited){
+                    bool nextIsMatchedEdge = !isMatchedEdge;
+                    if((isMatchedEdge && (u.cmatch == neigh || u.rmatch == neigh)) || 
+                    (!isMatchedEdge && (u.cmatch == -1 || u.rmatch == -1))){
+                        neigh.visited = True;
+                        altEdgeCount=altEdgeCount+1;
+                        neigh.isMatching = nextIsMatchedEdge;
+                        neigh.in_bfs = True;
+                    }
+                    if(neigh.cmatch == -1 && neigh.rmatch == -1) {
+                    unmatchedCount++;
+                }
+                }
+            }
+
+        }       
+        if(unmatchedCount == 0 && mod(altEdgeCount, 2) == 0){
+            evenComponents = evenComponents + 1;
+        } else if(mod(altEdgeCount, 2) == 1){
+            oddComponents = oddComponents + 1;
+        } else {
+            unmatchedComponents = unmatchedComponents + 1;
+        }
+    }
+        matchCount=matchCount+oddComponents+unmatchedComponents/2;
+        return matchCount;
+}
+
+
+Dynamic DynAPFB(Graph g,int nc,  updates<g> updateBatch, int batchSize){
+    propNode<int> rmatch;
+    propNode<int> cmatch;
+    int matchCount=APFB(g,nc,rmatch,cmatch);
+      Batch(updateBatch:batchSize) 
+    {
+    
+     propEdge<bool> modified_del; 
+     g.attachEdgeProperty(modified_del = false);
+
+     updates<g> deleteBatch = updateBatch.currentBatch(0);
+     updates<g> addBatch = updateBatch.currentBatch(1);
+
+     OnDelete(u in updateBatch.currentBatch()):
+          { 
+            int src = u.source;
+            int dest = u.destination;
+
+            for(nbr in g.neighbors(src))
+               {
+                 edge e = g.get_edge(src,nbr);
+                 if(nbr == dest)
+                   e.modified_del = True;
+               }
+
+          }
+
+
+     matchCount = Incremental(g,matchCount,modified_del,addBatch,rmatch,cmatch);
+     
+     g.updateCSRDel(updateBatch); 
+
+     g.updateCSRAdd(updateBatch);
+      
+     propEdge<bool> modified_add; 
+     g.attachEdgeProperty(modified_add = false);
+
+     OnAdd(u in updateBatch.currentBatch()): 
+         {
+               int src = u.source;
+               int dest = u.destination;
+
+               for(nbr in g.neighbors(src))
+                  {
+                    edge e = g.get_edge(src,nbr);
+                    if(nbr == dest)
+                       e.modified_add = True;
+                  }
+
+                 
+             }  
+
+       matchCount = Decremental(g,matchCount,modified_add,deleteBatch,rmatch,cmatch);    
+  }
+}

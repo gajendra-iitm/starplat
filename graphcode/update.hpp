@@ -12,13 +12,22 @@ class update
   int32_t weight;
 };
  
-  std::vector<update> parseUpdateFile(char* updateFile,int parcentage)
+  std::vector<update> parseUpdateFile(char* updateFile,double parcentage)
     { 
      std::vector<update> updates;
      std::ifstream infile;
+     std::ifstream infile1;
      infile.open(updateFile);
-     std::string line;
-    
+      std::string line;
+    // count the number of edges in the file
+    int edgesTotal = 0;
+    while (std::getline(infile,line)) {
+        edgesTotal++;}
+    infile.close();
+     infile.open(updateFile);
+     int linesToRead=edgesTotal*parcentage;
+    int ct=0;
+      std::cout<<"lines to read = "<<linesToRead<<std::endl;
      while (std::getline(infile,line))
      {
       
@@ -31,7 +40,8 @@ class update
         
         std::stringstream ss(line);
         
-       
+       if(++ct>linesToRead)
+         break;
         //edgesTotal++; //TO BE REMOVED 
         
     

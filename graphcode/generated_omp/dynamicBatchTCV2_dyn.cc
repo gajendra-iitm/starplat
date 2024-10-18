@@ -4,7 +4,6 @@
 #include<atomic>
 #include<omp.h>
 #include"../graph.hpp"
-#include"../atomicUtil.h"
 
 auto staticTC(graph& g)
 {
@@ -139,7 +138,6 @@ auto dynamicBatchTCV2_del(graph& g , int triangle_countSent , bool* modified , s
 void DynTC(graph& g , std::vector<update> updateBatch , int batchSize)
 {
   int triangleCount = staticTC(g);
-  std::cout << "static count = " << triangleCount << "\n";
   // int batchSize = batchSize;
   int batchElements = 0;
   for( int updateIndex = 0 ; updateIndex < updateBatch.size() ; updateIndex += batchSize){
@@ -199,12 +197,11 @@ void DynTC(graph& g , std::vector<update> updateBatch , int batchSize)
       }
     }
     triangleCount = dynamicBatchTCV2_add(g,triangleCount,modified_add,addBatch);
-    
     free(modified_del) ;
     deleteBatch.clear();
     addBatch.clear();
     free(modified_add) ;
 
   }
-  std::cout << "After update = "<<triangleCount << std::endl;
+
 }

@@ -2,7 +2,6 @@ function APFB (Graph g, int nc)
 {
     propNode<bool> modified;
     g.attachNodeProperty(modified = False);
-    
     propNode<int> rmatch;
     propNode<int> cmatch;
     g.attachNodeProperty(rmatch = -1);

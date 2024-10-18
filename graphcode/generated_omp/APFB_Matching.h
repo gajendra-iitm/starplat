@@ -8,6 +8,6 @@
 #include"../graph.hpp"
 #include"../atomicUtil.h"
 
-void APFB(graph& g , int nc);
+auto APFB(graph& g , int nc);
 
 #endif

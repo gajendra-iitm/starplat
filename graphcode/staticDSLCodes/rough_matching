@@ -1,0 +1,92 @@
+forall(v in g.nodes()){
+    if(!v.visited){
+        int componentSize = 0;
+        int unmatchedCount = 0;
+        int altEdgeCount = 0; // Tracks the number of alternating edges
+        v.visited = True;
+        propNode<bool> in_bfs;
+        propNode<bool> isMatching;
+        g.attachNodeProperty(in_bfs = False, isMatching = False);
+        v.isMatching = True;
+        iterateInBFS(node in g.nodes() from v){
+            bool isMatchedEdge = node.isMatching;
+            componentSize = componentSize + 1;
+
+            if(node.cmatch==-1 || node.rmatch==-1){
+                unmatchedCount=unmatchedCount+1;
+            }
+            for(neigh in g.neighbors(node)){
+                if(!neigh.visited){
+                    bool nextIsMatchedEdge = !isMatchedEdge; // Alternate between matched and unmatched
+                    if((isMatchedEdge && (node.cmatch == neigh || node.rmatch == neigh)) || 
+                    (!isMatchedEdge && (node.cmatch == -1 || node.rmatch == -1))){
+                        neigh.visited = True;
+                        altEdgeCount=altEdgeCount+1;
+                        neigh.isMatching = nextIsMatchedEdge;
+                        neigh.in_bfs = True;
+                    }
+                }
+            }
+
+        }
+        if(unmatchedCount == 0 && altEdgeCount % 2 == 0){
+            evenComponents++;
+        } else if(altEdgeCount % 2 == 1){
+            oddComponents++;
+        } else {
+            unmatchedComponents++;
+        }
+    }
+
+}
+
+
+
+
+// ------------------------------------------------------------
+
+        forall(v in g.nodes()){
+        if(!v.visited){
+            int componentSize = 0;
+            int unmatchedCount = 0;
+            int altEdgeCount = 0; // Tracks the number of alternating edges
+
+            v.visited = True;
+            queue<pair<int, bool>> q;  // queue is not supported in DSL and pair too
+            q.push({v, false}); // node and isMatchedEdge
+            while(!q.empty()){
+                pair<int, bool> front = q.front();
+                q.pop();
+                int node = front.first;
+                bool isMatchedEdge = front.second;
+                componentSize++;
+                
+                // Count unmatched nodes
+                if(node.cmatch == -1 || node.rmatch == -1){
+                    unmatchedCount++;
+                }
+                
+                // Visit all neighbors using alternating edges (unmatched -> matched or matched -> unmatched)
+                for(neigh in g.neighbors(node)){
+                    if(!neigh.visited){
+                        bool nextIsMatchedEdge = !isMatchedEdge; // Alternate between matched and unmatched
+                        if((isMatchedEdge && (node.cmatch == neigh || node.rmatch == neigh)) || 
+                        (!isMatchedEdge && (node.cmatch == -1 || node.rmatch == -1))){
+                            neigh.visited = True;
+                            altEdgeCount++; // Count alternating edges
+                            q.push({neigh, nextIsMatchedEdge});
+                        }
+                    }
+                }
+            }
+            
+            //alternating edge count and unmatched nodes
+            if(unmatchedCount == 0 && altEdgeCount % 2 == 0){
+                evenComponents++;
+            } else if(altEdgeCount % 2 == 1){
+                oddComponents++;
+            } else {
+                unmatchedComponents++;
+            }
+        }
+    }
