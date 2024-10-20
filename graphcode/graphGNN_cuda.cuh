@@ -295,8 +295,8 @@ void initializeLayers_cuda(GNN &gnn, std::vector<int32_t> neuronsPerHiddenLayer,
     cudaMalloc(&d_neuronsPerLayer, numLayers * sizeof(int));
     cudaMemcpy(d_neuronsPerLayer, neuronsPerLayer, numLayers * sizeof(int), cudaMemcpyHostToDevice);
 
-    layer *d_layers;
-    cudaMalloc(&d_layers, numLayers * sizeof(layer));
+    globalCudaVar *d_layers;
+    cudaMalloc(&d_layers, numLayers * sizeof(globalCudaVar));
 
 
     int threads = 128;

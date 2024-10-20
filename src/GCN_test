@@ -1,4 +1,4 @@
-function GCN(Graph g, GNN gnn,  container<int> neuronsPerHiddenLayer){
+function GCN(Graph g,  container<int> neuronsPerHiddenLayer){
     gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
     int num_epoch = 1;
     bool x =  true;
@@ -12,12 +12,12 @@ function GCN(Graph g, GNN gnn,  container<int> neuronsPerHiddenLayer){
         while(y){
             layerr = layerr + 1;
  
-               gnn.forwardPass(layerr );
+               gnn.forwardPass(layerr , "GCN");
                 }
-            
             while(layerr){
                 layerr--;
                 gnn.backPropogation(layerr);
             }
+            gnn.optimizer("adam, 0.01, 0.9, 0.999, 1e-8, 1e-3");
         }
 }

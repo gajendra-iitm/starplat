@@ -39,11 +39,14 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  graph G("../sample_graphs/Cora/cora_edgelist.txt");
+  // graph G("../sample_graphs/Cora/cora_edgelist.txt");
+  graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_edgelist.txt");
 
   G.parseGraph();
 
-  GNN gnn(G, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
+  // GNN gnn(G, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
+  GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_features.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_labels.txt");
+
   gnn.gcnPreprocessing();
 
   // print all the edges with weights
@@ -63,7 +66,7 @@ int main()
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
-  std::vector<layer> &layers = gnn.getLayers();
+  std::vector<Layers> &layers = gnn.getLayers();
 
   // graph &g = gnn.getGraph();
   // for (int j = 0; j < gnn.getGraph().num_nodes(); j++)
@@ -76,20 +79,21 @@ int main()
   // }
   graph &g = gnn.getGraph();
   int num_epochs = 100;
+  printf("Training started\n");
   for (int epoch = 1; epoch < num_epochs; epoch++)
   {
     for (int j = 0; j < layers.size(); j++)
     {
       for (int k = 0; k < g.num_nodes(); k++)
       {
-        gnn.forwardPass(k, j);
+        gnn.forwardPass(k, j, 1);
       }
     }
     for (int j = layers.size() - 1; j > 0; j--)
     {
       gnn.backPropogation(j);
     }
-    // gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
+    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
     gnn.predict();
 
     cout << epoch << endl;
@@ -99,7 +103,7 @@ int main()
   {
     for (int k = 0; k < g.num_nodes(); k++)
     {
-      gnn.forwardPass(k, j);
+      gnn.forwardPass(k, j,1);
     }
   }
   gnn.predict();

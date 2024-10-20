@@ -63,9 +63,12 @@ public:
 
   std::map<int, std::vector<edge>> getEdges();
 
-  int *getEdgeLen();
+  float *getEdgeLen();
 
   int num_nodes();
+
+  int *getNodesptr();
+  int *getEdgesList();
 
   // function to get total number of edges
   int num_edges();
@@ -102,7 +105,7 @@ public:
   std::vector<edge> getInNeighbors(int node);
 };
 
-class layer
+class Layers
 {
 public:
   int32_t num_features;
@@ -127,7 +130,7 @@ public:
 class GNN
 {
   graph &g;
-  std::vector<layer> layers;
+  std::vector<Layers> layers;
   std::vector<int32_t> labels;
   std::vector<std::vector<double>> features;
   char *feat_file, *lab_file;
@@ -136,6 +139,7 @@ class GNN
 
 public:
   GNN(graph &g, char *feat_file, char *lab_file);
+  GNN &getSelfRef();
   graph &getGraph();
   void loadFeatures();
   void loadLabels();
@@ -146,7 +150,7 @@ public:
   std::vector<std::vector<double>> &getFeatures();
   int numClasses();
   void initializeLayers(std::vector<int> neuronsPerLayer, char *initType);
-  std::vector<layer> &getLayers();
+  std::vector<Layers> &getLayers();
   std::vector<int32_t> &getLabels();
   void GCN_aggregate(int node, int layerNumber);
   void GIN_aggregate(int node, int layerNumber);

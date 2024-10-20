@@ -1,0 +1,8 @@
+Here half
+num_features 9858500
+num Nodes19717
+nodes size 19717
+features size 500
+labels size 3
+going to preprocessing
+preprosessing done

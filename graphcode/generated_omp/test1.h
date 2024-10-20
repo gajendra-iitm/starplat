@@ -5,10 +5,11 @@
 #include<limits.h>
 #include<atomic>
 #include<omp.h>
-#include"../graph.hpp"
+#include"../graph.cpp"
 #include"../atomicUtil.h"
 
 using namespace std;
+env environment("omp", "static", "test1");
 void string_test(string s);
 
 #endif

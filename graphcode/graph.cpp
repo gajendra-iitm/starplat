@@ -21,10 +21,20 @@ std::map<int, std::vector<edge>> graph::getEdges()
   return edges;
 }
 
-int *graph::getEdgeLen()
+float *graph::getEdgeLen()
 {
   return edgeLen;
 }
+int *graph::getNodesptr()
+{
+  return indexofNodes;
+}
+
+int *graph::getEdgesList()
+{
+  return edgeList;
+}
+
 
 int graph::num_nodes()
 {
@@ -975,12 +985,13 @@ GNN::GNN(graph &g, char *feat_file, char *lab_file) : g(g), feat_file(feat_file)
   std::cout << "labels size " << num_classes << std::endl;
 }
 
+
 graph &GNN::getGraph()
 {
   return g;
 }
 
-std::vector<layer> &GNN::getLayers()
+std::vector<Layers> &GNN::getLayers()
 {
   return layers;
 }
@@ -1131,7 +1142,7 @@ void GNN::forwardPass(int node, int layerNumber, int aggType)
 {
   if (strcmp(environment.get_backend(), "omp") == 0)
   {
-    forwardPass_omp(*this, node, layerNumber, aggType);
+    forwardPass_omp(*this, layerNumber, aggType);
     if(aggType == 1){
       aggregation_type = 1;
     }
