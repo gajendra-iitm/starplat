@@ -39,16 +39,18 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-  // graph G("../sample_graphs/Cora/cora_edgelist.txt");
-  graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_edgelist.txt");
+	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_edgelist.txt");
+		graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_edgelist.txt");
 
-  G.parseGraph();
+	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_edgelist.txt");
+	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph.txt");
+	G.parseGraph();
+		GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_labels.txt" );
 
-  // GNN gnn(G, "../sample_graphs/Cora/cora_features.txt", "../sample_graphs/Cora/cora_labels.txt");
-  GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_features.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_labels.txt");
-
-  gnn.gcnPreprocessing();
-
+	// GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_labels.txt" );
+	// GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_features.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_labels.txt");
+	// GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph_feat.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph_labels.txt");
+	gnn.gcnPreprocessing();
   // print all the edges with weights
   // for (int nod = 0; nod < G.num_nodes(); nod++)
   // {
@@ -61,8 +63,8 @@ int main()
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
-  // neuronsPerHiddenLayer.push_back(64);
   neuronsPerHiddenLayer.push_back(16);
+  // neuronsPerHiddenLayer.push_back(16);
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
   gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
@@ -80,34 +82,46 @@ int main()
   graph &g = gnn.getGraph();
   int num_epochs = 100;
   printf("Training started\n");
+  float start_time  = omp_get_wtime();
   for (int epoch = 1; epoch < num_epochs; epoch++)
   {
     for (int j = 0; j < layers.size(); j++)
     {
-      for (int k = 0; k < g.num_nodes(); k++)
-      {
-        gnn.forwardPass(k, j, 1);
-      }
+      gnn.forwardPass(j, 1);
     }
+//     printf("\n\n");
+// if(epoch==3)
+// exit(0);
+    // for(int k=1;k<layers.size();k++){
+    //   for(int l=0;l<gnn.getGraph().num_nodes();l++){
+    //     for(int m=0;m<layers[k].num_features;m++){
+    //       // print layers[k].preActivatedFeatures[l][m] 
+    //       // print layers[k].postActivatedFeatures[l][m]
+
+    //       cout << "Pre activated features of node " << l << " of layer " << k << " is " << layers[k].preActivatedFeatures[l][m] << endl;
+    //       cout << "Post activated features of node " << l << " of layer " << k << " is " << layers[k].postActivatedFeatures[l][m] << endl;
+    //     }
+    //   }
+    // }
     for (int j = layers.size() - 1; j > 0; j--)
     {
       gnn.backPropogation(j);
     }
-    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.001);
-    gnn.predict();
-
-    cout << epoch << endl;
+// exit(0);
+    gnn.adamOptimizer(epoch, 0.001, 0.9, 0.999, 1e-8,0.0001);
+    // if(epoch%10==0)
+      {gnn.predict();
+      cout << epoch << endl;}
+// exit(0);
   }
+float end = omp_get_wtime();
 
   for (int j = 0; j < layers.size(); j++)
   {
-    for (int k = 0; k < g.num_nodes(); k++)
-    {
-      gnn.forwardPass(k, j,1);
-    }
+      gnn.forwardPass(j,1);
   }
   gnn.predict();
-
+printf("Time taken %f\n",end-start_time);
   // print all the matrices associated with all the layers
   // for (int j = 1; j < layers.size(); j++)
   // {
