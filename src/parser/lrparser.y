@@ -659,6 +659,14 @@ int main(int argc,char **argv)
 				spomp::dsl_cpp_generator cpp_backend;
 				std::cout<< "size:" << frontEndContext.getFuncList().size() << '\n';
 				cpp_backend.setFileName(fileName);
+
+                if(optimize)
+                {
+                    liveVarsAnalyser lvAnalyser;
+                    lvAnalyser.analyse(frontEndContext.getFuncList());
+                    
+					cpp_backend.setOptimized();
+                }
 				cpp_backend.generate();
 			} 
 			else if (strcmp(backendTarget, "mpi") == 0)
