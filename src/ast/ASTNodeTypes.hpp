@@ -2236,10 +2236,15 @@ private:
     set<Identifier *> mapLocals;
     std::set<TableEntry *> modifiedGlobalVars;
 
+    // information for CUDA backend
     int eventId;
     int streamId;
     bool firstInStream;
     std::vector<int> eventDeps;
+
+    // information for OpenMP backend
+    int depthInDepGraph;
+    bool nowait;
 
 public:
     forallStmt()
@@ -2262,6 +2267,8 @@ public:
         eventId = -1;
         streamId = -1;
         firstInStream = false;
+        depthInDepGraph = 0;
+        nowait = false;
     }
 
     static forallStmt *createforallStmt(Identifier *iterator, Identifier *sourceGraph, proc_callExpr *extractElemFunc, statement *body, Expression *filterExpr, bool isforall)
@@ -2613,6 +2620,26 @@ public:
     std::vector<int> getEventDeps()
     {
         return eventDeps;
+    }
+
+    void setDepthInDepGraph(int depth)
+    {
+        this->depthInDepGraph = depth;
+    }
+
+    int getDepthInDepGraph()
+    {
+        return depthInDepGraph;
+    }
+
+    void setNowait()
+    {
+        this->nowait = true;
+    }
+
+    bool getNowait()
+    {
+        return nowait;
     }
 };
 class reductionCall : public ASTNode

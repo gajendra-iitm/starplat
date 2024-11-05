@@ -34,8 +34,8 @@ class dsl_cpp_generator {
   vector<ASTNode*> parallelConstruct;
   bool isOptimized;
 
-  
- 
+  std::vector<forallStmt *> forAllVec;
+
   public:
   dsl_cpp_generator()
   {
