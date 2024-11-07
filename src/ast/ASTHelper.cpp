@@ -582,6 +582,12 @@ static ASTNode* createNodeForForStmt(ASTNode* iterator,ASTNode* source,ASTNode* 
 
     return forallStmtNode;
 }
+static ASTNode *createNodeForSimpleForStmt(ASTNode *primitiveType, ASTNode *loopVariable, ASTNode *rhs, ASTNode *iterCondition, ASTNode *updateExpression, ASTNode *body)
+{
+    statement* simpleForStmtNode;
+    simpleForStmtNode = simpleForStmt::createSimpleForStmt((Type*)primitiveType, (Identifier*)loopVariable, (Expression*)rhs, (Expression*)iterCondition, (Expression*)updateExpression, (blockStatement*)body);
+    return simpleForStmtNode;
+}
 static ASTNode* createNodeforReductionCall(int reductionOperationType,list<argument*> argList)
 {
     reductionCall* reductionCallNode=reductionCall::nodeForReductionCall(reductionOperationType,argList);

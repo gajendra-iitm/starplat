@@ -222,6 +222,11 @@ namespace spomp
       generateForAll((forallStmt *)stmt);
     }
 
+    if(stmt->getTypeofNode() == NODE_SIMPLEFORSTMT){
+      generateSimpleForStmt((simpleForStmt*)stmt);
+    }
+
+
     if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT)
     {
       generateFixedPoint((fixedPointStmt *)stmt);
@@ -1322,6 +1327,31 @@ namespace spomp
     sprintf(strBuffer, "%s.insert(%s.end(), %s.begin(), %s.end());", strBuffer1, strBuffer1, strBuffer2, strBuffer2);
     main.pushstr_newL(strBuffer);
   }
+
+
+
+
+
+void dsl_cpp_generator::generateSimpleForStmt(simpleForStmt *simpleFor){
+  Type *primitiveType = simpleFor->getPrimitiveType();
+  Identifier *loopVariable = simpleFor->getLoopVariable();
+  Expression *rhs = simpleFor->getRhs();
+  Expression *iterCondition = simpleFor->getIterCondition();
+  Expression *updateExpression = simpleFor->getUpdateExpression();
+  blockStatement *body = simpleFor->getBody();
+
+  main.pushString("for (");
+  generateVariableDecl(declaration::assign_Declaration(primitiveType, loopVariable, rhs));
+  // main.pushString("; ");
+  
+  generateExpr(iterCondition);
+  main.pushstr_newL("; ");
+  generateExpr(updateExpression);
+  main.pushString(") ");
+  generateStatement(body);
+
+}
+
 
   void dsl_cpp_generator::generateForAll(forallStmt *forAll)
   {

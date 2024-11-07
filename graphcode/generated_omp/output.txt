@@ -1,215 +1,301 @@
 Here half
-num_features 5699250
-num Nodes7650
-nodes size 7650
-features size 745
-labels size 8
+num_features 11960065
+num Nodes2405
+nodes size 2405
+features size 4973
+labels size 17
 going to preprocessing
 omp
-Neurons initially 745
-layer with size 16 initialized
-layer with size 8 initialized
-xavier distribution with input neurons : 745 and output neurons : 16
-xavier distribution with input neurons : 16 and output neurons : 8
+Neurons initially 4973
+layer with size 40 initialized
+layer with size 17 initialized
+xavier distribution with input neurons : 4973 and output neurons : 40
+xavier distribution with input neurons : 40 and output neurons : 17
 Layers initialized
 Training started
-Accuracy: 0.115294
+Accuracy: 0.0943867
 1
-Accuracy: 0.115294
+Accuracy: 0.0952183
 2
-Accuracy: 0.115294
+Accuracy: 0.0370062
 3
-Accuracy: 0.115817
+Accuracy: 0.0382536
 4
-Accuracy: 0.116078
+Accuracy: 0.0382536
 5
-Accuracy: 0.107974
+Accuracy: 0.0449064
 6
-Accuracy: 0.107712
+Accuracy: 0.0952183
 7
-Accuracy: 0.107582
+Accuracy: 0.0952183
 8
-Accuracy: 0.107582
+Accuracy: 0.0952183
 9
-Accuracy: 0.107712
+Accuracy: 0.0952183
 10
-Accuracy: 0.107843
+Accuracy: 0.151351
 11
-Accuracy: 0.108366
+Accuracy: 0.00706861
 12
-Accuracy: 0.155425
+Accuracy: 0.0361746
 13
-Accuracy: 0.115556
+Accuracy: 0.0382536
 14
-Accuracy: 0.115556
+Accuracy: 0.0382536
 15
-Accuracy: 0.115425
+Accuracy: 0.0386694
 16
-Accuracy: 0.115556
+Accuracy: 0.176715
 17
-Accuracy: 0.127974
+Accuracy: 0.15343
 18
-Accuracy: 0.246928
+Accuracy: 0.121414
 19
-Accuracy: 0.253595
+Accuracy: 0.0948025
 20
-Accuracy: 0.268235
+Accuracy: 0.187942
 21
-Accuracy: 0.220392
+Accuracy: 0.0045738
 22
-Accuracy: 0.25281
+Accuracy: 0.010395
 23
-Accuracy: 0.108758
+Accuracy: 0.0773389
 24
-Accuracy: 0.108758
+Accuracy: 0.169647
 25
-Accuracy: 0.142353
+Accuracy: 0.362162
 26
-Accuracy: 0.450196
+Accuracy: 0.295218
 27
-Accuracy: 0.255686
+Accuracy: 0.140956
 28
-Accuracy: 0.256209
+Accuracy: 0.211642
 29
-Accuracy: 0.52732
+Accuracy: 0.214137
 30
-Accuracy: 0.22915
+Accuracy: 0.243243
 31
-Accuracy: 0.174379
+Accuracy: 0.251143
 32
-Accuracy: 0.42719
+Accuracy: 0.263617
 33
-Accuracy: 0.308627
+Accuracy: 0.485239
 34
-Accuracy: 0.570458
+Accuracy: 0.502703
 35
-Accuracy: 0.404444
+Accuracy: 0.404574
 36
-Accuracy: 0.462222
+Accuracy: 0.450312
 37
-Accuracy: 0.639608
+Accuracy: 0.484823
 38
-Accuracy: 0.475163
+Accuracy: 0.512266
 39
-Accuracy: 0.633725
+Accuracy: 0.390852
 40
-Accuracy: 0.71817
+Accuracy: 0.540956
 41
-Accuracy: 0.710719
+Accuracy: 0.460707
 42
-Accuracy: 0.688497
+Accuracy: 0.365489
 43
-Accuracy: 0.562876
+Accuracy: 0.49106
 44
-Accuracy: 0.757124
+Accuracy: 0.29896
 45
-Accuracy: 0.821699
+Accuracy: 0.189189
 46
-Accuracy: 0.78549
+Accuracy: 0.333472
 47
-Accuracy: 0.780261
+Accuracy: 0.393347
 48
-Accuracy: 0.736471
+Accuracy: 0.469439
 49
-Accuracy: 0.72
+Accuracy: 0.392931
 50
-Accuracy: 0.771242
+Accuracy: 0.439501
 51
-Accuracy: 0.800392
+Accuracy: 0.530561
 52
-Accuracy: 0.801046
+Accuracy: 0.452391
 53
-Accuracy: 0.76549
+Accuracy: 0.53264
 54
-Accuracy: 0.798954
+Accuracy: 0.51684
 55
-Accuracy: 0.857908
+Accuracy: 0.650312
 56
-Accuracy: 0.858824
+Accuracy: 0.484407
 57
-Accuracy: 0.883791
+Accuracy: 0.617879
 58
-Accuracy: 0.866797
+Accuracy: 0.549272
 59
-Accuracy: 0.869281
+Accuracy: 0.604574
 60
-Accuracy: 0.843268
+Accuracy: 0.557588
 61
-Accuracy: 0.884444
+Accuracy: 0.52973
 62
-Accuracy: 0.84183
+Accuracy: 0.649896
 63
-Accuracy: 0.874248
+Accuracy: 0.430353
 64
-Accuracy: 0.824575
+Accuracy: 0.53264
 65
-Accuracy: 0.880392
+Accuracy: 0.644491
 66
-Accuracy: 0.870065
+Accuracy: 0.707277
 67
-Accuracy: 0.894248
+Accuracy: 0.635343
 68
-Accuracy: 0.863137
+Accuracy: 0.772973
 69
-Accuracy: 0.893203
+Accuracy: 0.653222
 70
-Accuracy: 0.886275
+Accuracy: 0.6079
 71
-Accuracy: 0.878301
+Accuracy: 0.712682
 72
-Accuracy: 0.890458
+Accuracy: 0.686902
 73
-Accuracy: 0.88549
+Accuracy: 0.719751
 74
-Accuracy: 0.897386
+Accuracy: 0.808732
 75
-Accuracy: 0.900261
+Accuracy: 0.799584
 76
-Accuracy: 0.868105
+Accuracy: 0.816632
 77
-Accuracy: 0.888105
+Accuracy: 0.832848
 78
-Accuracy: 0.880261
+Accuracy: 0.838254
 79
-Accuracy: 0.889935
+Accuracy: 0.749272
 80
-Accuracy: 0.904706
+Accuracy: 0.835343
 81
-Accuracy: 0.896863
+Accuracy: 0.809979
 82
-Accuracy: 0.902614
+Accuracy: 0.843243
 83
-Accuracy: 0.899085
+Accuracy: 0.838669
 84
-Accuracy: 0.886928
+Accuracy: 0.839917
 85
-Accuracy: 0.90732
+Accuracy: 0.856549
 86
-Accuracy: 0.895425
+Accuracy: 0.851975
 87
-Accuracy: 0.897778
+Accuracy: 0.85738
 88
-Accuracy: 0.897516
+Accuracy: 0.860291
 89
-Accuracy: 0.910458
+Accuracy: 0.854886
 90
-Accuracy: 0.910065
+Accuracy: 0.858628
 91
-Accuracy: 0.902092
+Accuracy: 0.862786
 92
-Accuracy: 0.89085
+Accuracy: 0.865696
 93
-Accuracy: 0.908366
+Accuracy: 0.871933
 94
-Accuracy: 0.907974
+Accuracy: 0.866528
 95
-Accuracy: 0.905229
+Accuracy: 0.844075
 96
-Accuracy: 0.905752
+Accuracy: 0.0382536
 97
-Accuracy: 0.897124
+Accuracy: 0.0382536
 98
-Accuracy: 0.918693
+Accuracy: 0.0382536
 99
-Accuracy: 0.914379
-Time taken 256.000000
+Accuracy: 0.0382536
+100
+Accuracy: 0.0382536
+101
+Accuracy: 0.0382536
+102
+Accuracy: 0.0382536
+103
+Accuracy: 0.0382536
+104
+Accuracy: 0.0382536
+105
+Accuracy: 0.0382536
+106
+Accuracy: 0.0382536
+107
+Accuracy: 0.0382536
+108
+Accuracy: 0.0382536
+109
+Accuracy: 0.0382536
+110
+Accuracy: 0.0382536
+111
+Accuracy: 0.0382536
+112
+Accuracy: 0.0382536
+113
+Accuracy: 0.0382536
+114
+Accuracy: 0.0382536
+115
+Accuracy: 0.0382536
+116
+Accuracy: 0.0382536
+117
+Accuracy: 0.0382536
+118
+Accuracy: 0.0382536
+119
+Accuracy: 0.0382536
+120
+Accuracy: 0.0382536
+121
+Accuracy: 0.0382536
+122
+Accuracy: 0.0382536
+123
+Accuracy: 0.0382536
+124
+Accuracy: 0.0382536
+125
+Accuracy: 0.0382536
+126
+Accuracy: 0.0382536
+127
+Accuracy: 0.0382536
+128
+Accuracy: 0.0382536
+129
+Accuracy: 0.0382536
+130
+Accuracy: 0.0382536
+131
+Accuracy: 0.0382536
+132
+Accuracy: 0.0382536
+133
+Accuracy: 0.0382536
+134
+Accuracy: 0.0382536
+135
+Accuracy: 0.0382536
+136
+Accuracy: 0.0382536
+137
+Accuracy: 0.0382536
+138
+Accuracy: 0.0382536
+139
+Accuracy: 0.0382536
+140
+Accuracy: 0.0382536
+141
+Accuracy: 0.0382536
+142
+Accuracy: 0.0382536
+143

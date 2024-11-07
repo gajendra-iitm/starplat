@@ -236,7 +236,7 @@ __global__ void NeuralNetworkOperation(Layer* layers, int batchNumber, int batch
 	}
 }
 
-void forward(GNN &gnn, int layerNumber, int batchNumber, int batchSize, int activationType)
+void forwardPass_cuda(GNN &gnn, int layerNumber, int batchNumber, int batchSize, int activationType)
 {
 	int numNodesInBatch = batchSize;
 	int threadsPerBlock = 1024;
@@ -433,7 +433,7 @@ int main()
 	cudaMemcpy(features, d_features, gnn.getGraph().num_nodes() * feats[0].size() * sizeof(double), cudaMemcpyDeviceToHost);
 
 	printf("\n\ndone\n\n");
-	forward(gnn, 1, 0, 3, 1);
+	forwardPass_cuda(gnn, 1, 0, 3, 1);
 	//  double *features = new double[num_nodes * feats[0].size()];
 	//  cudaMemcpy(features, d_features, num_nodes * feats[0].size() * sizeof(double), cudaMemcpyDeviceToHost);
 	//  for (int i = 0; i < feats[0].size(); i++)

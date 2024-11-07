@@ -71,6 +71,7 @@ namespace spomp
     void generateAssignmentStmt(assignment *assignStmt);
     void generateWhileStmt(whileStmt *whilestmt);
     virtual void generateForAll(forallStmt *forAll);
+    virtual void generateSimpleForStmt(simpleForStmt *simpleFor);
     void generateFixedPoint(fixedPointStmt *fixedPoint);
     void generateIfStmt(ifStmt *ifstmt);
     void generateDoWhileStmt(dowhileStmt *doWhile);

@@ -154,7 +154,7 @@ public:
   std::vector<int32_t> &getLabels();
   void GCN_aggregate(int node, int layerNumber);
   void GIN_aggregate(int node, int layerNumber);
-  void forwardPass(int node, int layerNumber,int aggregationtype);
+  void forwardPass(int layerNumber,int aggregationtype);
   void backPropogation(int layerNumber);
   void adamOptimizer(int epochNumber, double lr, double beta1, double beta2, double epsilon, double decay = 0.0);
   void predict();

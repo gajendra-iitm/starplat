@@ -384,6 +384,8 @@ iteration_cf : T_FIXEDPOINT T_UNTIL '(' id ':' expression ')' blockstatements { 
 		| T_FOR '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, false);};
 		| T_FORALL '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, true);};
 
+		| T_FOR '(' primitive id '=' rhs ';' boolean_expr ';' expression ')' blockstatements {$$ = Util::createNodeForSimpleForStmt($3, $4, $6, $8, $10, $12); };
+
 filterExpr  :         { $$=NULL;};
             |'.' T_FILTER '(' boolean_expr ')'{ $$=$4;};
 

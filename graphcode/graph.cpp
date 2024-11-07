@@ -1138,7 +1138,7 @@ void GNN::GIN_aggregate(int node, int layerNumber)
 }
 
 
-void GNN::forwardPass(int node, int layerNumber, int aggType)
+void GNN::forwardPass(int layerNumber, int aggType)
 {
   if (strcmp(environment.get_backend(), "omp") == 0)
   {

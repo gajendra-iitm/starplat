@@ -1,23 +1,36 @@
-function GCN(Graph g,  container<int> neuronsPerHiddenLayer){
+function GCN(Graph g, container<int> neuronsPerHiddenLayer)
+{
+    GNN gnn;
     gnn.initializeLayers(neuronsPerHiddenLayer, "xaviers");
-    int num_epoch = 1;
-    bool x =  true;
-    while(x){
-        if(num_epoch == 100){
-            x = false;
-        }
-        num_epoch = num_epoch + 1;
-        int layerr = 0;
+    // int num_epoch = 1;
+    // bool x =  true;
+    // while(x){
+    //     if(num_epoch == 100){
+    //         x = false;
+    //     }
+    //     num_epoch = num_epoch + 1;
+    int layerr = 0;
         bool y  = 0;
-        while(y){
-            layerr = layerr + 1;
- 
-               gnn.forwardPass(layerr , "GCN");
-                }
-            while(layerr){
-                layerr--;
-                gnn.backPropogation(layerr);
-            }
-            gnn.optimizer("adam, 0.01, 0.9, 0.999, 1e-8, 1e-3");
+    for (int i = 0; i < 2320; i++)
+    // for(n in g.node())
+    {
+        // gnn.forwardPropogation(g, layerr);
+        layerr++;
+        int t = 100;
+        float x  = 0.432;
+        t = x*2;
+        // container<int> v;
+        // v.push_back(1);
+        while (layerr) {
+            layerr--;
+            // gnn.backPropogation(layerr);
         }
+    }
+    while (layerr)
+    {
+        layerr--;
+        gnn.backPropogation(layerr);
+    }
+    gnn.optimizer("adam, 0.01, 0.9, 0.999, 1e-8, 1e-3");
+    // }
 }

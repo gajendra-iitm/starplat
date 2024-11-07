@@ -1,8 +1,59 @@
 Here half
-num_features 9858500
-num Nodes19717
-nodes size 19717
+num_features 44625000
+num Nodes89250
+nodes size 89250
 features size 500
-labels size 3
+labels size 7
 going to preprocessing
 preprosessing done
+num_layers_cpu: 0
+Test Accuracy: 5.90%
+Test Accuracy: 5.90%
+Test Accuracy: 5.90%
+Test Accuracy: 5.90%
+Test Accuracy: 5.90%
+Test Accuracy: 5.90%
+Test Accuracy: 5.91%
+Test Accuracy: 5.91%
+Test Accuracy: 5.97%
+Test Accuracy: 13.02%
+Test Accuracy: 20.18%
+Test Accuracy: 42.02%
+Test Accuracy: 42.21%
+Test Accuracy: 42.25%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Test Accuracy: 42.26%
+Time elapsed: 119421 ms

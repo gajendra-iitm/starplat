@@ -39,15 +39,15 @@ void test1(graph &g, GNN &gnn, std::vector<vector<float>> features, int *labels)
 
 int main()
 {
-	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_edgelist.txt");
-		graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_edgelist.txt");
+	graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_edgelist.txt");
+		// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_edgelist.txt");
 
 	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_edgelist.txt");
 	// graph G("/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph.txt");
 	G.parseGraph();
-		GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_labels.txt" );
+		// GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Amazon/amazon_labels.txt" );
 
-	// GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_labels.txt" );
+	GNN gnn(G,"/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_features.txt","/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Wiki/wiki_labels.txt" );
 	// GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_features.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/Pubmed/pubmed_labels.txt");
 	// GNN gnn(G, "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph_feat.txt", "/home/anubhav/new_q/newww_tha/Starplat-GNN/graphcode/sample_graphs/sample_graph/sample_graph_labels.txt");
 	gnn.gcnPreprocessing();
@@ -63,7 +63,7 @@ int main()
   printf("%s\n", environment.get_backend());
 
   std::vector<int32_t> neuronsPerHiddenLayer;
-  neuronsPerHiddenLayer.push_back(16);
+  neuronsPerHiddenLayer.push_back(40);
   // neuronsPerHiddenLayer.push_back(16);
 
   // void GNN::initializeLayers(std::vector<int> neuronsPerLayer, char *initType)
@@ -80,7 +80,7 @@ int main()
   //   std::cout << std::endl;
   // }
   graph &g = gnn.getGraph();
-  int num_epochs = 100;
+  int num_epochs = 200;
   printf("Training started\n");
   float start_time  = omp_get_wtime();
   for (int epoch = 1; epoch < num_epochs; epoch++)
@@ -108,7 +108,7 @@ int main()
       gnn.backPropogation(j);
     }
 // exit(0);
-    gnn.adamOptimizer(epoch, 0.001, 0.9, 0.999, 1e-8,0.0001);
+    gnn.adamOptimizer(epoch, 0.01, 0.9, 0.999, 1e-8,0.0001);
     // if(epoch%10==0)
       {gnn.predict();
       cout << epoch << endl;}

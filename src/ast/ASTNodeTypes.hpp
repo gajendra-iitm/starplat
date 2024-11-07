@@ -1651,6 +1651,11 @@ public:
   }
 };
 
+
+
+
+
+
 class fixedPointStmt : public statement
 {
 
@@ -2202,6 +2207,72 @@ public:
   proc_callExpr *getProcCallExpr()
   {
     return procCall;
+  }
+};
+
+class simpleForStmt : public statement
+{
+private:
+  Type *primitiveType;
+  Identifier *loopVariable;
+  Expression *rhs;
+  Expression *iterCondition;
+  Expression *updateExpression;
+  blockStatement *body;
+
+public:
+  simpleForStmt()
+  {
+    primitiveType = nullptr;
+    loopVariable = nullptr;
+    rhs = nullptr;
+    iterCondition = nullptr;
+    updateExpression = nullptr;
+    body = NULL;
+  }
+
+  static simpleForStmt *createSimpleForStmt(Type *primitiveTypeSent, Identifier *loopVariableSent, Expression *rhsSent, Expression *iterConditionSent, Expression *updateExpressionSent, blockStatement *bodySent)
+  {
+    simpleForStmt *newSimpleForStmt = new simpleForStmt();
+    newSimpleForStmt->primitiveType = primitiveTypeSent;
+    newSimpleForStmt->loopVariable = loopVariableSent;
+    newSimpleForStmt->rhs = rhsSent;
+    newSimpleForStmt->iterCondition = iterConditionSent;
+    newSimpleForStmt->updateExpression = updateExpressionSent;
+    newSimpleForStmt->body = bodySent;
+    newSimpleForStmt->setTypeofNode(NODE_SIMPLEFORSTMT);
+    bodySent->setParent(newSimpleForStmt);
+    return newSimpleForStmt;
+  }
+
+  Type *getPrimitiveType()
+  {
+    return primitiveType;
+  }
+
+  Identifier *getLoopVariable()
+  {
+    return loopVariable;
+  }
+
+  Expression *getRhs()
+  {
+    return rhs;
+  }
+
+  Expression *getIterCondition()
+  {
+    return iterCondition;
+  }
+
+  Expression *getUpdateExpression()
+  {
+    return updateExpression;
+  }
+
+  blockStatement *getBody()
+  {
+    return body;
   }
 };
 

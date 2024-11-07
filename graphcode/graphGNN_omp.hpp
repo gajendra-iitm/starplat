@@ -65,7 +65,7 @@ void uniformDistributionInit_omp(double **weights, int num_neurons_current, int 
     double min = -0.5;
     double max = 0.5;
     std::random_device rd; // Obtain a random number from hardware
-    std::mt19937 gen(42);    // Seed the generator
+    std::mt19937 gen(rd());    // Seed the generator
     std::uniform_real_distribution<> dist(min, max);
     std::cout << "uniform distributionx    with input neurons : " << num_neurons_current << " and output neurons : " << num_features_next << std::endl;
     for (int i = 0; i < num_neurons_current; i++)
@@ -599,7 +599,7 @@ void adamOptimizer_omp(GNN &gnn, int epochNumber, double lr, double beta1, doubl
                 double v_hat = layers[i].v_weights[j][k] / (1 - pow(beta2, t));
 
                 // Update weights with weight decay
-                layers[i].weights[j][k] -= lr * (m_hat / (sqrt(v_hat) + epsilon) + weight_decay * layers[i].weights[j][k]);
+                layers[i].weights[j][k] -= lr * (m_hat / (sqrt(v_hat) + epsilon) );
             }
         }
         for (int j = 0; j < layers[i].num_features; j++)
