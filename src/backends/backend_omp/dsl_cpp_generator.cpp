@@ -185,78 +185,82 @@ namespace spomp
         generateStatement(whilestmt->getBody());
     }
 
-    void dsl_cpp_generator::generateStatement(statement *stmt)
+    void dsl_cpp_generator::generateAllForAllStatements()
     {
-        if (stmt->getTypeofNode() != NODE_FORALLSTMT && !forAllVec.empty())
+        int numForAlls = forAllVec.size();
+        int maxDepth = 0;
+
+        for (int i = 1; i < numForAlls; i++)
         {
-            int numForAlls = forAllVec.size();
-            int maxDepth = 0;
+            auto forAll = forAllVec[i];
 
-            for (int i = 1; i < numForAlls; i++)
+            for (int j = 0; j < i; j++)
             {
-                auto forAll = forAllVec[i];
+                auto dep = forAllVec[j];
 
-                for (int j = 0; j < i; j++)
+                auto depUses = dep->getUses();
+                auto depDefs = dep->getDefs();
+
+                bool hasDep = false;
+                for (auto use : forAll->getUses())
                 {
-                    auto dep = forAllVec[j];
-
-                    auto depUses = dep->getUses();
-                    auto depDefs = dep->getDefs();
-
-                    bool hasDep = false;
-                    for (auto use : forAll->getUses())
+                    if (depDefs.find(use) != depDefs.end())
                     {
-                        if (depDefs.find(use) != depDefs.end())
+                        // read-write dependency
+                        hasDep = true;
+                        break;
+                    }
+                }
+
+                if (!hasDep)
+                {
+                    for (auto def : forAll->getDefs())
+                    {
+                        if (depUses.find(def) != depUses.end() || depDefs.find(def) != depDefs.end())
                         {
-                            // read-write dependency
+                            // write-read or write-write dependency
                             hasDep = true;
                             break;
                         }
                     }
-
-                    if (!hasDep)
-                    {
-                        for (auto def : forAll->getDefs())
-                        {
-                            if (depUses.find(def) != depUses.end() || depDefs.find(def) != depDefs.end())
-                            {
-                                // write-read or write-write dependency
-                                hasDep = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (hasDep)
-                    {
-                        forAll->setDepthInDepGraph(std::max(forAll->getDepthInDepGraph(), dep->getDepthInDepGraph() + 1));
-                        maxDepth = std::max(maxDepth, forAll->getDepthInDepGraph());
-                    }
                 }
-            }
 
-            std::unordered_map<int, std::vector<forallStmt *>> depthToForAll;
-            for (auto forAll : forAllVec)
-            {
-                depthToForAll[forAll->getDepthInDepGraph()].push_back(forAll);
-            }
-
-            forAllVec.clear();
-
-            for (int i = 0; i <= maxDepth; i++)
-            {
-                auto forAlls = depthToForAll[i];
-                auto numForAlls = forAlls.size();
-
-                for (int j = 0; j < numForAlls - 1; j++)
+                if (hasDep)
                 {
-                    auto forAll = forAlls[j];
-                    forAll->setNowait();
-                    generateForAll(forAll);
+                    forAll->setDepthInDepGraph(std::max(forAll->getDepthInDepGraph(), dep->getDepthInDepGraph() + 1));
+                    maxDepth = std::max(maxDepth, forAll->getDepthInDepGraph());
                 }
-                auto finalForAll = forAlls[numForAlls - 1];
-                generateForAll(finalForAll);
             }
+        }
+
+        std::unordered_map<int, std::vector<forallStmt *>> depthToForAll;
+        for (auto forAll : forAllVec)
+        {
+            depthToForAll[forAll->getDepthInDepGraph()].push_back(forAll);
+        }
+
+        forAllVec.clear();
+
+        for (int i = 0; i <= maxDepth; i++)
+        {
+            auto forAlls = depthToForAll[i];
+            auto numForAlls = forAlls.size();
+
+            for (int j = 0; j < numForAlls - 1; j++)
+            {
+                auto forAll = forAlls[j];
+                forAll->setNowait();
+                generateForAll(forAll);
+            }
+            auto finalForAll = forAlls[numForAlls - 1];
+            generateForAll(finalForAll);
+        }
+    }
+
+    void dsl_cpp_generator::generateStatement(statement *stmt)
+    {
+        if (stmt->getTypeofNode() != NODE_FORALLSTMT && !forAllVec.empty())
+        {
         }
 
         if (stmt->getTypeofNode() == NODE_BLOCKSTMT)
@@ -1037,11 +1041,11 @@ namespace spomp
     {
         if (forAll->getNowait())
         {
-            main.pushString("#pragma omp parallel for nowait //here0");
+            main.pushString("#pragma omp parallel for nowait");
         }
         else
         {
-            main.pushString("#pragma omp parallel for //here1");
+            main.pushString("#pragma omp parallel for");
         }
         // main.pushString("#pragma omp parallel for //here1"); // This needs to be changed to checked for 'For' inside a parallel section.
         if (forAll->get_reduceKeys().size() > 0)
@@ -2757,6 +2761,10 @@ namespace spomp
         generatePriorDeclarations(func);
 
         generateBlock(func->getBlockStatement(), false);
+        if (!forAllVec.empty())
+        {
+            generateAllForAllStatements();
+        }
         main.NewLine();
         main.pushstr_newL("}");
         incFuncCount(func->getFuncType());

@@ -104,8 +104,10 @@ class dsl_cpp_generator {
   void generateNestedContainer(Type* type);
   void generateFreeInCurrentBatch();
   void generatePriorDeclarations(Function* proc);
+  void generateAllForAllStatements();
 
-  blockStatement* includeIfToBlock(forallStmt* forAll);
+      blockStatement *
+      includeIfToBlock(forallStmt *forAll);
   Expression* associateIterNodeToProp(Expression* filterExpr, Identifier* iterNode);
 
   void generateId();
