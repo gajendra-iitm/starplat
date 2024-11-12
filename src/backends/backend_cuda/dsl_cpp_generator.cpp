@@ -722,7 +722,7 @@ namespace spcuda
 
     void dsl_cpp_generator::generateStatement(statement *stmt, bool isMainFile)
     {
-        if (stmt->getTypeofNode() != NODE_FORALLSTMT && !forAllVec.empty() && isMainFile)
+        if (stmt->getTypeofNode() != NODE_FORALLSTMT && stmt->getTypeofNode() != NODE_TRANSFERSTMT && !forAllVec.empty() && isMainFile)
         {
             generateAllForAllStatements();
         }
