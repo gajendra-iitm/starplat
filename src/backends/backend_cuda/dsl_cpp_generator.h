@@ -65,7 +65,7 @@ namespace spcuda
         bool isHeader;
         bool isOptimized;
 
-        std::vector<forallStmt*> forAllVec;
+        std::vector<forallStmt *> forAllVec;
 
     public:
         dsl_cpp_generator()
@@ -118,6 +118,7 @@ namespace spcuda
         void generateBFSAbstraction(iterateBFS *bfsAbstraction, bool isMainFile);
         void generateRevBFSAbstraction(iterateBFS *bfsAbstraction,
                                        bool isMainFile); // reverse
+        void generateAllForAllStatements();
 
         void incFuncCount(int funcType);
         int curFuncCount();
