@@ -1,4 +1,3 @@
-%define parse.trace
 %{
 	#include <stdio.h>
 	#include <string.h>
@@ -300,7 +299,8 @@ expression : proc_call { $$=$1;};
              | expression '+' expression { $$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_ADD);};
 	         | expression '-' expression { $$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_SUB);};
 	         | expression '*' expression {$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MUL);};
-	         | expression'/' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_DIV);};
+	         | expression '/' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_DIV);};
+			 | expression '%' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MOD);};
              | expression T_AND_OP expression {$$=Util::createNodeForLogicalExpr($1,$3,OPERATOR_AND);};
 	         | expression T_OR_OP  expression {$$=Util::createNodeForLogicalExpr($1,$3,OPERATOR_OR);};
 	         | expression T_LE_OP expression {$$=Util::createNodeForRelationalExpr($1,$3,OPERATOR_LE);};
