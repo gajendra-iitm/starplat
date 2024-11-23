@@ -38,6 +38,18 @@ usedVariables GetVarsExpr(Expression *expr)
         result = GetVarsExpr(expr->getLeft());
         result.merge(GetVarsExpr(expr->getRight()));
     }
+    else if(expr->isIndexExpr()){
+      std::cout<<"USED VARS INDEX EXPRESSION\n";
+
+      Expression* mapExpr = expr->getMapExpr();
+      Expression* indexExpr = expr->getIndexExpr();
+      Identifier* indexExprId = indexExpr->getId(); 
+
+      Identifier* mapExprId = mapExpr->getId();
+      result.addVariable(mapExprId, READ);
+      result.addVariable(indexExprId, READ);
+
+    }
     return result;
 }
 
@@ -70,6 +82,17 @@ usedVariables GetVarsAssignment(assignment *stmt)
   }
   else if (stmt->lhs_isIdentifier())
     currVars.addVariable(stmt->getId(), WRITE);
+  else if(stmt->lhs_isIndexAccess()){
+    Expression* expr = stmt->getIndexAccess();
+    Expression* mapExpr = expr->getMapExpr();
+    Expression* indexExpr = expr->getIndexExpr();
+    Identifier* indexExprId = indexExpr->getId();
+
+    Identifier* mapExprId = mapExpr->getId();
+    currVars.addVariable(mapExprId, READ);
+    currVars.merge(GetVarsExpr(indexExpr));
+    // currVars.addVariable(indexExprId, READ);
+  }
 
   usedVariables exprVars = GetVarsExpr(stmt->getExpr());
   currVars.merge(exprVars);
@@ -215,22 +238,23 @@ usedVariables getVarsBFS(iterateBFS *stmt)
   return currVars;
 }
 
-usedVariables getVarsBFS(iterateBFS2 *stmt)
-{
-  usedVariables currVars = GetVarsStatement(stmt->getBody());
-  if (stmt->getRBFS() != nullptr)
-  {
-    iterateReverseBFS *RBFSstmt = stmt->getRBFS();
-    if (RBFSstmt->getBFSFilter() != nullptr)
-      currVars.merge(GetVarsExpr(RBFSstmt->getBFSFilter()));
-    currVars.merge(GetVarsStatement(RBFSstmt->getBody()));
-  }
+// usedVariables getVarsBFS(iterateBFS2 *stmt)
+// {
+//   usedVariables currVars = GetVarsStatement(stmt->getBody());
+//   if (stmt->getRBFS() != nullptr)
+//   {
+//     iterateReverseBFS *RBFSstmt = stmt->getRBFS();
+//     if (RBFSstmt->getBFSFilter() != nullptr)
+//       currVars.merge(GetVarsExpr(RBFSstmt->getBFSFilter()));
+//     currVars.merge(GetVarsStatement(RBFSstmt->getBody()));
+//   }
 
-  return currVars;
-}
+//   return currVars;
+// }
 
 usedVariables GetVarsForAll(forallStmt *stmt)
 {
+  std::cout<<"\nENTER GET VARS\n"<<stmt->getIterator()->getIdentifier()<<" "<<stmt->getSource()->getIdentifier()<<"\n";
   usedVariables currVars = GetVarsStatement(stmt->getBody());
   currVars.removeVariable(stmt->getIterator(), READ_WRITE);
 
@@ -244,7 +268,11 @@ usedVariables GetVarsForAll(forallStmt *stmt)
   }
   else if(!stmt->isSourceField())
   {
+      std::cout<<"NOT SOURCE FIELD\n";
       Identifier *iden = stmt->getSource();
+      // if(currVars.isUsedVariable(iden)){
+      //   currVars.addVariable(iden, READ);
+      // }
       currVars.addVariable(iden, READ);
   }
   else

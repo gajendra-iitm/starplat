@@ -5,14 +5,14 @@
 
 struct MetaDataUsed
 {
-  public:
-  bool isMetaUsed;      // if d_meta is used in the ASTNode
-  bool isRevMetaUsed;   // if d_rev_meta is used in the ASTNode
-  bool isDataUsed;      // if d_data is used in the ASTNode
-  bool isSrcUsed;       // if d_src is used in the ASTNode
-  bool isWeightUsed;    // if d_weight is used in the ASTNode
+public:
+  bool isMetaUsed;    // if d_meta is used in the ASTNode
+  bool isRevMetaUsed; // if d_rev_meta is used in the ASTNode
+  bool isDataUsed;    // if d_data is used in the ASTNode
+  bool isSrcUsed;     // if d_src is used in the ASTNode
+  bool isWeightUsed;  // if d_weight is used in the ASTNode
 
-  MetaDataUsed() 
+  MetaDataUsed()
   {
     isMetaUsed = false;
     isRevMetaUsed = false;
@@ -26,7 +26,7 @@ struct MetaDataUsed
     return isMetaUsed || isRevMetaUsed || isDataUsed || isSrcUsed || isWeightUsed;
   }
 
-  MetaDataUsed& operator|= (const MetaDataUsed& rhs)
+  MetaDataUsed &operator|=(const MetaDataUsed &rhs)
   {
     isMetaUsed = isMetaUsed || rhs.isMetaUsed;
     isRevMetaUsed = isRevMetaUsed || rhs.isRevMetaUsed;
@@ -36,7 +36,7 @@ struct MetaDataUsed
     return *this;
   }
 
-  MetaDataUsed& operator&= (const MetaDataUsed& rhs)
+  MetaDataUsed &operator&=(const MetaDataUsed &rhs)
   {
     isMetaUsed = isMetaUsed && rhs.isMetaUsed;
     isRevMetaUsed = isRevMetaUsed && rhs.isRevMetaUsed;
@@ -46,7 +46,7 @@ struct MetaDataUsed
     return *this;
   }
 
-  MetaDataUsed& operator^= (const MetaDataUsed& rhs)
+  MetaDataUsed &operator^=(const MetaDataUsed &rhs)
   {
     isMetaUsed = isMetaUsed ^ rhs.isMetaUsed;
     isRevMetaUsed = isRevMetaUsed ^ rhs.isRevMetaUsed;
@@ -56,7 +56,7 @@ struct MetaDataUsed
     return *this;
   }
 
-  MetaDataUsed& operator= (const MetaDataUsed& rhs)
+  MetaDataUsed &operator=(const MetaDataUsed &rhs)
   {
     isMetaUsed = rhs.isMetaUsed;
     isRevMetaUsed = rhs.isRevMetaUsed;
@@ -66,28 +66,28 @@ struct MetaDataUsed
     return *this;
   }
 
-  MetaDataUsed operator| (const MetaDataUsed& rhs) const
+  MetaDataUsed operator|(const MetaDataUsed &rhs) const
   {
     MetaDataUsed result = *this;
     result |= rhs;
     return result;
   }
 
-  MetaDataUsed operator& (const MetaDataUsed& rhs) const
+  MetaDataUsed operator&(const MetaDataUsed &rhs) const
   {
     MetaDataUsed result = *this;
     result &= rhs;
     return result;
   }
 
-  MetaDataUsed operator^ (const MetaDataUsed& rhs) const
+  MetaDataUsed operator^(const MetaDataUsed &rhs) const
   {
     MetaDataUsed result = *this;
     result ^= rhs;
     return result;
   }
 
-  MetaDataUsed operator~ () const
+  MetaDataUsed operator~() const
   {
     MetaDataUsed result = *this;
     result.isMetaUsed = !result.isMetaUsed;

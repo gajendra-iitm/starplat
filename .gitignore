@@ -24,9 +24,15 @@ cudadump/
 testcases/testAMD/*
 graphcode/generated_hip/*cc
 graphcode/generated_hip/*h
+graphcode/generated_mpi/output/*
+graphcode/generated_mpi/Makefile
+graphcode/generated_mpi/*.cc
+graphcode/generated_mpi/*.h
 graphcode/generated_omp/*cc
 graphcode/generated_omp/*h
 graphcode/generated_cuda/*
 .idea/
 RandomCode.cpp
 *.o
+**/.DS_Store
+graphcode/sample_graphs/*

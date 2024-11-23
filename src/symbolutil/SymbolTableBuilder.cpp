@@ -341,8 +341,8 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       if (depId->getSymbolInfo() != NULL)
       {
         Identifier *tableId = depId->getSymbolInfo()->getId();
-        printf(tableId->getIdentifier());
-        printf("\n");
+        printf("%s\n", tableId->getIdentifier());
+        //printf("\n");
         tableId->set_redecl();                            // explained in the ASTNodeTypes
         tableId->set_fpassociation();                     // explained in the ASTNodeTypes
         tableId->set_fpId(fixedPointId->getIdentifier()); // explained in the ASTNodeTypes

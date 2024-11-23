@@ -13,7 +13,7 @@
 #include "dsl_cpp_generator.h"
 #include "getUsedVars.cpp"
 
-#define HIT_CHECK std::cout << "Hit at line " << __LINE__ << " of function " << __func__ << " in file " << __FILE__ << "\n";
+// #define HIT_CHECK std::std::cout << "Hit at line " << __LINE__ << " of function " << __func__ << " in file " << __FILE__ << "\n";
 
 string forAllSrcVariable = "";
 string forAllNbrVariable = ""; 
@@ -91,11 +91,11 @@ namespace sphip {
         GenerateFunctionBody(func);
         main.NewLine();
 
-        GenerateTimerStart();
-        GenerateHipMallocParams(func->getParamList()); //TODO: impl
+        // GenerateTimerStart();
+        // GenerateHipMallocParams(func->getParamList()); //TODO: impl
         GenerateBlock(func->getBlockStatement(), false);
         
-        GenerateTimerStop();
+        // GenerateTimerStop();
 
         GenerateHipMemcpyParams(func->getParamList());
 
@@ -108,7 +108,12 @@ namespace sphip {
 
         // TODO: Add function to increment indentation
 
-        targetFile.pushString("void");
+        if(func->containsReturn()){
+            targetFile.pushString("auto");
+        }
+        else{
+            targetFile.pushString("void");
+        }
         targetFile.AddSpace();
         std::cout << func->getIdentifier()->getIdentifier() << std::endl;
         targetFile.pushString(func->getIdentifier()->getIdentifier());
@@ -128,7 +133,7 @@ namespace sphip {
             arg_currNo++;
             argumentTotal--;
             Type *type = (*itr)->getType();
-            targetFile.pushString(ConvertToCppType(type)); // TODO: add function in header and impl
+            targetFile.pushString(ConvertToCppType(type, false, true)); // TODO: add function in header and impl
             targetFile.AddSpace();
 
             char* parName = (*itr)->getIdentifier()->getIdentifier();
@@ -166,9 +171,9 @@ namespace sphip {
                 if (type->isPrimitiveType()) {
                     char strBuffer[1024];
 
-                    sprintf(strBuffer, "__device__ %s %s ;", ConvertToCppType(type).c_str(), parName);
-                    targetFile.pushString(strBuffer);
-                    targetFile.NewLine();
+                    std::sprintf(strBuffer, "__device__ %s %s ;", ConvertToCppType(type).c_str(), parName);
+                    // targetFile.pushString(strBuffer);
+                    // targetFile.NewLine();
                 }
             }
         }
@@ -202,7 +207,7 @@ namespace sphip {
         CheckAndGenerateVariables(func, "d");
         CheckAndGenerateHipMalloc(func);
         CheckAndGenerateMemcpy(func);
-        GenerateLaunchConfiguration();
+        // GenerateLaunchConfiguration();
     }
 
     void DslCppGenerator::SetCurrentFunction(Function* func) {
@@ -212,69 +217,6 @@ namespace sphip {
 
     Function* DslCppGenerator::GetCurrentFunction() {
         return this->function;
-    }
-
-    std::string DslCppGenerator::ConvertToCppType(Type *type) {
-
-        if (type->isPrimitiveType()) {
-
-            int typeId = type->gettypeId();
-            switch (typeId) {
-                case TYPE_INT:
-                    return "int";
-                case TYPE_BOOL:
-                    return "bool";
-                case TYPE_LONG:
-                    return "long";
-                case TYPE_FLOAT:
-                    return "float";
-                case TYPE_DOUBLE:
-                    return "double";
-                case TYPE_NODE:
-                    return "int";
-                case TYPE_EDGE:
-                    return "int";
-                default:
-                    assert(false);
-            }
-        } else if (type->isPropType()) {
-
-            Type* targetType = type->getInnerTargetType();
-            if (targetType->isPrimitiveType()) {
-                int typeId = targetType->gettypeId();
-                switch (typeId) {
-                    case TYPE_INT:
-                        return "int*";
-                    case TYPE_BOOL:
-                        return "bool*";
-                    case TYPE_LONG:
-                        return "long*";
-                    case TYPE_FLOAT:
-                        return "float*";
-                    case TYPE_DOUBLE:
-                        return "double*";
-                    default:
-                        assert(false);
-                }
-            }
-        } else if (type->isNodeEdgeType()) {
-            return "int";  // need to be modified.
-
-        } else if (type->isGraphType()) {
-            return "graph&";
-        } else if (type->isCollectionType()) {
-            int typeId = type->gettypeId();
-
-            switch (typeId) {
-                case TYPE_SETN:
-                    return "std::set<int>&";
-
-                default:
-                    assert(false);
-            }
-        }
-
-        return "NA";
     }
 
     void DslCppGenerator::GenerateCsrArrays(const std::string &graphId, Function *func) {
@@ -358,7 +300,7 @@ namespace sphip {
         case NODE_ASSIGN:
             {
                 assignment *asst = static_cast<assignment*>(stmt);
-
+                std::cout<<"ASSIGNMENT EXPR "<<asst->isDeviceAssignment()<<endl;
                 if(asst->isDeviceAssignment())
                     GenerateDeviceAssignment(asst, isMainFile);
                 else
@@ -383,22 +325,35 @@ namespace sphip {
             GenerateReductionStmt(static_cast<reductionCallStmt*>(stmt), isMainFile);
             break;
 
+        case NODE_RETURN:
+        {
+            returnStmt* returnStmtNode = (returnStmt*)stmt;
+            main.pushstr_space("return");
+            GenerateExpression(returnStmtNode->getReturnExpression(), isMainFile);
+            main.pushstr_newL(";");
+            break;
+        }
+
         case NODE_ITRBFS:
             GenerateItrBfs(static_cast<iterateBFS*>(stmt), isMainFile);
             break;
 
-        case NODE_ITRBFS2:
-            GenerateItrBfs2(static_cast<iterateBFS2*>(stmt), isMainFile);
+        case NODE_WHILESTMT:
+            GenerateWhileStmt((whileStmt*)stmt, isMainFile);
             break;
 
+        // case NODE_ITRBFS2:
+        //     GenerateItrBfs2(static_cast<iterateBFS2*>(stmt), isMainFile);
+        //     break;
+
         case NODE_ITRRBFS:
-            cout << "DOES IT HIT ITRTBFS\n";
+            std::cout << "DOES IT HIT ITRTBFS\n";
             // GenerateItrRevBfs(static_cast<iterateReverseBFS*>(stmt), isMainFile);
             break;
 
-        case NODE_ITERBFSREV:
-            GenerateItrBfsRev(static_cast<iterateBFSReverse*>(stmt), isMainFile);
-            break;
+        // case NODE_ITERBFSREV:
+        //     GenerateItrBfsRev(static_cast<iterateBFSReverse*>(stmt), isMainFile);
+        //     break;
 
         case NODE_PROCCALLSTMT:
             GenerateProcCallStmt(static_cast<proc_callStmt*>(stmt), isMainFile);
@@ -448,7 +403,7 @@ namespace sphip {
             targetFile.pushstr_newL("//hipFree up!! all propVars in this BLOCK!");
         }
         for (Identifier* iden : vars) {
-            sprintf(strBuffer, "hipFree(d%s);", CapitalizeFirstLetter(iden->getIdentifier()));
+            std::sprintf(strBuffer, "hipFree(d%s);", CapitalizeFirstLetter(iden->getIdentifier()));
             targetFile.pushstr_newL(strBuffer);
         }
         targetFile.NewLine();
@@ -458,6 +413,86 @@ namespace sphip {
 
         main.NewLine();
     }
+
+    std::string DslCppGenerator::ConvertToCppType(Type* type, bool isMemcpy, bool isParameter) {
+        if (type->isPrimitiveType()) {
+            int typeId = type->gettypeId();
+            switch (typeId) {
+            case TYPE_INT:
+                return "int";
+            case TYPE_BOOL:
+                return "bool";
+            case TYPE_LONG:
+                return "long";
+            case TYPE_FLOAT:
+                return "float";
+            case TYPE_DOUBLE:
+                return "double";
+            case TYPE_NODE:
+                return "int";
+            case TYPE_EDGE:
+                return "int";
+            default:
+                assert(false);
+            }
+        } else if (type->isPropType()) {
+            Type* targetType = type->getInnerTargetType();
+            if (targetType->isPrimitiveType()) {
+            int typeId = targetType->gettypeId();
+            //~ cout << "TYPEID IN CPP" << typeId << "\n";
+            switch (typeId) {
+                case TYPE_INT:
+                return "int*";
+                case TYPE_BOOL:
+                return "bool*";
+                case TYPE_LONG:
+                return "long*";
+                case TYPE_FLOAT:
+                return "float*";
+                case TYPE_DOUBLE:
+                return "double*";
+                default:
+                assert(false);
+            }
+            }
+        } else if (type->isNodeEdgeType()) {
+            return "int";  // need to be modified.
+
+        } else if (type->isGraphType()) {
+            return "graph&";
+        } else if (type->isCollectionType()) {
+            int typeId = type->gettypeId();
+
+            switch (typeId) {
+            case TYPE_SETN:
+                return "std::set<int>&";
+
+            case TYPE_CONTAINER:
+                {
+                char* newS = new char[1024];
+                string vecString = "std::vector<";   
+
+                string valType = ConvertToCppType(type->getInnerTargetType());
+                string innerString = valType;
+                vecString = vecString + innerString;
+                vecString = vecString + ">";
+
+                if(isMemcpy){ vecString = innerString + "*";}
+
+                if(isParameter) {vecString = vecString + "&";}
+
+                copy(vecString.begin(), vecString.end(), newS);
+                newS[vecString.size()] = '\0';
+                return newS; 
+
+                }
+            default:
+                assert(false);
+            }
+        }
+
+        return "NA";
+        }
 
     void DslCppGenerator::GenerateVariableDeclaration(declaration* stmt, bool isMainFile) {
 
@@ -519,12 +554,12 @@ namespace sphip {
             bool declInHeader = !isMainFile;  // if variable is declared in header file, to stop generating unnecessary commas and newline
 
             if (isMainFile == true) {
-                sprintf(strBuffer, "__device__ %s %s; ", varType, varName);
-                header.pushString(strBuffer);
+                std::sprintf(strBuffer, "__device__ %s %s; ", varType, varName);
+                // header.pushString(strBuffer);
                 declInHeader = true;
             }
             /// REPLICATE ON HOST AND DEVICE
-            sprintf(strBuffer, "%s %s", varType, varName);
+            std::sprintf(strBuffer, "%s %s", varType, varName);
             targetFile.pushString(strBuffer);
 
             if (stmt->isInitialized()) {
@@ -544,6 +579,101 @@ namespace sphip {
             }
 
         }
+
+        else if(type->isCollectionType())
+         {
+           if(type->gettypeId() == TYPE_UPDATES)
+             {
+                main.pushString(ConvertToCppType(type));
+                main.push(' ');
+                main.pushString(stmt->getdeclId()->getIdentifier());
+                if(stmt->isInitialized())
+                   {
+                      main.pushString(" = ");
+                      GenerateExpression(stmt->getExpressionAssigned(), true, false);
+                     
+                   } 
+                  main.pushstr_newL(";");
+   
+
+                // if(insideBatchBlock)
+                //    freeIdStore.back().push_back(stmt->getdeclId());   
+             }
+            if(type->gettypeId() == TYPE_NODEMAP){
+               
+                main.pushString(ConvertToCppType(type));
+                main.push(' ');
+                main.pushString(stmt->getdeclId()->getIdentifier());
+                main.pushstr_newL(";");
+           }
+           if(type->gettypeId() == TYPE_CONTAINER){
+             
+              main.pushString(ConvertToCppType(type));
+              main.push(' ');
+              main.pushString(stmt->getdeclId()->getIdentifier());
+
+              if(type->isInitializeType()){
+                string temp = "";
+                temp = temp + "(" + std::string(type->getId()->getIdentifier()) + ", " + to_string(type->getVal()) + ")";
+                main.pushString(temp);
+              }
+
+              if(type->getArgList().size() !=0){
+                 
+                 list<argument*> args = type->getArgList();
+                 Expression* expr = args.front()->getExpr();
+                 main.pushString("(");
+                 GenerateExpression(expr, isMainFile);
+
+              // if(type->getInnerTargetSize() != NULL)
+              //    generateNestedContainer(type->getInnerTargetSize());
+              if(type->getArgList().size() == 2) {
+                 main.pushstr_space(",");
+                 GenerateExpression(args.back()->getExpr(), isMainFile);
+               }   
+
+                 main.pushString(")");
+
+              }
+
+              main.pushstr_newL(";");
+
+              if(stmt->getdeclId()->getSymbolInfo()->getId()->isLocalMapReq()){
+
+                 main.pushString("std::vector<");
+                 main.pushString(ConvertToCppType(type));
+                 main.pushstr_space(">");
+
+                 main.pushString(stmt->getdeclId()->getIdentifier());
+                 main.pushString("_local");
+                 main.pushString("(omp_get_max_threads() , ");
+                 main.pushString(ConvertToCppType(type));
+                 
+                 if(type->getArgList().size() !=0){
+                 
+                    list<argument*> args = type->getArgList();
+                    Expression* expr = args.front()->getExpr();
+                    main.pushString("(");
+                    GenerateExpression(expr, isMainFile);
+  
+                // if(type->getInnerTargetSize() != NULL)
+                //    generateNestedContainer(type->getInnerTargetSize());
+                if(type->getArgList().size() == 2) {
+                   main.pushstr_space(",");
+                   GenerateExpression(args.back()->getExpr(), isMainFile);
+                }   
+
+                 main.pushString(")");
+              }
+              main.pushString(")");
+                  
+              main.pushstr_newL(";");
+
+              }
+
+           }
+
+         }
     }
 
     void DslCppGenerator::GenerateDeviceAssignment(assignment* stmt, bool isMainFile) {
@@ -565,14 +695,14 @@ namespace sphip {
                 
                 const char* varType = ConvertToCppType(typeB).c_str();  //DONE: get the type from id
                 if(isMainFile) {
-                    sprintf(strBuffer, "initIndex<%s><<<1,1>>>(V,d%s,%s,(%s)",
+                    std::sprintf(strBuffer, "initIndex<%s><<<1,1>>>(V,d%s,%s,(%s)",
                         varType,
                         CapitalizeFirstLetter(propId->getIdentifier2()->getIdentifier()),
                         propId->getIdentifier1()->getIdentifier(),
                         varType);                
                 }
                 else {
-                    sprintf(strBuffer, "d%s[%s] = (",
+                    std::sprintf(strBuffer, "d%s[%s] = (",
                             CapitalizeFirstLetter(propId->getIdentifier2()->getIdentifier()),
                             propId->getIdentifier1()->getIdentifier());
                 }
@@ -611,37 +741,47 @@ namespace sphip {
         if (stmt->lhs_isIdentifier()) {
             Identifier* id = stmt->getId();
             Expression* exprAssigned = stmt->getExpr();
+            std::cout<<"LHS ID "<<stmt->hasPropCopy()<<" "<<id->getIdentifier()<<endl;
             if (stmt->hasPropCopy())  // prop_copy is of the form (propId = propId)
             {
                 char strBuffer[1024];
                 Identifier* rhsPropId2 = exprAssigned->getId();
                 Type* type = id->getSymbolInfo()->getType();
 
-                sprintf(strBuffer, "hipMemcpy(d%s, d%s, sizeof(%s)*V, hipMemcpyDeviceToDevice)", CapitalizeFirstLetter(id->getIdentifier()),
+                std::sprintf(strBuffer, "hipMemcpy(d%s, d%s, sizeof(%s)*V, hipMemcpyDeviceToDevice)", CapitalizeFirstLetter(id->getIdentifier()),
                         CapitalizeFirstLetter(rhsPropId2->getIdentifier()), ConvertToCppType(type->getInnerTargetType()).c_str());
                 targetFile.pushString(strBuffer);
                 targetFile.pushstr_newL(";");
             } else
-                targetFile.pushString(id->getIdentifier());
-            } else if (stmt->lhs_isProp())  // the check for node and edge property to be
-                                        // carried out.
             {
-                PropAccess* propId = stmt->getPropId();
-                if (stmt->getAtomicSignal()) {
-                    targetFile.pushString("atomicAdd(&");
-                    isAtomic = true;
-                }
-                if (stmt->isAccumulateKernel()) {  // NOT needed
-                    isResult = true;
-                    std::cout << "\t  RESULT NO BC by 2 ASST" << '\n';
-                }
-                std::string varName = CapitalizeFirstLetter(std::string(propId->getIdentifier2()->getIdentifier()));
-                varName = "d" + varName;
-                targetFile.pushString(varName);
-                targetFile.push('[');
-                targetFile.pushString(propId->getIdentifier1()->getIdentifier());
-                targetFile.push(']');
+                targetFile.pushString(id->getIdentifier());
             }
+        }
+         else if (stmt->lhs_isProp()){  // the check for node and edge property to be carried out.
+            std::cout<<"LHS PROP "<<endl;
+            PropAccess* propId = stmt->getPropId();
+            if (stmt->getAtomicSignal()) {
+                targetFile.pushString("atomicAdd(&");
+                isAtomic = true;
+            }
+            if (stmt->isAccumulateKernel()) {  // NOT needed
+                isResult = true;
+                std::cout << "\t  RESULT NO BC by 2 ASST" << '\n';
+            }
+            std::string varName = CapitalizeFirstLetter(std::string(propId->getIdentifier2()->getIdentifier()));
+            varName = "d" + varName;
+            targetFile.pushString(varName);
+            targetFile.push('[');
+            targetFile.pushString(propId->getIdentifier1()->getIdentifier());
+            targetFile.push(']');
+        }
+        else if(stmt->lhs_isIndexAccess()){
+    
+            cout<<"entered here for index access assignment type"<<"\n";
+            Expression* indexAccessExpr = stmt->getIndexAccess();
+            GenerateExpression(indexAccessExpr, isMainFile);
+
+        }
 
         if (isAtomic)
             targetFile.pushString(", ");
@@ -662,11 +802,11 @@ namespace sphip {
     
 
     void DslCppGenerator::GenerateIfStmt(ifStmt* stmt, bool isMainFile) {
-
+        std::cout<<"Entered IF BLOCK..\n";
         dslCodePad& targetFile = isMainFile ? main : header;
         Expression* condition = stmt->getCondition();
 
-        targetFile.pushString("if (");
+        targetFile.pushString("\nif (");
         GenerateExpression(condition, isMainFile);
         targetFile.pushStringWithNewLine(") {");
         GenerateStatement(stmt->getIfBody(), isMainFile);
@@ -719,58 +859,88 @@ namespace sphip {
 
         if(stmt->isForall()) {
 
-            cout << "HIT inside FORALL";
+            std::cout << "HIT inside FORALL";
 
             usedVariables usedVars = GetVarsForAll(stmt);
             list<Identifier*> vars = usedVars.getVariables();
 
             for (Identifier* iden : vars) {
+                std::cout<<"IDENTIFIER "<<iden->getIdentifier()<<"\n";
                 Type* type = iden->getSymbolInfo()->getType();
 
                 if (type->isPrimitiveType())
                     GenerateHipMemCpySymbol(iden->getIdentifier(), ConvertToCppType(type), true);
+                else if(type->isCollectionType()){
+                    std::cout<<"COLLECTION TYPE\n";
+                    string memcpy = "";
+                    memcpy = memcpy + ConvertToCppType(type, true) + " d_" + iden->getIdentifier() + to_string(loopNum) + ";\n";
+                    memcpy = memcpy + "hipMalloc(" + "&d_" + iden->getIdentifier() + to_string(loopNum) + ", sizeof(" + ConvertToCppType(type->getInnerTargetType()) +  ") * " + iden->getIdentifier() + ".size());\n";
+                    memcpy = memcpy + "hipMemcpy(" + "d_" + string(iden->getIdentifier()) + to_string(loopNum) + 
+                    + ", " + string(iden->getIdentifier()) + ".data(), " + string(iden->getIdentifier()) + ".size() * sizeof(" + ConvertToCppType(type->getInnerTargetType())  
+                    + "), hipMemcpyHostToDevice);\n";
+                    targetFile.pushString(memcpy);
+                }
             }
+            
 
-            main.pushString(GetCurrentFunction()->getIdentifier()->getIdentifier());
+            GenerateLaunchConfiguration(stmt, loopNum, isMainFile);
+
+            targetFile.pushString(GetCurrentFunction()->getIdentifier()->getIdentifier());
             std::string temp = "_kernel" + to_string(loopNum);
-            main.pushString(temp);
-            loopNum++;
-            main.pushString("<<<numBlocks, threadsPerBlock>>>(V, E");
+            targetFile.pushString(temp);
+            targetFile.pushString("<<<numBlocks" + to_string(loopNum) + ", threadsPerBlock" + to_string(loopNum) + ">>>(V" + to_string(loopNum));
             if(stmt->getIsMetaUsed())
-                main.pushString(", dOffsetArray");
+                targetFile.pushString(", dOffsetArray");
             if(stmt->getIsDataUsed())
-                main.pushString(", dEdgelist");
+                targetFile.pushString(", dEdgelist");
             if(stmt->getIsSrcUsed())
-                main.pushString(", dSrcList");
+                targetFile.pushString(", dSrcList");
             if(stmt->getIsWeightUsed())
-                main.pushString(", dWeight");
+                targetFile.pushString(", dWeight");
             if(stmt->getIsRevMetaUsed())                                   // if d_rev_meta is used, i.e. nodes_to is called
-                main.pushString(",dRevOffsetArray");
+                targetFile.pushString(",dRevOffsetArray");
 
             for (Identifier* iden : vars) {
                 Type* type = iden->getSymbolInfo()->getType();
                 if (type->isPropType()) {
                     std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
                     parameterName = ", d" + parameterName;
-                    main.pushString(/*createParamName(*/ parameterName);
+                    targetFile.pushString(/*createParamName(*/ parameterName);
+                }
+                else if(type->isPrimitiveType()){
+                    string parameterName = ", " + std::string(iden->getIdentifier());
+                    targetFile.pushString(parameterName);
+                }
+                else if(type->isCollectionType()){
+                    string parameterName = ", d_" + std::string(iden->getIdentifier()) + to_string(loopNum);
+                    targetFile.pushString(parameterName);
                 }
             }
-            main.pushString(")");
-            main.pushStringWithNewLine(";");
+            targetFile.pushString(")");
+            targetFile.pushStringWithNewLine(";");
 
-            main.pushStringWithNewLine("hipDeviceSynchronize();");
+            targetFile.pushStringWithNewLine("hipDeviceSynchronize();");
 
             for (Identifier* iden : vars) {
                 Type* type = iden->getSymbolInfo()->getType();
                 if (type->isPrimitiveType())
                     GenerateHipMemCpySymbol(iden->getIdentifier(), ConvertToCppType(type), false);
+                else if(type->isCollectionType()){
+                    string memcpy = "";
+                    memcpy = memcpy + "hipMemcpy(" + string(iden->getIdentifier()) + ".data(), " + "d_" + string(iden->getIdentifier()) + to_string(loopNum) + ", " + string(iden->getIdentifier()) + ".size() * sizeof(" + ConvertToCppType(type->getInnerTargetType())  
+                    + "), hipMemcpyDeviceToHost);\n";
+                    memcpy = memcpy + "hipFree(d_" + string(iden->getIdentifier()) + to_string(loopNum) + ");\n";
+                    targetFile.pushString(memcpy);
+                }
             }
+
+            loopNum++;
 
             GenerateHipKernel(stmt);
 
         } else {
 
-            cout << "HIT inside FORALL ELSE";
+            std::cout << "HIT inside FORALL ELSE\n";
 
             GenerateForAllSignature(stmt, false);  // FOR LINE
 
@@ -780,6 +950,7 @@ namespace sphip {
             }
 
             if (extractElemFunc != NULL) {
+                std::cout<<"CHECK HERE..\n";
                 if (NeighbourIteration(iteratorMethodId->getIdentifier())) {  
                     
                     char* wItr = stmt->getIterator()->getIdentifier();  // w iterator
@@ -792,15 +963,15 @@ namespace sphip {
                         Identifier* nodeNbr = argList.front()->getExpr()->getId();
                         nbrVar = nodeNbr->getIdentifier();
                         
-                        sprintf(strBuffer, "if(dLevel[%s] == -1) {", wItr);
+                        std::sprintf(strBuffer, "if(dLevel[%s] == -1) {", wItr);
                         targetFile.pushstr_newL(strBuffer);
-                        sprintf(strBuffer, "dLevel[%s] = *dHopsFromSource + 1;", wItr);
+                        std::sprintf(strBuffer, "dLevel[%s] = *dHopsFromSource + 1;", wItr);
 
                         targetFile.pushstr_newL(strBuffer);
                         targetFile.pushstr_newL("*dFinished = false;");
                         targetFile.pushstr_newL("}");
 
-                        sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource + 1) {", wItr);
+                        std::sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource + 1) {", wItr);
                         targetFile.pushstr_newL(strBuffer);
 
                         GenerateBlock((blockStatement*)stmt->getBody(), false, false);
@@ -819,7 +990,7 @@ namespace sphip {
                         Identifier* nodeNbr = argList.front()->getExpr()->getId();
                         nbrVar = nodeNbr->getIdentifier();
                         std::cout << "V?:" << nbrVar << '\n';
-                        sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource) {", wItr);
+                        std::sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource) {", wItr);
                         targetFile.pushstr_newL(strBuffer);
                         GenerateBlock((blockStatement*)stmt->getBody(), false, false);
                         targetFile.pushstr_newL("} // end IF  ");
@@ -845,7 +1016,7 @@ namespace sphip {
                     if (body->getTypeofNode() == NODE_BLOCKSTMT) {
                         targetFile.pushstr_newL("{");
                         //~ targetFile.pushstr_newL("//HERE");
-                        sprintf(strBuffer, "int %s = *itr;", stmt->getIterator()->getIdentifier());
+                        std::sprintf(strBuffer, "int %s = *itr;", stmt->getIterator()->getIdentifier());
                         targetFile.pushstr_newL(strBuffer);
                         GenerateBlock((blockStatement*)body, false);  //FOR BODY for
                         targetFile.pushstr_newL("}");
@@ -853,7 +1024,8 @@ namespace sphip {
                         GenerateStatement(stmt->getBody(), false);
 
                 } else {
-                    GenerateStatement(stmt->getBody(), false);
+                    GenerateBlock((blockStatement*)body, false);  //FOR BODY for
+                    targetFile.pushstr_newL("\n}\n");
                 }
 
                 if (stmt->isForall() && stmt->hasFilterExpr()) {
@@ -866,7 +1038,7 @@ namespace sphip {
 
     void DslCppGenerator::GenerateFixedPoint(fixedPointStmt* stmt, bool isMainFile) {
 
-        cout << "Inside GenerateFixedPoint\n";
+        std::cout << "Inside GenerateFixedPoint\n";
 
         dslCodePad& targetFile = isMainFile ? main : header;
 
@@ -880,11 +1052,16 @@ namespace sphip {
         Identifier* dependentId = NULL;
         assert(convergeExpr->getExpressionFamily() == EXPR_UNARY ||
                 convergeExpr->getExpressionFamily() == EXPR_ID);
+        
         if (convergeExpr->getExpressionFamily() == EXPR_UNARY) {
             if (convergeExpr->getUnaryExpr()->getExpressionFamily() == EXPR_ID) {
-            dependentId = convergeExpr->getUnaryExpr()->getId();
+                dependentId = convergeExpr->getUnaryExpr()->getId();
             }
         }
+        else if(convergeExpr->getExpressionFamily() == EXPR_ID){
+            dependentId=convergeExpr->getId();
+        }
+
         const char* modifiedVar = CapitalizeFirstLetter(dependentId->getIdentifier());
         char* fixPointVar = fixedPointId->getIdentifier();
 
@@ -898,20 +1075,21 @@ namespace sphip {
 
         if (convergeExpr->getExpressionFamily() == EXPR_ID)
             dependentId = convergeExpr->getId();
+        
         if (dependentId != NULL) {
             if (dependentId->getSymbolInfo()->getType()->isPropType()) {
                 if (dependentId->getSymbolInfo()->getType()->isPropNodeType()) {
                     targetFile.pushStringWithNewLine("//BEGIN FIXED POINT");
-                    sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, false);", fixPointVarType.c_str(), modifiedVarNext);
+                    std::sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, false);", fixPointVarType.c_str(), modifiedVarNext);
                     targetFile.pushstr_newL(strBuffer);
                     generateInitKernel = true;
 
                     targetFile.pushStringWithNewLine("int k=0; // #fixpt-Iterations");
-                    sprintf(strBuffer, "while(!%s) {", fixPointVar);
+                    std::sprintf(strBuffer, "while(!%s) {", fixPointVar);
                     targetFile.pushstr_newL(strBuffer);
 
                     std::cout<< "Size::" << graphId.size() << '\n';
-                    sprintf(strBuffer, "%s = %s", fixPointVar, "true");
+                    std::sprintf(strBuffer, "%s = %s", fixPointVar, "true");
                     targetFile.pushString(strBuffer);
                     targetFile.pushStringWithNewLine(";");
 
@@ -924,12 +1102,12 @@ namespace sphip {
 
                     GenerateHipMemCpySymbol(fixPointVar, fixPointVarType, false);
                     
-                    sprintf(strBuffer, "hipMemcpy(d%s, %s, sizeof(%s)*V, hipMemcpyDeviceToDevice)", modifiedVar,
+                    std::sprintf(strBuffer, "hipMemcpy(d%s, %s, sizeof(%s)*V, hipMemcpyDeviceToDevice)", modifiedVar,
                             modifiedVarNext, fixPointVarType.c_str());
                     targetFile.pushString(strBuffer);
                     targetFile.pushstr_newL(";");
 
-                    sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, false);", fixPointVarType.c_str(), modifiedVarNext);
+                    std::sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, false);", fixPointVarType.c_str(), modifiedVarNext);
                     targetFile.pushstr_newL(strBuffer);
                     generateInitKernel = true;
 
@@ -937,11 +1115,15 @@ namespace sphip {
 
                     Expression* initializer = dependentId->getSymbolInfo()->getId()->get_assignedExpr();
                     assert(initializer->isBooleanLiteral());
+
+                    targetFile.pushStringWithNewLine("} // END FIXED POINT");
+                    targetFile.NewLine();
                 }
             }
+            else{
+                std::cout<<"NOT YET IMPLEMENTED\n";
+            }
         }
-        targetFile.pushStringWithNewLine("} // END FIXED POINT");
-        targetFile.NewLine();
 
     }
 
@@ -956,17 +1138,17 @@ namespace sphip {
             if(tableEntry->getId()->get_fp_association())
             {
                 targetFile.pushstr_newL("#pragma omp for");
-                sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++)
+                std::sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++)
             ","int","v","v",graphId[0]->getIdentifier(),"num_nodes","v");
                 targetFile.pushstr_newL(strBuffer);
                 targetFile.pushstr_space("{");
-                sprintf(strBuffer,"%s[%s] =  %s_nxt[%s]
+                std::sprintf(strBuffer,"%s[%s] =  %s_nxt[%s]
             ;",filterId->getIdentifier(),"v",filterId->getIdentifier(),"v");
                 targetFile.pushstr_newL(strBuffer);
                 Expression* initializer =
             filterId->getSymbolInfo()->getId()->get_assignedExpr();
                 assert(initializer->isBooleanLiteral());
-                sprintf(strBuffer,"%s_nxt[%s] = %s
+                std::sprintf(strBuffer,"%s_nxt[%s] = %s
             ;",filterId->getIdentifier(),"v",initializer->getBooleanConstant()?"true":"false");
                 targetFile.pushstr_newL(strBuffer);
                 targetFile.pushstr_newL("}");
@@ -975,6 +1157,16 @@ namespace sphip {
             }
             */
         }
+    }
+
+    void DslCppGenerator::GenerateWhileStmt(whileStmt* whilestmt, bool isMainFile) {
+        Expression* conditionExpr = whilestmt->getCondition();
+        main.pushString("\n");
+        main.pushString("while (");
+        GenerateExpression(conditionExpr, isMainFile);
+        main.pushString(" ){\n");
+        GenerateStatement(whilestmt->getBody(), isMainFile);
+        main.pushString("\n}\n");
     }
 
     void DslCppGenerator::GenerateReductionStmt(reductionCallStmt* stmt, bool isMainFile) {
@@ -996,9 +1188,9 @@ namespace sphip {
             Identifier* id = stmt->getLeftId();  
             const char* typVar = ConvertToCppType(id->getSymbolInfo()->getType()).c_str();
             if (strcmp("long", typVar) == 0) {
-            sprintf(strBuffer, "atomicAdd((unsigned long long*)& %s, (unsigned long long)", id->getIdentifier());
+            std::sprintf(strBuffer, "atomicAdd((unsigned long long*)& %s, (unsigned long long)", id->getIdentifier());
             } else {
-            sprintf(strBuffer, "atomicAdd(& %s, (%s)", id->getIdentifier(), typVar);
+            std::sprintf(strBuffer, "atomicAdd(& %s, (%s)", id->getIdentifier(), typVar);
             }
             targetFile.pushString(strBuffer);
             std::string operatorString = GetOperatorString(stmt->reduction_op());
@@ -1019,104 +1211,104 @@ namespace sphip {
         }
     }
 
-    void DslCppGenerator::GenerateItrBfs2(iterateBFS2* stmt, bool isMainFile) {
+    // void DslCppGenerator::GenerateItrBfs2(iterateBFS2* stmt, bool isMainFile) {
 
-        cout << "Inside GenerateItrBfs2\n"; 
+    //     std::cout << "Inside GenerateItrBfs2\n"; 
 
-        char strBuffer[1024];
-        bool generateRevBfs = stmt->getRBFS() && stmt->getRBFS()->getBody();
+    //     char strBuffer[1024];
+    //     bool generateRevBfs = stmt->getRBFS() && stmt->getRBFS()->getBody();
 
-        statement* body = stmt->getBody();
-        assert(body->getTypeofNode() == NODE_BLOCKSTMT);
-        blockStatement* block = (blockStatement*)body;
-        list<statement*> statementList = block->returnStatements();
+    //     statement* body = stmt->getBody();
+    //     assert(body->getTypeofNode() == NODE_BLOCKSTMT);
+    //     blockStatement* block = (blockStatement*)body;
+    //     list<statement*> statementList = block->returnStatements();
 
-        main.NewLine();
-        main.pushstr_newL("//EXTRA vars for ITBFS AND REVBFS");  //NOT IN DSL so hardcode is fine
-        main.pushstr_newL("bool finished2;");
-        if(generateRevBfs)
-            main.pushstr_newL("int hopsFromSource2=0;");
+    //     main.NewLine();
+    //     main.pushstr_newL("//EXTRA vars for ITBFS AND REVBFS");  //NOT IN DSL so hardcode is fine
+    //     main.pushstr_newL("bool finished2;");
+    //     if(generateRevBfs)
+    //         main.pushstr_newL("int hopsFromSource2=0;");
 
-        main.pushstr_newL("bool* dFinished2;");
-        main.pushstr_newL("hipMalloc(&dFinished2,sizeof(bool) *(1));");
-        if(generateRevBfs) {
-            main.pushstr_newL("int* dHopsFromSource2;");
-            main.pushstr_newL("hipMalloc(&dHopsFromSource2, sizeof(int));");
-            main.pushstr_newL("hipMemset(dHopsFromSource2,0,sizeof(int));");
-            main.pushstr_newL("int* dLevel2;           hipMalloc(&dLevel2,sizeof(int) *(V));");
+    //     main.pushstr_newL("bool* dFinished2;");
+    //     main.pushstr_newL("hipMalloc(&dFinished2,sizeof(bool) *(1));");
+    //     if(generateRevBfs) {
+    //         main.pushstr_newL("int* dHopsFromSource2;");
+    //         main.pushstr_newL("hipMalloc(&dHopsFromSource2, sizeof(int));");
+    //         main.pushstr_newL("hipMemset(dHopsFromSource2,0,sizeof(int));");
+    //         main.pushstr_newL("int* dLevel2;           hipMalloc(&dLevel2,sizeof(int) *(V));");
         
-            main.NewLine();
-            main.pushstr_newL("//EXTRA vars INITIALIZATION");
+    //         main.NewLine();
+    //         main.pushstr_newL("//EXTRA vars INITIALIZATION");
 
-            GenerateInitkernelStr("int", "dLevel2", "-1");
+    //         GenerateInitkernelStr("int", "dLevel2", "-1");
 
-            sprintf(strBuffer, "initIndex<int><<<1,1>>>(V, dLevel2, %s, 0);", stmt->getRootNode()->getIdentifier());
-            main.pushstr_newL(strBuffer);
-            main.NewLine();
-            generateInitIndex = true;
+    //         std::sprintf(strBuffer, "initIndex<int><<<1,1>>>(V, dLevel2, %s, 0);", stmt->getRootNode()->getIdentifier());
+    //         main.pushstr_newL(strBuffer);
+    //         main.NewLine();
+    //         generateInitIndex = true;
 
-        }
-        main.pushStringWithNewLine("bool *dVisitBfs2;");
-        GenerateHipMallocStr("dVisitBfs2", "bool", "V");
-        GenerateInitkernelStr("bool", "dVisitBfs2", "false");
-        main.pushstr_newL("do {");
+    //     }
+    //     main.pushStringWithNewLine("bool *dVisitBfs2;");
+    //     GenerateHipMallocStr("dVisitBfs2", "bool", "V");
+    //     GenerateInitkernelStr("bool", "dVisitBfs2", "false");
+    //     main.pushstr_newL("do {");
 
-        AddHipBFS2IterationLoop(stmt, generateRevBfs);  // ADDS BODY OF ITERBFS + KERNEL LAUNCH
+    //     AddHipBFS2IterationLoop(stmt, generateRevBfs);  // ADDS BODY OF ITERBFS + KERNEL LAUNCH
 
-        main.NewLine();
+    //     main.NewLine();
 
-        GenerateHipMemCpyStr("&finished2", "dFinished2", "bool", "1", false);
+    //     GenerateHipMemcpyStr("&finished2", "dFinished2", "bool", "1", false);
 
-        main.pushstr_newL("}while(!finished2);"); 
+    //     main.pushstr_newL("}while(!finished2);"); 
         
-        iterateReverseBFS* revBfs = stmt->getRBFS();
+    //     iterateReverseBFS* revBfs = stmt->getRBFS();
 
-        if(revBfs == NULL)
-            return;
+    //     if(revBfs == NULL)
+    //         return;
 
-        blockStatement* revBlock = (blockStatement*)stmt->getRBFS()->getBody();
+    //     blockStatement* revBlock = (blockStatement*)stmt->getRBFS()->getBody();
 
-        if(revBlock == NULL)
-            return;
+    //     if(revBlock == NULL)
+    //         return;
 
-        list<statement*> revStmtList = revBlock->returnStatements();
+    //     list<statement*> revStmtList = revBlock->returnStatements();
         
-        AddHipRevBFS2IterationLoop(stmt);
+    //     AddHipRevBFS2IterationLoop(stmt);
 
-        main.pushstr_newL("//BACKWARD PASS");
-        main.pushstr_newL("while(hopsFromSource2 > 1) {");
+    //     main.pushstr_newL("//BACKWARD PASS");
+    //     main.pushstr_newL("while(hopsFromSource2 > 1) {");
 
-        main.NewLine();
-        main.pushstr_newL("//KERNEL Launch");
-        main.pushString("back_pass2<<<numBlocks,threadsPerBlock>>>(V, dRevOffsetArray, dEdgelist, dWeight, dLevel2, dHopsFromSource2, dFinished2");
+    //     main.NewLine();
+    //     main.pushstr_newL("//KERNEL Launch");
+    //     main.pushString("back_pass2<<<numBlocks,threadsPerBlock>>>(V, dRevOffsetArray, dEdgelist, dWeight, dLevel2, dHopsFromSource2, dFinished2");
 
-        GeneratePropParams(GetCurrentFunction()->getParamList(), false, true);  // true: typeneed false:inMainfile
+    //     GeneratePropParams(GetCurrentFunction()->getParamList(), false, true);  // true: typeneed false:inMainfile
 
-        usedVariables usedVars = getVarsBFS(stmt);
-        list<Identifier*> vars = usedVars.getVariables();
+    //     usedVariables usedVars = getVarsBFS(stmt);
+    //     list<Identifier*> vars = usedVars.getVariables();
 
-        for (Identifier* iden : vars) {
-            Type* type = iden->getSymbolInfo()->getType();
-            if (type->isPropType()) {
-                std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
-                parameterName = ", d" + parameterName;
-                main.pushString(/*createParamName(*/ parameterName);
-            }
-        }
+    //     for (Identifier* iden : vars) {
+    //         Type* type = iden->getSymbolInfo()->getType();
+    //         if (type->isPropType()) {
+    //             std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
+    //             parameterName = ", d" + parameterName;
+    //             main.pushString(/*createParamName(*/ parameterName);
+    //         }
+    //     }
 
-        main.pushstr_newL("); ///DONE from varList");  ///TODO get all propnodes from function body and params
+    //     main.pushstr_newL("); ///DONE from varList");  ///TODO get all propnodes from function body and params
         
-        AddHipRevBFS2IterKernel(revStmtList, stmt);  // KERNEL BODY
+    //     AddHipRevBFS2IterKernel(revStmtList, stmt);  // KERNEL BODY
 
-        main.pushstr_newL("hopsFromSource2--;");
-        GenerateHipMemCpyStr("dHopsFromSource2", "&hopsFromSource2", "int", "1", true);
+    //     main.pushstr_newL("hopsFromSource2--;");
+    //     GenerateHipMemcpyStr("dHopsFromSource2", "&hopsFromSource2", "int", "1", true);
 
-        main.pushstr_newL("}");
-    }
+    //     main.pushstr_newL("}");
+    // }
 
     void DslCppGenerator::GenerateItrBfs(iterateBFS* stmt, bool isMainFile) {
 
-        cout << "Inside GenerateItrBfs\n";
+        std::cout << "Inside GenerateItrBfs\n";
         char strBuffer[1024];
         bool generateRevBfs = stmt->getRBFS() && stmt->getRBFS()->getBody();
 
@@ -1144,7 +1336,7 @@ namespace sphip {
 
             GenerateInitkernelStr("int", "dLevel", "-1");
 
-            sprintf(strBuffer, "initIndex<int><<<1,1>>>(V, dLevel, %s, 0);", stmt->getRootNode()->getIdentifier());
+            std::sprintf(strBuffer, "initIndex<int><<<1,1>>>(V, dLevel, %s, 0);", stmt->getRootNode()->getIdentifier());
             main.pushstr_newL(strBuffer);
             main.NewLine();
             generateInitIndex = true;
@@ -1159,7 +1351,7 @@ namespace sphip {
 
         main.NewLine();
 
-        GenerateHipMemCpyStr("&finished", "dFinished", "bool", "1", false);
+        GenerateHipMemcpyStr("&finished", "dFinished", "bool", "1", false);
 
         main.pushstr_newL("}while(!finished);"); 
         
@@ -1203,14 +1395,14 @@ namespace sphip {
         AddHipRevBFSIterKernel(revStmtList, stmt);  // KERNEL BODY
 
         main.pushstr_newL("hopsFromSource--;");
-        GenerateHipMemCpyStr("dHopsFromSource", "&hopsFromSource", "int", "1", true);
+        GenerateHipMemcpyStr("dHopsFromSource", "&hopsFromSource", "int", "1", true);
 
         main.pushstr_newL("}");
     }
 
     void DslCppGenerator::GenerateItrRevBfs(iterateReverseBFS* stmt, bool isMainFile) {
 
-        cout << "Inside GenerateItrRevBfs\n";
+        std::cout << "Inside GenerateItrRevBfs\n";
 
         statement* body = stmt->getBody();
         assert(body->getTypeofNode() == NODE_BLOCKSTMT);
@@ -1224,10 +1416,10 @@ namespace sphip {
 
     }
 
-    void DslCppGenerator::GenerateItrBfsRev(iterateBFSReverse* stmt, bool isMainFile) {
-        std::cout << "Inside reverse bfs\n";
-        header.pushstr_newL("It works, bfs");
-    }
+    // void DslCppGenerator::GenerateItrBfsRev(iterateBFSReverse* stmt, bool isMainFile) {
+    //     std::std::cout << "Inside reverse bfs\n";
+    //     header.pushstr_newL("It works, bfs");
+    // }
 
     void DslCppGenerator::GenerateProcCallStmt(proc_callStmt* stmt, bool isMainFile) {
 
@@ -1236,6 +1428,7 @@ namespace sphip {
         string nodeCall = "attachNodeProperty";
         string edgeCall = "attachEdgeProperty";
 
+        std::cout<<"HELLOO\n";
         if(methodId.compare(nodeCall) == 0) {
 
             list<argument*> argList = proc->getArgList();
@@ -1248,19 +1441,71 @@ namespace sphip {
 
         } else if(methodId.compare(edgeCall) == 0) {
 
-            HIT_CHECK
+            // HIT_CHECK
 
         } else {
 
-            HIT_CHECK
+            // HIT_CHECK
+            GenerateExpressionProcCallExpression(proc, isMainFile);
+            main.pushstr_newL(";");
+            main.NewLine();
 
         }
         
     }
 
+    void DslCppGenerator::generate_exprIndex(Expression* expr, bool isLocal, bool isMainFile){
+
+        dslCodePad & targetFile = (isMainFile ? main : header);
+        char strBuffer[1024];
+        Expression* mapExpr = expr->getMapExpr();
+        Expression* indexExpr = expr->getIndexExpr();
+
+        Identifier* mapExprId = mapExpr->getId();
+
+        if(indexExpr->isIdentifierExpr()){
+
+            cout<<"entered here for indentifier gen for indexexpr"<<"\n";
+            Identifier* indexExprId = indexExpr->getId();  
+
+            if(isLocal)
+                sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+            else
+                sprintf(strBuffer , "%s[%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+
+            cout<<"string gen "<<strBuffer<<"\n";
+            targetFile.pushString(strBuffer);
+        }
+        else if(indexExpr->isPropIdExpr()){
+
+            cout<<"entered here for index "<<"\n";
+            if(isLocal){
+                sprintf(strBuffer, "%s_local[omp_get_thread_num()][", mapExprId->getIdentifier());
+                targetFile.pushString(strBuffer);
+                // generate_exprPropId(indexExpr->getPropId(), true);
+                targetFile.pushString("]");
+            }
+            else {
+                sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
+                targetFile.pushString(strBuffer);
+                // generate_exprPropId(indexExpr->getPropId(), true);
+                targetFile.pushString("]");
+            }
+
+        }
+        else{
+            sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
+            targetFile.pushString(strBuffer);
+            GenerateExpression(indexExpr, isMainFile);
+            targetFile.pushString("]");
+        }
+
+    }
+
     void DslCppGenerator::GenerateExpression(
-        Expression *expr, bool isMainFile, bool isAtomic
+        Expression *expr, bool isMainFile, bool isToUpper, bool isAtomic
     ) {
+        std::cout<<"EXPR "<<expr->isProcCallExpr()<<endl;
         if(expr->isLiteral()) 
             GenerateExpressionLiteral(expr, isMainFile);
 
@@ -1284,6 +1529,29 @@ namespace sphip {
 
         else if(expr->isUnary())
             GenerateExpressionUnary(expr, isMainFile);
+
+        else if(expr->isIndexExpr())
+       {
+        std::cout<<"INDEX EXPR\n";
+
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString("!");
+
+          } }
+
+         generate_exprIndex(expr, false, isMainFile);
+
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString(".empty()");
+
+          } }
+
+
+       }
 
         else    
             assert(false);
@@ -1344,7 +1612,7 @@ namespace sphip {
         (isMainFile ? main : header).pushString(value);
     }
 
-    void DslCppGenerator::GenerateExpressionIdentifier(Identifier* id, bool isMainFile) {
+    void DslCppGenerator::GenerateExpressionIdentifier(Identifier* id, bool isMainFile, bool isNotToUpper) {
 
         (isMainFile ? main : header).pushString(id->getIdentifier());
     }
@@ -1424,6 +1692,50 @@ namespace sphip {
             target.pushString(")");
     }
 
+    void DslCppGenerator::generateArgList(list<argument*> argList, bool addBraces, bool isMainFile){
+
+        dslCodePad & targetFile = (isMainFile ? main : header);
+        char strBuffer[1024]; 
+
+        if(addBraces)
+            targetFile.pushString("(") ;
+
+        int argListSize = argList.size();
+        int commaCounts = 0;
+        list<argument*>::iterator itr;
+        for(itr=argList.begin();itr!=argList.end();itr++)
+        {
+            commaCounts++;
+            argument* arg = *itr;
+            Expression* expr = arg->getExpr();//->getId();
+            //sprintf(strBuffer, "%s", id->getIdentifier());
+        // targetFile.pushString(strBuffer);
+            GenerateExpression(expr, isMainFile);
+            if(commaCounts < argListSize)
+            targetFile.pushString(",");
+
+        }
+        
+        if(addBraces)
+            targetFile.pushString(")");
+    }
+
+
+    string DslCppGenerator::getProcName(proc_callExpr* proc){
+
+        string methodId(proc->getMethodId()->getIdentifier());
+
+        if(methodId == "push") {
+
+            string modifiedId = "push_back";
+            return modifiedId;
+
+        }
+        else
+        return methodId;
+
+    }
+
     void DslCppGenerator::GenerateExpressionProcCallExpression(
         proc_callExpr* expr, bool isMainFile
     ) {
@@ -1451,13 +1763,87 @@ namespace sphip {
         } else if (methodId == "is_an_edge") {
 
             //TODO: Implement
-            cout << "DANGER HIT";
+            std::cout << "DANGER HIT";
 
         } else if (methodId == "num_nodes") {
             targetFile.pushString("g.num_nodes()");
         } else {
             
-            cout << "DANGER HIT";
+            // std::cout << "DANGER HIT";
+            proc_callExpr* proc = expr;
+                char strBuffer[1024];
+                list<argument*> argList=proc->getArgList();
+                Identifier* objectId = proc->getId1();
+                Expression* indexExpr = proc->getIndexExpr();
+
+                if(objectId!=NULL) 
+                {
+                    cout << "isnide here 1"<<endl;
+                    Identifier* id2 = proc->getId2();
+                    if(id2 != NULL)
+                    {
+
+                        sprintf(strBuffer,"%s.%s.%s",objectId->getIdentifier(), id2->getIdentifier(), getProcName(proc).c_str());
+                    }
+                    else
+                    {
+                        sprintf(strBuffer,"%s.%s",objectId->getIdentifier(), getProcName(proc).c_str());  
+                
+                    }  
+                }
+                else if(indexExpr != NULL)
+                {
+                    cout << "isnide here 2"<<endl;
+                    cout<<"ENTERED HERE FOR INDEXEXPR GENERATION DYNAMIC"<<"\n";
+                    Expression* mapExpr = indexExpr->getMapExpr();
+                    Identifier* mapExprId = mapExpr->getId();
+
+                    generate_exprIndex(indexExpr, true, isMainFile);
+
+                    sprintf(strBuffer,".%s", getProcName(proc).data());
+                } 
+                else {
+                cout << "isnide here 3"<<endl;
+                sprintf(strBuffer,"%s", getProcName(proc).data());
+            
+                }
+
+
+                targetFile.pushString(strBuffer);
+
+            if(methodId == "insert"){
+                
+                targetFile.pushString("(");
+
+                if(indexExpr != NULL){
+                    Expression* mapExpr = indexExpr->getMapExpr();
+                    Identifier* mapExprId = mapExpr->getId();
+
+                    generate_exprIndex(indexExpr, true, isMainFile);
+                }
+                else if(objectId != NULL){
+                    Identifier* id2 = proc->getId2();
+                    if(id2 != NULL)
+                        sprintf(strBuffer,"%s.%s",objectId->getIdentifier(), id2->getIdentifier());               
+                    else
+                        sprintf(strBuffer,"%s",objectId->getIdentifier()); 
+
+                    targetFile.pushString(strBuffer);      
+                }
+
+                targetFile.pushString(".end()");
+                targetFile.pushString(",");
+                generateArgList(argList,false, isMainFile);
+                targetFile.pushString(".begin(),");
+                generateArgList(argList, false, isMainFile);
+                targetFile.pushString(".end())");
+                        
+            }  
+            else  
+            {
+                cout << "isnide here 4"<<endl;
+                generateArgList(argList, true, isMainFile);   
+            } 
         }
     }
 
@@ -1514,7 +1900,7 @@ namespace sphip {
         //         }
         //         if (stmt->isAccumulateKernel()) {  // NOT needed
         //             isResult = true;
-        //             std::cout << "\t  RESULT NO BC by 2 ASST" << '\n';
+        //             std::std::cout << "\t  RESULT NO BC by 2 ASST" << '\n';
         //         }
         //         std::string varName = CapitalizeFirstLetter(std::string(propId->getIdentifier2()->getIdentifier()));
         //         varName = "d" + varName;
@@ -1616,19 +2002,19 @@ namespace sphip {
     void DslCppGenerator::CheckAndGenerateMemcpy(Function *function) {
 
         if(function->getIsMetaUsed())
-            GenerateHipMemCpyStr("dOffsetArray", "hOffsetArray", "int", "V + 1");
+            GenerateHipMemcpyStr("dOffsetArray", "hOffsetArray", "int", "V + 1");
 
         if(function->getIsDataUsed())
-            GenerateHipMemCpyStr("dEdgelist", "hEdgelist", "int", "E");
+            GenerateHipMemcpyStr("dEdgelist", "hEdgelist", "int", "E");
 
         if(function->getIsSrcUsed())
-            GenerateHipMemCpyStr("dSrcList", "hSrcList", "int", "E");
+            GenerateHipMemcpyStr("dSrcList", "hSrcList", "int", "E");
 
         if(function->getIsWeightUsed())
-            GenerateHipMemCpyStr("dWeight", "hWeight", "int", "E");
+            GenerateHipMemcpyStr("dWeight", "hWeight", "int", "E");
 
         if(function->getIsRevMetaUsed())
-            GenerateHipMemCpyStr("dRevOffsetArray", "hRevOffsetArray", "int", "V + 1");
+            GenerateHipMemcpyStr("dRevOffsetArray", "hRevOffsetArray", "int", "V + 1");
 
         main.NewLine();
     }
@@ -1648,7 +2034,7 @@ namespace sphip {
         header.pushString(temp);
         kernelNum++;
 
-        header.pushString("(int V, int E");
+        header.pushString("(int V");
         if(stmt->getIsMetaUsed())
             header.pushString(", int* dOffsetArray");
         if(stmt->getIsDataUsed())
@@ -1664,28 +2050,38 @@ namespace sphip {
             Type* type = iden->getSymbolInfo()->getType();
             if (type->isPropType()) {
                 char strBuffer[1024];
-                sprintf(strBuffer, ", %s d%s", ConvertToCppType(type).c_str(), CapitalizeFirstLetter(iden->getIdentifier()));
+                std::sprintf(strBuffer, ", %s d%s", ConvertToCppType(type).c_str(), CapitalizeFirstLetter(iden->getIdentifier()));
                 header.pushString(/*createParamName(*/ strBuffer);
                 if(iden->getSymbolInfo()->getId()->get_fp_association()) { 
-                    sprintf(strBuffer, ", %s d%sNext", ConvertToCppType(type).c_str(), CapitalizeFirstLetter(iden->getIdentifier()));
+                    std::sprintf(strBuffer, ", %s d%sNext", ConvertToCppType(type).c_str(), CapitalizeFirstLetter(iden->getIdentifier()));
                     header.pushString(/*createParamName(*/ strBuffer);
                 }
+            }
+            else if(type->isCollectionType()){
+                string parameter = "";
+                parameter = parameter + ", " + ConvertToCppType(type, true).c_str() + " " + iden->getIdentifier();
+                header.pushString(parameter);
+            }
+            else if(type->isPrimitiveType()){
+                string parameter = "";
+                parameter = parameter + ", " + ConvertToCppType(type, false, true).c_str() + " " + iden->getIdentifier();
+                header.pushString(parameter);
             }
         }
 
         header.pushStringWithNewLine("){ // BEGIN KER FUN via ADDKERNEL");
 
-        sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
+        std::sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
         header.pushstr_newL(strBuffer);
 
-        sprintf(strBuffer, "if(%s >= V) return;", loopVar);
+        std::sprintf(strBuffer, "if(%s >= V) return;", loopVar);
         header.pushstr_newL(strBuffer);
 
         if (stmt->hasFilterExpr()) {
             blockStatement* changedBody = IncludeIfToBlock(stmt);
-            cout << "============CHANGED BODY  TYPE==============" << (changedBody->getTypeofNode() == NODE_BLOCKSTMT);
+            std::cout << "============CHANGED BODY  TYPE==============" << (changedBody->getTypeofNode() == NODE_BLOCKSTMT);
             stmt->setBody(changedBody);
-            // cout<<"FORALL BODY
+            // std::cout<<"FORALL BODY
             // TYPE"<<(forAll->getBody()->getTypeofNode()==NODE_BLOCKSTMT);
         }
 
@@ -1751,11 +2147,11 @@ namespace sphip {
                 if (s.compare("neighbors") == 0) {
                     list<argument*> argList = extractElemFunc->getArgList();
                     assert(argList.size() == 1);
-                    sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++) { // FOR NBR ITR ", "int", "edge", "dOffsetArray", "v", "edge", "dOffsetArray", "v", "edge");
+                    std::sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++) { // FOR NBR ITR ", "int", "edge", "dOffsetArray", "v", "edge", "dOffsetArray", "v", "edge");
                     isForwardBfsLoop = true;
                     targetFile.pushstr_newL(strBuffer);
                     //~ targetFile.pushString("{");
-                    sprintf(strBuffer, "%s %s = %s[%s];", "int", iterator->getIdentifier(), "dEdgelist", "edge");  //needs to move the addition of
+                    std::sprintf(strBuffer, "%s %s = %s[%s];", "int", iterator->getIdentifier(), "dEdgelist", "edge");  //needs to move the addition of
                     targetFile.pushstr_newL(strBuffer);
                     forAllNbrVariable = iterator->getIdentifier();
                 }
@@ -1764,24 +2160,56 @@ namespace sphip {
                     list<argument*> argList = extractElemFunc->getArgList();
                     assert(argList.size() == 1);
                     Identifier* nodeNbr = argList.front()->getExpr()->getId();
-                    sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++)", "int", "edge", "dRevOffsetArray", nodeNbr->getIdentifier(), "edge", "dRevOffsetArray", nodeNbr->getIdentifier(), "edge");
+                    std::sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++)", "int", "edge", "dRevOffsetArray", nodeNbr->getIdentifier(), "edge", "dRevOffsetArray", nodeNbr->getIdentifier(), "edge");
                     isForwardBfsLoop = false;
                     targetFile.pushstr_newL(strBuffer);
                     targetFile.pushstr_newL("{");
-                    sprintf(strBuffer, "%s %s = %s[%s] ;", "int", iterator->getIdentifier(), "dSrcList", "edge");  //needs to move the addition of
+                    std::sprintf(strBuffer, "%s %s = %s[%s] ;", "int", iterator->getIdentifier(), "dSrcList", "edge");  //needs to move the addition of
                     targetFile.pushstr_newL(strBuffer);
                 }  //statement to  a different method.
             }
         }
         else if (stmt->isSourceField()) {
+            std::cout<<"Source Field\n";
+        } 
+        else if(stmt->isSourceExpr()){
+  
+            Expression* expr = stmt->getSourceExpr();
+            Expression* mapExpr = expr->getMapExpr();
+            Identifier* mapId = mapExpr->getId();
 
-        } else {
+            cout<<"ENTERED................................................."<<"\n";
+
+            if(mapId->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER){
+                main.pushString("for(int i = 0 ; i < ");
+                GenerateExpression(expr, isMainFile);
+                main.pushstr_newL(".size() ; i++)");
+                main.pushString("{\n");
+                sprintf(strBuffer, "int %s = ", iterator->getIdentifier());
+                main.pushString(strBuffer);
+                GenerateExpression(expr, isMainFile);
+                main.pushstr_newL("[i];\n");
+            } 
+            
+            // cout<<"REACHED HERE AFTER COMPLETING "<<"\n";
+            
+        }
+        else {
             Identifier* sourceId = stmt->getSource();
             if (sourceId != NULL) {
+                std::cout<<"CHECK\n";
                 if (sourceId->getSymbolInfo()->getType()->gettypeId() == TYPE_SETN) {  //FOR SET
                     main.pushStringWithNewLine("std::set<int>::iterator itr;");
-                    sprintf(strBuffer, "for(itr=%s.begin();itr!=%s.end();itr++) ", sourceId->getIdentifier(), sourceId->getIdentifier());
+                    std::sprintf(strBuffer, "for(itr=%s.begin();itr!=%s.end();itr++) ", sourceId->getIdentifier(), sourceId->getIdentifier());
                     main.pushstr_newL(strBuffer);
+                }
+                else if(sourceId->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER){
+                    sprintf(strBuffer,"\nfor(int i = 0 ; i < %s.size() ; i++)",sourceId->getIdentifier());
+                    main.pushstr_newL(strBuffer); 
+                    main.pushString("{\n");
+                    sprintf(strBuffer, "int %s = %s[i];\n", iterator->getIdentifier(), sourceId->getIdentifier());
+                    main.pushstr_newL(strBuffer); 
+
                 }
             }
         }
@@ -1800,52 +2228,52 @@ namespace sphip {
 
     void DslCppGenerator::GenerateInitkernelStr(const char* inVarType, const char* inVarName, const char* initVal) {
         char strBuffer[1024];
-        sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, %s);", inVarType, inVarName, initVal);
+        std::sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V, %s, %s);", inVarType, inVarName, initVal);
         main.pushstr_newL(strBuffer);
         generateInitKernel = true;
     }
 
-    void DslCppGenerator::AddHipBFS2IterationLoop(iterateBFS2* bfsAbstraction, bool generateRevBfs) {
+    // void DslCppGenerator::AddHipBFS2IterationLoop(iterateBFS2* bfsAbstraction, bool generateRevBfs) {
         
-        main.pushstr_newL("finished2 = true;");  // these vars are BFS specific
-        GenerateHipMemCpyStr("dFinished2", "&finished2", "bool", "1");
+    //     main.pushstr_newL("finished2 = true;");  // these vars are BFS specific
+    //     GenerateHipMemcpyStr("dFinished2", "&finished2", "bool", "1");
 
-        main.NewLine();
-        main.pushstr_newL("//Kernel LAUNCH");
-        main.pushString("fwd_pass2<<<numBlocks,threadsPerBlock>>>(V, dOffsetArray, dEdgelist, dRevOffsetArray, dSrcList, dWeight");
-        if(generateRevBfs)
-            main.pushString(", dLevel2, dHopsFromSource2");
-        main.pushString(", dFinished2, dVisitBfs2");
+    //     main.NewLine();
+    //     main.pushstr_newL("//Kernel LAUNCH");
+    //     main.pushString("fwd_pass2<<<numBlocks,threadsPerBlock>>>(V, dOffsetArray, dEdgelist, dRevOffsetArray, dSrcList, dWeight");
+    //     if(generateRevBfs)
+    //         main.pushString(", dLevel2, dHopsFromSource2");
+    //     main.pushString(", dFinished2, dVisitBfs2");
 
-        GeneratePropParams(GetCurrentFunction()->getParamList(), false, true);  // true: typeneed false:inMainfile
+    //     GeneratePropParams(GetCurrentFunction()->getParamList(), false, true);  // true: typeneed false:inMainfile
 
-        usedVariables usedVars = getVarsBFS(bfsAbstraction);
-        list<Identifier*> vars = usedVars.getVariables();
+    //     usedVariables usedVars = getVarsBFS(bfsAbstraction);
+    //     list<Identifier*> vars = usedVars.getVariables();
 
-        for (Identifier* iden : vars) {
-            Type* type = iden->getSymbolInfo()->getType();
-            if (type->isPropType()) {
-                std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
-                parameterName = ", d" + parameterName;
-                main.pushString(/*createParamName(*/ parameterName);
-            }
-        }
+    //     for (Identifier* iden : vars) {
+    //         Type* type = iden->getSymbolInfo()->getType();
+    //         if (type->isPropType()) {
+    //             std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
+    //             parameterName = ", d" + parameterName;
+    //             main.pushString(/*createParamName(*/ parameterName);
+    //         }
+    //     }
 
-        main.pushstr_newL("); ///DONE from varList");
+    //     main.pushstr_newL("); ///DONE from varList");
 
-        AddHipBFS2IterKernel(bfsAbstraction, generateRevBfs);  // KERNEL BODY!!!
+    //     AddHipBFS2IterKernel(bfsAbstraction, generateRevBfs);  // KERNEL BODY!!!
 
-        main.pushstr_newL("hipDeviceSynchronize();");
-        if(generateRevBfs) {
-            main.pushstr_newL("++hopsFromSource2; // updating the level to process in the next iteration");
-        }
+    //     main.pushstr_newL("hipDeviceSynchronize();");
+    //     if(generateRevBfs) {
+    //         main.pushstr_newL("++hopsFromSource2; // updating the level to process in the next iteration");
+    //     }
         
-    }
+    // }
 
     void DslCppGenerator::AddHipBFSIterationLoop(iterateBFS* bfsAbstraction, bool generateRevBfs) {
         
         main.pushstr_newL("finished = true;");  // these vars are BFS specific
-        GenerateHipMemCpyStr("dFinished", "&finished", "bool", "1");
+        GenerateHipMemcpyStr("dFinished", "&finished", "bool", "1");
 
         main.NewLine();
         main.pushstr_newL("//Kernel LAUNCH");
@@ -1880,16 +2308,16 @@ namespace sphip {
     void DslCppGenerator::AddHipRevBFSIterationLoop(iterateBFS* stmt) {
         main.NewLine();
         main.pushstr_newL("hopsFromSource--;");
-        GenerateHipMemCpyStr("dHopsFromSource", "&hopsFromSource", "int", "1");
+        GenerateHipMemcpyStr("dHopsFromSource", "&hopsFromSource", "int", "1");
         main.NewLine();
     }
 
-    void DslCppGenerator::AddHipRevBFS2IterationLoop(iterateBFS2* stmt) {
-        main.NewLine();
-        main.pushstr_newL("hopsFromSource2--;");
-        GenerateHipMemCpyStr("dHopsFromSource2", "&hopsFromSource2", "int", "1");
-        main.NewLine();
-    }
+    // void DslCppGenerator::AddHipRevBFS2IterationLoop(iterateBFS2* stmt) {
+    //     main.NewLine();
+    //     main.pushstr_newL("hopsFromSource2--;");
+    //     GenerateHipMemcpyStr("dHopsFromSource2", "&hopsFromSource2", "int", "1");
+    //     main.NewLine();
+    // }
 
     void DslCppGenerator::AddHipBFSIterKernel(iterateBFS* bfsAbstraction, bool generateRevBfs) {
         const char* loopVar = "v";
@@ -1922,13 +2350,13 @@ namespace sphip {
 
         header.pushstr_newL(") {");
 
-        sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
+        std::sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
         header.pushstr_newL(strBuffer);
 
-        sprintf(strBuffer, "if(%s >= n) return;", loopVar);
+        std::sprintf(strBuffer, "if(%s >= n) return;", loopVar);
         header.pushstr_newL(strBuffer);
         if(generateRevBfs) {
-            sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource) {", loopVar);
+            std::sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource) {", loopVar);
             header.pushstr_newL(strBuffer);
         }
 
@@ -1962,82 +2390,82 @@ namespace sphip {
         header.NewLine();
     }
 
-    void DslCppGenerator::AddHipBFS2IterKernel(iterateBFS2* bfsAbstraction, bool generateRevBfs) {
-        const char* loopVar = "v";
-        char strBuffer[1024];
+    // void DslCppGenerator::AddHipBFS2IterKernel(iterateBFS2* bfsAbstraction, bool generateRevBfs) {
+    //     const char* loopVar = "v";
+    //     char strBuffer[1024];
 
-        statement* body = bfsAbstraction->getBody();
-        assert(body->getTypeofNode() == NODE_BLOCKSTMT);
-        blockStatement* block = (blockStatement*)body;
-        list<statement*> statementList = block->returnStatements();
+    //     statement* body = bfsAbstraction->getBody();
+    //     assert(body->getTypeofNode() == NODE_BLOCKSTMT);
+    //     blockStatement* block = (blockStatement*)body;
+    //     list<statement*> statementList = block->returnStatements();
 
-        header.pushString("__global__ void fwd_pass2(int n, int* dOffsetArray, int* dEdgelist, int* dRevOffsetArray, int* dSrcList, int* dWeight");
-        if(generateRevBfs)
-            header.pushString(", int* dLevel2, int* dHopsFromSource2");
-        header.pushString(", bool* dFinished2, bool* dVisitBfs2");
+    //     header.pushString("__global__ void fwd_pass2(int n, int* dOffsetArray, int* dEdgelist, int* dRevOffsetArray, int* dSrcList, int* dWeight");
+    //     if(generateRevBfs)
+    //         header.pushString(", int* dLevel2, int* dHopsFromSource2");
+    //     header.pushString(", bool* dFinished2, bool* dVisitBfs2");
 
-        GeneratePropParams(GetCurrentFunction()->getParamList(), true, false);  // true: typeneed false:inMainfile
+    //     GeneratePropParams(GetCurrentFunction()->getParamList(), true, false);  // true: typeneed false:inMainfile
 
-        usedVariables usedVars = getVarsBFS(bfsAbstraction);
-        list<Identifier*> vars = usedVars.getVariables();
+    //     usedVariables usedVars = getVarsBFS(bfsAbstraction);
+    //     list<Identifier*> vars = usedVars.getVariables();
 
-        for (Identifier* iden : vars) {
-            Type* type = iden->getSymbolInfo()->getType();
-            if (type->isPropType()) {
-                std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
-                parameterName = ", " + ConvertToCppType(type) + " d" + parameterName;
-                header.pushString(/*createParamName(*/ parameterName);
-            }
-        }
+    //     for (Identifier* iden : vars) {
+    //         Type* type = iden->getSymbolInfo()->getType();
+    //         if (type->isPropType()) {
+    //             std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
+    //             parameterName = ", " + ConvertToCppType(type) + " d" + parameterName;
+    //             header.pushString(/*createParamName(*/ parameterName);
+    //         }
+    //     }
 
-        header.pushstr_newL(") {");
+    //     header.pushstr_newL(") {");
 
-        sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
-        header.pushstr_newL(strBuffer);
+    //     std::sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
+    //     header.pushstr_newL(strBuffer);
 
-        sprintf(strBuffer, "if(%s >= n) return;", loopVar);
-        header.pushstr_newL(strBuffer);
-        if(generateRevBfs) {
-            sprintf(strBuffer, "if(dLevel2[%s] == *dHopsFromSource2) {", loopVar);
-            header.pushstr_newL(strBuffer);
-        }
-        header.pushStringWithNewLine("//Before for loop");
-        for (statement* stmt : statementList) {
-            header.pushStringWithNewLine("//Generating a statement");
-            GenerateStatement(stmt, false);  //false. All these stmts should be inside kernel
-        }
-        header.pushStringWithNewLine("//After for loop");
-        if(generateRevBfs)
-            header.pushstr_newL("} // end if d lvl");
+    //     std::sprintf(strBuffer, "if(%s >= n) return;", loopVar);
+    //     header.pushstr_newL(strBuffer);
+    //     if(generateRevBfs) {
+    //         std::sprintf(strBuffer, "if(dLevel2[%s] == *dHopsFromSource2) {", loopVar);
+    //         header.pushstr_newL(strBuffer);
+    //     }
+    //     header.pushStringWithNewLine("//Before for loop");
+    //     for (statement* stmt : statementList) {
+    //         header.pushStringWithNewLine("//Generating a statement");
+    //         GenerateStatement(stmt, false);  //false. All these stmts should be inside kernel
+    //     }
+    //     header.pushStringWithNewLine("//After for loop");
+    //     if(generateRevBfs)
+    //         header.pushstr_newL("} // end if d lvl");
 
-        header.pushStringWithNewLine("dVisitBfs2[v] = true;");
-        if(isForwardBfsLoop) {
-            header.pushStringWithNewLine("for (int edge = dOffsetArray[v]; edge < dOffsetArray[v+1]; edge++) { // FOR NBR ITR ");
-            header.pushStringWithNewLine("int w = dEdgelist[edge];");
-            header.pushStringWithNewLine("if (dVisitBfs2[w] == false) {");
-            header.pushStringWithNewLine("*dFinished2 = false;");
-            header.pushStringWithNewLine("dVisitBfs[w] = true;");
-            header.pushStringWithNewLine("}");
-            header.pushStringWithNewLine("}");
-        }
-        else {
-            header.pushStringWithNewLine("for (int edge = dRevOffsetArray[v]; edge < dRevOffsetArray[v+1]; edge++) { // FOR NBR REV ITR ");
-            header.pushStringWithNewLine("int w = dSrcList[edge];");
-            header.pushStringWithNewLine("if (dVisitBfs2[w] == false) {");
-            header.pushStringWithNewLine("*dFinished2 = false;");
-            header.pushStringWithNewLine("dVisitBfs2[w] = true;");
-            header.pushStringWithNewLine("}");
-            header.pushStringWithNewLine("}");
-        }
-        header.pushstr_newL("} // kernel end");
-        header.NewLine();
-    }
+    //     header.pushStringWithNewLine("dVisitBfs2[v] = true;");
+    //     if(isForwardBfsLoop) {
+    //         header.pushStringWithNewLine("for (int edge = dOffsetArray[v]; edge < dOffsetArray[v+1]; edge++) { // FOR NBR ITR ");
+    //         header.pushStringWithNewLine("int w = dEdgelist[edge];");
+    //         header.pushStringWithNewLine("if (dVisitBfs2[w] == false) {");
+    //         header.pushStringWithNewLine("*dFinished2 = false;");
+    //         header.pushStringWithNewLine("dVisitBfs[w] = true;");
+    //         header.pushStringWithNewLine("}");
+    //         header.pushStringWithNewLine("}");
+    //     }
+    //     else {
+    //         header.pushStringWithNewLine("for (int edge = dRevOffsetArray[v]; edge < dRevOffsetArray[v+1]; edge++) { // FOR NBR REV ITR ");
+    //         header.pushStringWithNewLine("int w = dSrcList[edge];");
+    //         header.pushStringWithNewLine("if (dVisitBfs2[w] == false) {");
+    //         header.pushStringWithNewLine("*dFinished2 = false;");
+    //         header.pushStringWithNewLine("dVisitBfs2[w] = true;");
+    //         header.pushStringWithNewLine("}");
+    //         header.pushStringWithNewLine("}");
+    //     }
+    //     header.pushstr_newL("} // kernel end");
+    //     header.NewLine();
+    // }
 
     void DslCppGenerator::AddHipRevBFSIterKernel(list<statement*>& statementList, iterateBFS* bfsAbstraction) {
         const char* loopVar = "v";
         char strBuffer[1024];
 
-        sprintf(strBuffer, "__global__ void back_pass(int n, int* dOffsetArray, int* dEdgelist, int* dWeight, int* dLevel, int* dHopsFromSource, bool* dFinished");
+        std::sprintf(strBuffer, "__global__ void back_pass(int n, int* dOffsetArray, int* dEdgelist, int* dWeight, int* dLevel, int* dHopsFromSource, bool* dFinished");
         header.pushString(strBuffer);
 
         GeneratePropParams(GetCurrentFunction()->getParamList(), true, false);  // true: typeneed false:inMainfile
@@ -2056,14 +2484,14 @@ namespace sphip {
 
         header.pushstr_newL(") {");
 
-        sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
+        std::sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
         header.pushstr_newL(strBuffer);
 
-        sprintf(strBuffer, "if(%s >= n) return;", loopVar);
+        std::sprintf(strBuffer, "if(%s >= n) return;", loopVar);
         header.pushstr_newL(strBuffer);
         header.pushstr_newL("auto grid = cooperative_groups::this_grid();");
 
-        sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource-1) {", loopVar);
+        std::sprintf(strBuffer, "if(dLevel[%s] == *dHopsFromSource-1) {", loopVar);
         header.pushstr_newL(strBuffer);
 
         for (statement* stmt : statementList) {
@@ -2075,47 +2503,47 @@ namespace sphip {
         header.NewLine();
     }
 
-    void DslCppGenerator::AddHipRevBFS2IterKernel(list<statement*>& statementList, iterateBFS2* bfsAbstraction) {
-        const char* loopVar = "v";
-        char strBuffer[1024];
+    // void DslCppGenerator::AddHipRevBFS2IterKernel(list<statement*>& statementList, iterateBFS2* bfsAbstraction) {
+    //     const char* loopVar = "v";
+    //     char strBuffer[1024];
 
-        sprintf(strBuffer, "__global__ void back_pass2(int n, int* dRevOffsetArray, int* dEdgelist, int* dWeight, int* dLevel2, int* dHopsFromSource2, bool* dFinished2");
-        header.pushString(strBuffer);
+    //     std::sprintf(strBuffer, "__global__ void back_pass2(int n, int* dRevOffsetArray, int* dEdgelist, int* dWeight, int* dLevel2, int* dHopsFromSource2, bool* dFinished2");
+    //     header.pushString(strBuffer);
 
-        GeneratePropParams(GetCurrentFunction()->getParamList(), true, false);  // true: typeneed false:inMainfile
+    //     GeneratePropParams(GetCurrentFunction()->getParamList(), true, false);  // true: typeneed false:inMainfile
 
-        usedVariables usedVars = getVarsBFS(bfsAbstraction);
-        list<Identifier*> vars = usedVars.getVariables();
+    //     usedVariables usedVars = getVarsBFS(bfsAbstraction);
+    //     list<Identifier*> vars = usedVars.getVariables();
 
-        for (Identifier* iden : vars) {
-            Type* type = iden->getSymbolInfo()->getType();
-            if (type->isPropType()) {
-                std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
-                parameterName = ", " + ConvertToCppType(type) + " d" + parameterName;
-                header.pushString(/*createParamName(*/ parameterName);
-            }
-        }
+    //     for (Identifier* iden : vars) {
+    //         Type* type = iden->getSymbolInfo()->getType();
+    //         if (type->isPropType()) {
+    //             std::string parameterName = CapitalizeFirstLetter(std::string(iden->getIdentifier()));
+    //             parameterName = ", " + ConvertToCppType(type) + " d" + parameterName;
+    //             header.pushString(/*createParamName(*/ parameterName);
+    //         }
+    //     }
 
-        header.pushstr_newL(") {");
+    //     header.pushstr_newL(") {");
 
-        sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
-        header.pushstr_newL(strBuffer);
+    //     std::sprintf(strBuffer, "unsigned %s = blockIdx.x * blockDim.x + threadIdx.x;", loopVar);
+    //     header.pushstr_newL(strBuffer);
 
-        sprintf(strBuffer, "if(%s >= n) return;", loopVar);
-        header.pushstr_newL(strBuffer);
-        header.pushstr_newL("auto grid = cooperative_groups::this_grid();");
+    //     std::sprintf(strBuffer, "if(%s >= n) return;", loopVar);
+    //     header.pushstr_newL(strBuffer);
+    //     header.pushstr_newL("auto grid = cooperative_groups::this_grid();");
 
-        sprintf(strBuffer, "if(dLevel2[%s] == *dHopsFromSource2-1) {", loopVar);
-        header.pushstr_newL(strBuffer);
+    //     std::sprintf(strBuffer, "if(dLevel2[%s] == *dHopsFromSource2-1) {", loopVar);
+    //     header.pushstr_newL(strBuffer);
 
-        for (statement* stmt : statementList) {
-            GenerateStatement(stmt, false);  //false. All these stmts should be inside kernel
-        }
+    //     for (statement* stmt : statementList) {
+    //         GenerateStatement(stmt, false);  //false. All these stmts should be inside kernel
+    //     }
 
-        header.pushstr_newL("} // end if d lvl");
-        header.pushstr_newL("} // kernel end");
-        header.NewLine();
-    }
+    //     header.pushstr_newL("} // end if d lvl");
+    //     header.pushstr_newL("} // kernel end");
+    //     header.NewLine();
+    // }
 
     void DslCppGenerator::GeneratePropParams(list<formalParam*> paramList, bool isNeedType = true, bool isMainFile = true) {
         list<formalParam*>::iterator itr;
@@ -2133,9 +2561,9 @@ namespace sphip {
                     strcat(temp2, temp1);
 
                     if (isNeedType)
-                        sprintf(strBuffer, ",%s* %s", ConvertToCppType(type->getInnerTargetType()).c_str(), temp2);
+                        std::sprintf(strBuffer, ",%s* %s", ConvertToCppType(type->getInnerTargetType()).c_str(), temp2);
                     else
-                        sprintf(strBuffer, ",%s", temp2);
+                        std::sprintf(strBuffer, ",%s", temp2);
                     targetFile.pushString(strBuffer);
                 }
             }
@@ -2150,7 +2578,7 @@ namespace sphip {
         if (predefinedFunc.compare(methodID->getIdentifier()) == 0) {
             if (type->gettypeId() != TYPE_INT) {
                 char strBuffer[1024];
-                sprintf(strBuffer, "(%s)", ConvertToCppType(type).c_str());
+                std::sprintf(strBuffer, "(%s)", ConvertToCppType(type).c_str());
                 main.pushString(strBuffer);
             }
         }
@@ -2196,22 +2624,22 @@ namespace sphip {
                 const char *varType = ConvertToCppType(declStmt->getType()).c_str();
                 const char *varName = declStmt->getdeclId()->getIdentifier();
 
-                sprintf(strBuffer, "%s %s = 0;", varType, varName);
+                std::sprintf(strBuffer, "%s %s = 0;", varType, varName);
                 targetFile.pushstr_newL(strBuffer);
 
                 if(isMainFile){
-                    sprintf(strBuffer, "for(int edge=hOffsetArray[%s]; edge<hOffsetArray[%s+1]; edge++){", srcId, srcId);
+                    std::sprintf(strBuffer, "for(int edge=hOffsetArray[%s]; edge<hOffsetArray[%s+1]; edge++){", srcId, srcId);
                     targetFile.pushstr_newL(strBuffer);
-                    sprintf(strBuffer, "if(hEdgelist[edge] == %s){", destId);
+                    std::sprintf(strBuffer, "if(hEdgelist[edge] == %s){", destId);
                     targetFile.pushstr_newL(strBuffer);
                 }
                 else{
-                    sprintf(strBuffer, "for(int edge=dOffsetArray[%s]; edge<dOffsetArray[%s+1]; edge++){", srcId, srcId);
+                    std::sprintf(strBuffer, "for(int edge=dOffsetArray[%s]; edge<dOffsetArray[%s+1]; edge++){", srcId, srcId);
                     targetFile.pushstr_newL(strBuffer);
-                    sprintf(strBuffer, "if(dEdgelist[edge] == %s){", destId);
+                    std::sprintf(strBuffer, "if(dEdgelist[edge] == %s){", destId);
                     targetFile.pushstr_newL(strBuffer);
                 }
-                sprintf(strBuffer, "%s = edge;", varName);
+                std::sprintf(strBuffer, "%s = edge;", varName);
                 targetFile.pushstr_newL(strBuffer);
                 targetFile.pushstr_newL("}");
                 targetFile.pushstr_newL("}");

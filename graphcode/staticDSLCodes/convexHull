@@ -1,0 +1,274 @@
+function extremePoints(container<double> xCoord, container<double> yCoord){
+    container<int>ans;
+    int minIndex;
+    int maxIndex;
+    double minX = 100000000;
+    double maxX = -1;
+
+    double index = 0;
+    while(index < xCoord.size()){
+        double v = xCoord[index];
+        if(v < minX){
+            minX = v;
+            minIndex = index;
+        }
+        if(v > maxX){
+            maxX = v;
+            maxIndex = index;
+        }
+        index++;
+    }
+
+    ans.push_back(minIndex);
+    ans.push_back(maxIndex);
+
+    return ans;
+}
+
+function innerPoint(container<int>R, container<double>xCoord, container<double>yCoord){
+    container<double>(2, 0)point;
+    int z = 0;
+    int o = 1;
+    for(v in R){
+        point[z] = point[z] + xCoord[v];
+        point[o] = point[o] + yCoord[v];
+    }
+    point[z] = point[0] / R.size();
+    point[o] = point[1] / R.size();
+
+    return point;
+}
+
+function getSign(container<int>R, container<int>sign, container<double>point, container<double>xCoord, container<double>yCoord, container<int>label, container<int>L, container<int>mark, int maxLabel){
+    int n = L.size();
+    forall(v in L){
+        if(mark[v] == 0){
+            int lab = label[v];
+            int left = R[lab];
+            lab = lab + 1;
+            if(lab == maxLabel){
+                lab = 0;
+            }
+            int right = R[lab];
+            int z = 0;
+            int o = 1;
+            double dist = (xCoord[right] - xCoord[left]) * (point[o] - yCoord[left]) - (yCoord[right] - yCoord[left]) * (point[z] - xCoord[left]);
+            if(dist <= 0){
+                sign[lab] = -1;
+            }
+            else{
+                sign[lab] = 1;
+            }
+        }
+    }
+}
+
+function updateDistance(container<int>label, container<float>distance, container<double>xCoord, container<double>yCoord, container<int>L, container<int>R, container<int>mark, container<int>sign, int maxLabel){
+    int n = L.size();
+    forall(v in L){
+        if(mark[v] == 0){
+            int lab = label[v];
+            int left = R[lab];
+            lab = lab + 1;
+            if(lab == maxLabel){
+                lab = 0;
+            }
+            int right = R[lab];
+            double dist = (xCoord[right] - xCoord[left]) * (yCoord[v] - yCoord[left]) - (yCoord[right] - yCoord[left]) * (xCoord[v] - xCoord[left]);
+            if(sign[lab] == -1){
+                if(dist <= 0){
+                    mark[v] = 1;
+                }
+            }
+            else if(sign[lab] == 1){
+                if(dist >= 0){
+                    mark[v] = 1;
+                }
+                dist = -1 * dist;
+            }
+            distance[v] = dist;
+        }
+    }
+}
+
+function updateHull(container<float>distance, container<double>xCoord, container<double>yCoord, container<int>R, container<int>label,container<int>mark, container<int>sign, container<double>point, container<int>L, int maxLabel){
+
+    int n = L.size();
+    forall(v in R){
+        if(v < n){
+            R[v + 2 * n] = -1;
+        }
+    }
+
+    int index = 0;
+    int newVertices = 0;
+    for(v in distance){
+        if(v > 0 && mark[index] == 0){
+            int tempIndex = label[index] + 2 * n;
+            if(R[tempIndex] == -1){
+                R[tempIndex] = index;
+                newVertices++;
+            }
+            else{
+                int currMinIndex = R[tempIndex];
+                if(distance[currMinIndex] < v){
+                    R[tempIndex] = index;
+                }
+            }
+        }
+        else{
+            mark[index] = 1;
+        }
+        index++;
+    }
+
+    container<int>(3 * n, -1)newR;
+    forall(v in newR){
+        int temp = v - v / 2;
+        if(temp == v / 2){
+            int index = v / 2;
+            newR[v] = R[index];
+        }
+        else if(v / 2 < n){
+            int index =  v / 2 + 2 * n;
+            newR[v] = R[index];
+        }
+    }
+
+    if(newVertices > 0){
+        
+        forall(v in R){
+            R[v] = newR[v];
+        }
+    }
+
+    return newVertices;
+
+}
+
+function updateLabel(container<int>label, container<int>R, container<double>xCoord, container<double>yCoord, container<int>mark, int currHullSize){
+    int n = label.size();
+    forall(v in label){
+        if(mark[v] == 0){
+            int left = 2 * label[v];
+            int right = left + 2;
+            if(right >= currHullSize){
+                right = 0;
+            }
+            left = R[left];
+            right = R[right];
+            int x = xCoord[left];
+            int y = yCoord[left];
+            int px = xCoord[v];
+            int py = yCoord[v];
+            double dist1 = (x - px) * (x - px) + (y - py) * (y - py);
+            x = xCoord[right];
+            y = yCoord[right];
+            double dist2 = (x - px) * (x - px) + (y - py) * (y - py);
+            if(dist2 < dist1){
+                label[v] = 2 * label[v] + 1;
+            }
+            else{
+                label[v] = 2 * label[v];
+            }
+        }
+    }
+}
+
+function convexHull(int n, container<double> xCoord, container<double> yCoord){
+
+    container<int>(n, 0) label;
+    container<float>(n) distance;
+    container<int>(n) L;
+    container<int>(3 * n, -1)R;
+    container<int>(n, 0)mark;
+    container<double>(2, 0)point;
+    container<int>(2 * n, 0) sign;
+
+    int A;
+    int B;
+    container<int>extreme;
+    extreme = extremePoints(xCoord, yCoord);
+    A = extreme[0];
+    B = extreme[1];
+
+    forall(v in L){
+        L[v] = v;
+    }
+
+    R[0] = A;
+    R[1] = B;
+    mark[A] = 1;
+    mark[B] = 1;
+
+    updateDistance(label, distance, xCoord, yCoord, L, R, mark, sign, 2);
+
+    int upperHull = 0;
+    float upperDist = 0;
+    int lowerHull = -1;
+    float lowerDist = -1;
+
+    for(v in L){
+
+        if(distance[v] < 0 && upperDist > distance[v]){
+            upperHull = v;
+            upperDist = distance[v];
+        }
+        else if(distance[v] > 0 && lowerDist < distance[v]){
+            lowerDist = distance[v];
+            lowerHull = v;
+        }
+
+        if(distance[v] < 0){
+            label[v] = 1;
+        }
+    }
+
+    R[2] = R[1];
+    int total = 2;
+    if(upperHull != -1){
+        R[3] = upperHull;
+        mark[upperHull] = 1;
+        total++;
+    }
+    else{
+        R[3] = -1;
+    }
+    if(lowerHull != -1){
+        R[1] = lowerHull;
+        mark[lowerHull] = 1;
+        total++;
+    }
+    else{
+        R[1] = -1;
+    }
+
+    point = innerPoint(R, xCoord, yCoord);
+    
+    getSign(R, sign, point, xCoord, yCoord, label, L, mark, 2);
+
+    int added = 2;
+    int currHullSize = 4;
+    int maxLabel = 2;
+    while(added > 0 && currHullSize <= n){
+
+        updateLabel(label, R, xCoord, yCoord, mark, currHullSize);
+
+        maxLabel = maxLabel * 2;
+
+        getSign(R, sign, point, xCoord, yCoord, label, L, mark, maxLabel);
+
+        updateDistance(label, distance, xCoord, yCoord, L, R, mark, sign, maxLabel);
+
+        added = updateHull(distance, xCoord, yCoord, R, label, mark, sign, point, L, maxLabel);
+
+        currHullSize = currHullSize * 2;
+
+        total = total + added;
+
+    }
+
+
+    return R;
+
+}

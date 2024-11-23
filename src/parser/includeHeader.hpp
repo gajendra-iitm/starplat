@@ -37,6 +37,8 @@
 /* UNCOMMENT IT TO GENERATE FOR AMD BACKEND */
 #include "../backends/backend_amd/dsl_cpp_generator.h"
 
+#include "../backends/backend_hip/dsl_cpp_generator.h"
+
 
 extern "C" int yyparse(void);
 // what would this do ?? 

@@ -47,17 +47,34 @@ namespace sphip {
         std::ostringstream oss;
 
         if(isHostToDevice) {
-            oss << "hipMemcpyToSymbol(::" << var
+            oss << typeStr << "* d_" << var << ";\n"; 
+            oss << "hipMemcpyToSymbol(d_" << var
             << ", &" << var << ", " << "sizeof(" << typeStr  
             << "), 0, hipMemcpyHostToDevice);";
         }
         else {
             oss << "hipMemcpyFromSymbol(&" << var
-            << ", ::" << var << ", " << "sizeof(" << typeStr  
+            << ", d_" << var << ", " << "sizeof(" << typeStr  
             << "), 0, hipMemcpyDeviceToHost);";
         }
 
-        main.pushStringWithNewLine(oss.str());
+        // main.pushStringWithNewLine(oss.str());
+    }
+
+    void DslCppGenerator::GenerateLaunchConfiguration(forallStmt* stmt, int loopNum, bool isMainFile) {
+        
+        dslCodePad & targetFile = (isMainFile ? main : header);
+        if(!stmt->isSourceField()){
+            targetFile.NewLine();
+            targetFile.pushStringWithNewLine("int V" + to_string(loopNum) + " = " + std::string(stmt->getSource()->getIdentifier()) + ".size();");
+            targetFile.pushStringWithNewLine("const unsigned threadsPerBlock" + to_string(loopNum) + " = 32;"
+            );
+            targetFile.pushStringWithNewLine(
+                "const unsigned numBlocks" + to_string(loopNum) + " = (V" + to_string(loopNum) + " + threadsPerBlock" + to_string(loopNum) + " - 1) / threadsPerBlock" + to_string(loopNum) + ";"
+            );
+
+            targetFile.NewLine();
+        }
     }
 
     void DslCppGenerator::GenerateLaunchConfiguration() {
@@ -159,31 +176,32 @@ namespace sphip {
                     strcpy(temp2, temp);
                     strcat(temp2, temp1.c_str());
 
-                    GenerateHipMemCpyStr((*itr)->getIdentifier()->getIdentifier(), temp2, ConvertToCppType(type->getInnerTargetType()), sizeofProp, 0);
+                    GenerateHipMemcpyStr((*itr)->getIdentifier()->getIdentifier(), temp2, ConvertToCppType(type->getInnerTargetType()), sizeofProp, 0);
                     
                 }
-    void DslCppGenerator::GenerateCopyBackToHost(const list<formalParam*> &paramList) {
-        
-        for(auto param: paramList) {
-
-            if(param->getType()->isPropType() && param->getType()->getInnerTargetType()->isPrimitiveType()) {
-
-                GenerateHipMemcpyStr(
-                    "h" + CapitalizeFirstLetter(param->getIdentifier()->getIdentifier()), 
-                    "d" + CapitalizeFirstLetter(param->getIdentifier()->getIdentifier()), 
-                    ConvertToCppType(param->getType()->getInnerTargetType()), 
-                    param->getType()->isPropEdgeType() ? "E" : "V", 
-                    false
-                );
-
             }
         }
     }
+    
+    // void DslCppGenerator::GenerateCopyBackToHost(const list<formalParam*> &paramList) {
+        
+    //     for(auto param: paramList) {
 
-    void DslCppGenerator::GenerateHipMalloc(
-        Type* type, 
-        const std::string &identifier
-    ) {
+    //         if(param->getType()->isPropType() && param->getType()->getInnerTargetType()->isPrimitiveType()) {
+
+    //             GenerateHipMemcpyStr(
+    //                 "h" + CapitalizeFirstLetter(param->getIdentifier()->getIdentifier()), 
+    //                 "d" + CapitalizeFirstLetter(param->getIdentifier()->getIdentifier()), 
+    //                 ConvertToCppType(param->getType()->getInnerTargetType()), 
+    //                 param->getType()->isPropEdgeType() ? "E" : "V", 
+    //                 false
+    //             );
+
+    //         }
+    //     }
+    // }
+
+    void DslCppGenerator::GenerateHipMalloc(Type* type, const std::string &identifier) {
 
         const std::string typeStr = type->isPrimitiveType() ? 
             ConvertToCppType(type) : ConvertToCppType(type->getInnerTargetType());

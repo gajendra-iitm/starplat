@@ -85,7 +85,7 @@ public:
         }
     }
 
-    bool isUsedVar(Identifier *iden, int type = READ_WRITE)
+    bool isUsedVariable(Identifier *iden, int type = READ_WRITE)
     {
         TableEntry *symbInfo = iden->getSymbolInfo();
         if (type == READ)

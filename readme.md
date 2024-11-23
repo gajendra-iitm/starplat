@@ -33,6 +33,18 @@ export OMP_NUM_THREADS=16
 g++ main.cpp -o main -fopenmp 
 ./main
 ```
+## Publication
+[StarPlat: A versatile DSL for graph analytics](https://www.sciencedirect.com/science/article/pii/S074373152400131X); Nibedita Behera, Ashwina Kumar, Ebenezer Rajadurai T, Sai Nitish, Rajesh Pandian M, Rupesh Nasre; IJPP 2024
+
+
+## Acknowledgments
+```
+This project is funded by India's National Supercomputing Mission, whose timely funding and regular reviews are greatly appreciated.
+Part of the work is supported by Qualcomm Innovation Fellowship 2023. 
+```
+## Licensing
+The StarPlat codebase is made available for academic and non-commercial use.
+StarPlat is patented. Commercial use of the code needs licensing. The interested may contact rupesh@cse.iitm.ac.in.
 
 
 
