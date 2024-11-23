@@ -30,7 +30,9 @@ graphcode/generated_mpi/*.cc
 graphcode/generated_mpi/*.h
 graphcode/generated_omp/*cc
 graphcode/generated_omp/*h
+graphcode/generated_cuda/*
 .idea/
+RandomCode.cpp
 *.o
 **/.DS_Store
 graphcode/sample_graphs/*
