@@ -1,0 +1,38 @@
+Static staticDegree(Graph g, propNode<int> deg){
+    g.attachNodeProperty(deg = 0);
+    forall(v in g.nodes()){
+        v.deg = g.count_outNbrs(v);
+    }
+}
+
+Decremental(Graph g, propNode<int> deg, updates<g> deleteBatch){
+    forall(update in deleteBatch){
+        int src = update.source;
+        int dst = update.destination;
+        src.deg = src.deg - 1;
+        // dst.deg = dst.deg - 1;
+    }
+}
+
+Incremental(Graph g, propNode<int> deg, updates<g> addBatch){
+    forall(update in addBatch){
+        int src = update.source;
+        int dst = update.destination;
+        src.deg = src.deg + 1;
+        // dst.deg = dst.deg + 1;
+    }
+}
+
+Dynamic DynDegree(Graph g, updates<g> updateBatch, propNode<int> deg, int batchSize){
+
+    staticDegree(g,deg);
+
+    Batch(updateBatch:batchSize){
+        updates<g> deleteBatch = updateBatch.currentBatch(0);
+        updates<g> addBatch = updateBatch.currentBatch(1);
+        Decremental(g, deg, deleteBatch);
+        g.updateCSRDel(updateBatch);
+        g.updateCSRAdd(updateBatch); 
+        Incremental(g, deg, addBatch);
+    }
+}

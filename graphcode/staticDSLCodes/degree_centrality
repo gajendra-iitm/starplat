@@ -1,0 +1,6 @@
+function Degree(Graph g, propNode<int> deg){
+    g.attachNodeProperty(deg = 0);
+    forall(v in g.nodes()){
+        v.deg = g.count_outNbrs(v);
+    }
+}

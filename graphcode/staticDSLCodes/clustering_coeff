@@ -1,0 +1,14 @@
+function staticClusteringCoeff(Graph g, propNode<int> cf){
+    g.attachNodeProperty(cf = 0);
+    forall(v in g.nodes()) {
+        forall(u in g.neighbors(v).filter(u < v)) {
+            forall(w in g.neighbors(v).filter(w > v)) {
+                if (g.is_an_edge(u, w)) {
+                    v.cf+=1;
+                    u.cf+=1;
+                    w.cf+=1;
+                }
+            }
+            }
+    }
+}

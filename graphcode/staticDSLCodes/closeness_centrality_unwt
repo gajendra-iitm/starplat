@@ -1,0 +1,20 @@
+function Compute_CC_Unweighted(Graph g, propNode < float > CC, SetN < g > sourceSet) {
+  g.attachNodeProperty(CC = 0);
+  propNode < int > dist;
+  for (src in sourceSet) {
+    g.attachNodeProperty(dist = 0);
+    src.dist = 0;
+    iterateInBFS(v in g.nodes() from src) {
+      for (w in g.neighbors(v)) {
+        w.dist = v.dist + 1;
+      }
+    }
+    iterateInReverse(v != src) {
+    }
+    int distSum = 0;
+    forall (v in g.nodes()) {
+        distSum += v.dist;
+    }
+    src.CC = 1.0/distSum;
+  }
+}
