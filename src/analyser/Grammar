@@ -74,6 +74,7 @@ expression : proc_call
 	         | expression '-' expression 
 	         | expression '*' expression 
 	         | expression'/' expression
+			 | expression '%' expression 
              | expression T_AND_OP expression 
 	         | expression T_OR_OP  expression 
 	         | expression T_LE_OP expression 
