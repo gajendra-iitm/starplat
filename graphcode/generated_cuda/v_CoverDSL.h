@@ -3,8 +3,6 @@
 #define GENCPP_V_COVERDSL_H
 #include <stdio.h>
 #include <stdlib.h>
-#include "ParallelHeapCudaClass.cu"
-#include "deepak_map_cuda.cu"
 #include <limits.h>
 #include <cuda.h>
 #include "../graph.hpp"
