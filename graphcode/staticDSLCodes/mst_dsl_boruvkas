@@ -28,7 +28,7 @@ function mst_boruvkas(Graph g) {
             {
                 edge e = g.get_edge(src, dst);
                 if(e.isCovered == false) {
-
+                    
                     int minweight = e.weight;
                     int src_par = src.parent;
                     g.getsrc_par.minweight = <Min(src_par.minweight, e.weight)>;

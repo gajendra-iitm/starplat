@@ -138,7 +138,7 @@ auto dynamicBatchTCV2_del(graph& g , int triangle_countSent , bool* modified , s
 void DynTC(graph& g , std::vector<update> updateBatch , int batchSize)
 {
   int triangleCount = staticTC(g);
-  // int batchSize = batchSize;
+  int batchSize = batchSize;
   int batchElements = 0;
   for( int updateIndex = 0 ; updateIndex < updateBatch.size() ; updateIndex += batchSize){
     if((updateIndex + batchSize) > updateBatch.size())

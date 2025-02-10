@@ -1,15 +1,13 @@
 function mod(int a,int b){
     return a - b * (a / b);
 }
-function APFB (Graph g, int nc){
+function APFB(Graph g, int nc){
     propNode<bool> modified;
-    g.attachNodeProperty(modified = False);
-    
     propNode<int> rmatch;
     propNode<int> cmatch;
+    g.attachNodeProperty(modified = False);
     g.attachNodeProperty(rmatch = -1);
     g.attachNodeProperty(cmatch = -1);
-    
     bool noNewPaths = False;
     propNode<int> bfsArray;
     propNode<int> predeccesor;
@@ -127,6 +125,8 @@ function APFB (Graph g, int nc){
 }
     propNode<bool> in_bfs;
     propNode<bool> isMatching;
+    propNode<int> bfsDist;
+    g.attachNodeProperty(bfsDist = 0);
     g.attachNodeProperty(in_bfs = False);
     g.attachNodeProperty(isMatching = False);
 
@@ -140,7 +140,7 @@ function APFB (Graph g, int nc){
             v.in_bfs = True;
             v.isMatching = (v.cmatch != -1 || v.rmatch != -1);
         iterateInBFS(u in g.nodes() from v) {
-
+            bool isMatchedEdge=(u.cmatch != -1 || u.rmatch != -1);
             for(neigh in g.neighbors(u)){
                 if(!neigh.visited){
                     bool nextIsMatchedEdge = !isMatchedEdge;
@@ -164,4 +164,11 @@ function APFB (Graph g, int nc){
             unmatchedComponents = unmatchedComponents + 1;
         }
 }
+    int totalMatching = 0;
+    forall(v in g.nodes()){
+        if(v.rmatch != -1){
+            totalMatching = totalMatching + 1;
+        }
+    }
+    return totalMatching;
 }

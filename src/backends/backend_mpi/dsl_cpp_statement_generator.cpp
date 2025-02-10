@@ -48,7 +48,7 @@ namespace spmpi {
         main.pushstr_newL(strBuffer);
         main.pushstr_newL("{");
         blockStatement* revBlock = (blockStatement*)bfsAbstraction->getRBFS()->getBody();
-        list<statement*> revStmtList = revBlock->returnStatements();
+        list<statement*> revStmtLisbtt = revBlock->returnStatements();
 
         for (statement* stmt : revStmtList) {
             generateStatement(stmt);
