@@ -1,0 +1,114 @@
+function mst_boruvkas(Graph g) {
+    propNode<int> parent;
+    propNode<int> minedge;
+    propNode<int> minweight;
+    propEdge<bool> isCovered;
+    propEdge<int> destination;
+
+    g.attachNodeProperty(parent = -1);
+    g.attachNodeProperty(minedge = -1);
+    g.attachNodeProperty(minweight = -1 );
+    
+
+
+    forall(u in g.nodes()){
+        u.parent = u;
+        forall(dst in g.neighbors(u)){
+            edge e = g.get_edge(src, dst);
+            e.isCovered = false;
+            e.destination = dst;
+        }
+    }
+
+
+    bool hasComponent = true;
+        propNode<bool> modified;
+        bool finished =False;
+        
+
+    do{
+        hasComponent = false;
+        g.attachNodeProperty(minedge = -1);
+        g.attachNodeProperty(minweight = -1);
+
+
+        forall(src in g.nodes())
+        {
+            forall(dst in g.neighbors(src))
+            {
+                edge e = g.get_edge(src, dst);
+                if(e.isCovered == false) {
+                    int x = src.minweight;
+                    if (x==-1|| x>e.weight){
+                        x = e.weight;
+                    }
+                    src.minweight = x;
+                }   
+            }
+        }
+
+        forall(src in g.nodes()){
+            forall(dst in g.neighbors(src))
+            {
+                edge e = g.get_edge(src, dst);
+                if(e.isCovered == false) {
+                    if(e.weight==src.minweight){
+                        src.minedge = e;
+                    }                    
+                }   
+            }
+        }
+
+        g.attachNodeProperty(modified = True);
+        fixedPoint until(finished :!modified){
+            forall(v in g.nodes().filter(modified==True)){
+                int par = v.parent;
+                if(v.minweight>=par.minweight){
+                    v.modified = False;
+                    finished = False;
+                }  
+                if(v.minweight<par.minweight){
+                    par.minweight = v.minweight;
+                    par.minedge = v.minedge;
+                }
+            }
+        }
+        forall(v in g.nodes().filter(parent==v)){
+            int e = v.minedge;
+            if(e!=-1){
+                int dst1 = e.destination;
+                int pardst1 = e.parent;
+                int epar = pardst1.minedge;
+                if(epar!=-1){
+                    int dstdst = epar.destination;
+                    if(dstdst == v && pardst1 < v){
+                        pardst1.minedge = -1;
+                    }
+
+                }
+                 
+            }
+        }
+        forall(v in g.nodes().filter(parent == v)){
+            int e = v.minedge;
+            if(e!=-1){
+                e.isCovered = True;
+                hasComponent = True;
+                int dst = e.destination;
+                v.parent = dst;
+            }
+        }
+
+        finished = False;        
+        fixedPoint until(finished: !modified){
+            forall(v in g.nodes()){
+                int par = v.parent;
+                if(par.parent!=par){
+                    finished = False;
+                    v.parent = par.parent;
+                }
+            }
+        }
+    }while(hasComponent);
+    return 0;
+}

@@ -1,0 +1,159 @@
+function mst_boruvkas(Graph g) {
+
+    propNode<int> rank;
+    propNode<int> parent;
+    propNode<int> minedge;
+    propNode<int> minweight;
+    propEdge<bool> isCovered;
+    // propNode<node> nodeparent;
+
+    g.attachNodeProperty(rank = 0);
+    g.attachNodeProperty(parent = -1);
+    g.attachNodeProperty(minedge = -1);
+    g.attachNodeProperty(minweight = -1 );
+    
+
+    // g.attachEdgeProperty(isCovered = 0);
+
+    forall(u in g.nodes()){
+        u.rank = 0;
+        u.parent = u;
+        forall(dst in g.neighbors(u)){
+            edge e = g.get_edge(src, dst);
+            e.isCovered = false;
+        }
+        // u.nodeparent = u;
+    }
+
+
+    bool hasComponent = true;
+        propNode<bool> modified;
+        bool finished =False;
+        
+
+    do{
+        hasComponent = false;
+        g.attachNodeProperty(minedge = -1);
+        g.attachNodeProperty(minweight = -1);
+
+
+        forall(src in g.nodes())
+        {
+            forall(dst in g.neighbors(src))
+            {
+                edge e = g.get_edge(src, dst);
+                if(e.isCovered == false) {
+                    int x = src.minweight;
+                    if (x==-1|| x>e.weight){
+                        x = e.weight;
+                    }
+                    src.minweight = x;
+                }   
+            }
+        }
+        forall(src in g.nodes()){
+            forall(dst in g.neighbors(src))
+            {
+                edge e = g.get_edge(src, dst);
+                if(e.isCovered == false) {
+                    if(e.weight==src.minweight){
+                        src.minedge = e;
+                    }                    
+                }   
+            }
+        }
+        g.attachNodeProperty(modified = True);
+        // forall(src in g.nodes()){
+        //     int par = src.parent;
+        //     // par.minweight
+        //     int w = src.minweight;
+        //     int w2 = par.minweight;
+        //     // bool y;
+            
+        //     fixedPoint until (finished:!modified) {
+        //     forall (v in g.nodes().filter(modified == True) ) {
+        //         // forall (nbr in g.neighbors(v)) {          
+        //         //     edge e = g.get_edge(v, nbr);
+        //         //     <nbr.dist,nbr.modified_nxt,nbr.parent> = <Min (nbr.dist, v.dist + e.weight), True,v>;
+        //         // }
+        //         // }
+        //         int par = v.
+        //         if(v.minweight>sr)
+        //         modified = modified_nxt;
+        //         g.attachNodeProperty(modified_nxt = False);
+        //     }
+        //     // par.minweight = 2;
+        //     // <par.minweight,y> = <Min(1,2),True>; 
+
+        
+        
+        // fixedPoint until (finished:!modified) {
+        // forall (v in g.nodes().filter(modified == True) ) {
+        //     // forall (nbr in g.neighbors(v)) {          
+        //     //     edge e = g.get_edge(v, nbr);
+        //     //     <nbr.dist,nbr.modified_nxt,nbr.parent> = <Min (nbr.dist, v.dist + e.weight), True,v>;
+        //     // }
+        //     // }
+        //     int par = v.parent;
+        //     if(v.minweight>=par.minweight){
+        //         v.modified = True;
+        //     } else {
+        //         par.minweight = v.minweight;
+        //     }
+        // }                                
+        // }
+        // }
+        // forall(src in g.nodes())
+        // {
+        //     forall(dst in g.neighbors(src))
+        //     {
+        //         edge e = g.get_edge(src, dst);
+        //         if(e.isCovered == false) {
+
+        //             int wt = e.weight;
+        //             node pars = g.get_node(src.parent);
+        //             if(wt == pars.minweight) {
+        //                 src.parent.minedge = e;
+        //             }
+                        
+        //         }
+
+        //     }
+        // }
+
+        // forall(src in g.nodes())
+        // {
+        //     if(src.minedge != -1) {
+        //         int cmp1 = minedge.source.parent;
+        //         int cmp2 = minedge.destination.parent;
+        //         if(cmp1 == cmp2) {
+        //             minedge.isCovered = true;
+        //         } else {
+        //             if(cmp1 < cmp2) {
+        //                 int temp = cmp1;
+        //                 cmp1 = cmp2;
+        //                 cmp2 = cmp1;
+        //             }
+        //             //atomically
+        //             mst_weight += src.minedge.weight;
+        //             Merge(cmp1, cmp2)
+        //         }
+        //     }
+        // }
+
+        // int firstNode = -1;
+        // forall(src in g.nodes())
+        // {
+        //     firstNode = src;
+        // }
+
+        // forall(src in g.nodes())
+        // {
+        //     if(firstNode.parent != src.parent){
+        //         hasComponent = true;
+        //     }
+        // }
+
+    }while(hasComponent);
+    return 0;
+}
