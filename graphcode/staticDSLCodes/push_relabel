@@ -8,7 +8,13 @@ function do_max_flow (Graph g, int source, int sink,int kernel_parameter) {
     g.attachNodeProperty (excess = 0) ;
 	
 	propEdge<int> residual_capacity;
-	g.attachEdgeProperty(residual_capacity=g.getEdgeLen());
+	// g.attachEdgeProperty(residual_capacity=g.getEdgeLen());
+	forall(v in g.nodes()){
+		for(dst in g.neighbors(v)){
+			edge e = g.get_edge(v,dst);
+			e.residual_capacity = e.weight;
+		}
+	}
 	
 	int excesstotal=0;
 	
@@ -43,7 +49,6 @@ function do_max_flow (Graph g, int source, int sink,int kernel_parameter) {
 						lv=vv;
 						hh=vv.label;
 					}
-					
 				}
 				if(v.label>hh && lv!=-1){
 					edge current_edge = g.get_edge (v,lv) ;

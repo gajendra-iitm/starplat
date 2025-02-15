@@ -8,7 +8,7 @@ function ek (Graph g,node s,node d,propNode<int> weight)
     int e_cap = 0 ;
     bool terminate = False;
     propEdge <int> cap;
-    g.attachEdgeProperty(cap = t.weight);
+    // g.attachEdgeProperty(cap = t.weight);
     
     while (new_flow != 0)
     {
