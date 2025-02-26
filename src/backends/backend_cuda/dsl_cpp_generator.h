@@ -10,7 +10,7 @@
 
 namespace spcuda {
 class dsl_cpp_generator {
- private:
+ protected:
   dslCodePad header;
   dslCodePad main;
   FILE* headerFile;

@@ -7,7 +7,7 @@
 #include "getUsedVars.cpp"
 
 bool flag_for_device_var = 0;  //temporary fix to accomodate device variable and
-
+int kernel_counter = 0;
 //~ using namespace spcuda;
 namespace spcuda {
 
@@ -37,7 +37,7 @@ void dsl_cpp_generator::generateInitkernel1(
 
   Identifier* inId = assign->getId();
   Expression* exprAssigned = assign->getExpr();
-
+std::cout<<"40 convertToCppType\n";
   const char* inVarType =
       convertToCppType(inId->getSymbolInfo()->getType()->getInnerTargetType());
   const char* inVarName = inId->getIdentifier();
@@ -46,7 +46,7 @@ void dsl_cpp_generator::generateInitkernel1(
           inVarType, inVarName, inVarType);
   main.pushString(strBuffer);
 
-  std::cout << "varName:" << inVarName << '\n';
+  std::cout << "49 varName:" << inVarName << '\n';
   generateExpr(exprAssigned, isMainFile);  // asssuming int/float const literal // OUTPUTS INIT VALUE
 
   main.pushstr_newL(");");
@@ -141,6 +141,7 @@ void dsl_cpp_generator::generation_begin() {
   header.NewLine();
 
   main.pushString("#include ");
+  kernel_counter = 0;
   sprintf(temp, "%s.h", fileName);
   addIncludeToFile(temp, main, false);
   main.NewLine();
@@ -827,13 +828,32 @@ void dsl_cpp_generator::generateReductionOpStmt(reductionCallStmt* stmt,
     targetFile.pushstr_newL(");");
 
   } else {
-    generate_exprPropId(stmt->getPropAccess(), isMainFile);
+     const char* operatorString = getOperatorString(stmt->reduction_op());
+     if(strcmp("+=",operatorString)==0){
+        // sprintf(strBuffer, "atomicAdd(& %s, %s);",stmt->getPropAccess() ,stmt->getRightSide());
+        // targetFile.pushstr_newL(strBuffer);
+        targetFile.pushString("atomicAdd(& ");
+        generate_exprPropId(stmt->getPropAccess(), isMainFile);
+        targetFile.pushString(" , ");
+        generateExpr(stmt->getRightSide(), isMainFile);
+        targetFile.pushstr_newL(");");
+     } else if(strcmp("-=",operatorString)==0){
+        targetFile.pushString("atomicSub(& ");
+        generate_exprPropId(stmt->getPropAccess(), isMainFile);
+        targetFile.pushString(" , ");
+        generateExpr(stmt->getRightSide(), isMainFile);
+        targetFile.pushstr_newL(");");
+     } else{
+            generate_exprPropId(stmt->getPropAccess(), isMainFile);
     targetFile.pushString(" = ");
     generate_exprPropId(stmt->getPropAccess(), isMainFile);
-    const char* operatorString = getOperatorString(stmt->reduction_op());
+   
+    // std::cout<<" Operator:"<<operatorString<<"\n";
     targetFile.pushstr_space(operatorString);
     generateExpr(stmt->getRightSide(), isMainFile);
     targetFile.pushstr_newL(";");
+     }
+
   }
 }
 
@@ -875,8 +895,9 @@ void dsl_cpp_generator::generateIfStmt(ifStmt* ifstmt, bool isMainFile) {
   generateStatement(ifstmt->getIfBody(), isMainFile);
   targetFile.pushstr_newL("} // if filter end");
   if (ifstmt->getElseBody() == NULL) return;
-  targetFile.pushstr_newL("else");
+  targetFile.pushstr_newL("else {");
   generateStatement(ifstmt->getElseBody(), isMainFile);
+  targetFile.pushstr_newL("}");
 }
 
 void dsl_cpp_generator::findTargetGraph(vector<Identifier*> graphTypes,
@@ -1016,7 +1037,7 @@ void dsl_cpp_generator::generateDeviceAssignmentStmt(assignment* asmt,
   {
     PropAccess* propId = asmt->getPropId();
 
-    if (asmt->isDeviceAssignment()) {
+    if (asmt->isDeviceAssignment() && isMainFile) {
       isDevice = true;
       //~ src.dist = 0; ===>  initIndex<int><<<1,1>>>(V,d_dist,src, 0);
       //                                  1              2     3   4
@@ -1329,6 +1350,7 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll, bool isMainF
 
   char strBuffer[1024];
   Identifier* iterator = forAll->getIterator();
+  Identifier* source = forAll->getSource();
   if (forAll->isSourceProcCall()) {
     //~ Identifier* sourceGraph = forAll->getSourceGraph();
     proc_callExpr* extractElemFunc = forAll->getExtractElementFunc();
@@ -1359,9 +1381,13 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll, bool isMainF
       if (s.compare("neighbors") == 0) {
         list<argument*> argList = extractElemFunc->getArgList();
         assert(argList.size() == 1);
+        argument * arg1 = argList.front();
+        Expression *arg1_expr = arg1->getExpr();
+        Identifier* id = arg1_expr->getId();
         //~ Identifier* nodeNbr=argList.front()->getExpr()->getId();
         //~ sprintf(strBuffer,"for (int edge = d_meta[v]; %s < %s[%s+1]; %s++) { // ","int","edge","d_meta","v","edge","d_meta","v","edge");
-        sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++) { // FOR NBR ITR ", "int", "edge", "d_meta", "v", "edge", "d_meta", "v", "edge");
+        sprintf(strBuffer, "for (%s %s = %s[%s]; %s < %s[%s+1]; %s++) { // FOR NBR ITR ", "int", "edge", "d_meta", id->getIdentifier(), "edge", "d_meta", id->getIdentifier(), "edge");
+        // sprintf(strBuffer,"FORALL %s",id->getIdentifier());
         targetFile.pushstr_newL(strBuffer);
         //~ targetFile.pushString("{");
         sprintf(strBuffer, "%s %s = %s[%s];", "int", iterator->getIdentifier(), "d_data", "edge");  //needs to move the addition of
@@ -1587,7 +1613,7 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
 
   header.pushString("__global__ void ");
   header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
-  header.pushString("_kernel");
+  header.pushString("_kernel_"+to_string(kernel_counter));
 
   header.pushString("(int V, int E");
   if(forAll->getIsMetaUsed())
@@ -1655,6 +1681,7 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
 void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
   dslCodePad& targetFile = isMainFile ? main : header;
   //~ cout << "inside the forall the value of ismainfile =" << isMainFile;
+  kernel_counter++;
   proc_callExpr* extractElemFunc = forAll->getExtractElementFunc();
   PropAccess* sourceField = forAll->getPropSource();
   Identifier* sourceId = forAll->getSource();
@@ -1718,7 +1745,7 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
     /*memcpy to symbol*/
 
     main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
-    main.pushString("_kernel");
+    main.pushString("_kernel_"+to_string(kernel_counter));
     main.pushString("<<<");
     main.pushString("numBlocks, threadsPerBlock");
     main.pushString(">>>");
@@ -1747,7 +1774,12 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
           main.pushString(",");
           main.pushString("d_");
           main.pushString(/*createParamName(*/ iden->getIdentifier());
-        }
+          // if(iden->getSymbolInfo()->getId()->get_fp_association()) { // If id has a fp association then _next must also be added as a parameter
+          // std::cout<<"1625 convertToCppType\n";
+          // sprintf(strBuffer, ",d_%s_next",iden->getIdentifier());
+          // main.pushString(/*createParamName(*/ strBuffer);
+          // }
+        } 
       }
     } else {
       std::cout<< "INN OPTIMESED ---------------" << '\n';
@@ -2329,15 +2361,15 @@ const char* dsl_cpp_generator::getOperatorString(int operatorId) {
     case OPERATOR_DEC:
       return "--";
     case OPERATOR_ADDASSIGN:
-      return "+";
+      return "+=";
     case OPERATOR_ANDASSIGN:
       return "&&";
     case OPERATOR_ORASSIGN:
       return "||";
     case OPERATOR_MULASSIGN:
-      return "*";
+      return "*=";
     case OPERATOR_SUBASSIGN:
-      return "-";
+      return "-=";
     default:
       return "NA";
   }
@@ -2923,6 +2955,7 @@ void dsl_cpp_generator::generateCudaMallocParams(list<formalParam*> paramList) {
     if (type->isPropType()) {
       if (type->getInnerTargetType()->isPrimitiveType()) {
         Type* innerType = type->getInnerTargetType();
+        std::cout<<"2944 convertToCppType\n";
         main.pushString(convertToCppType(
             innerType));  // convertToCppType need to be modified.
         main.pushString("*");
@@ -3194,7 +3227,21 @@ const char* dsl_cpp_generator::convertToCppType(Type* type) {
 		newS[vecString.size()] = '\0';
 		return newS; 
 
-      } 
+      }
+//       case TYPE_UPDATES:
+//       {
+//         		char* newS = new char[1024];
+            
+// 		string vecString = "std::vector<update>";   
+// cout<<"I am here1!\n";
+// 		// char* valType = (char*)convertToCppType(type->getInnerTargetType());
+// 		// string innerString = valType;
+//   cout<<"I am here!  Vecstring:"<<vecString<<"\n";
+// 		copy(vecString.begin(), vecString.end(), newS);
+// 		newS[vecString.size()] = '\0';
+// 		return newS; 
+        
+//       }
       default:
         assert(false);
     }

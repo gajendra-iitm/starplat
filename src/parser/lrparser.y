@@ -498,10 +498,10 @@ tid : id '.' id '.' id {// Identifier* id1=(Identifier*)Util::createIdentifierNo
 				   $$=Util::createPropIdNode($1,$3);
 				    };
 id : ID   { 
-	         $$=Util::createIdentifierNode($1);  
+	        $$=Util::createIdentifierNode($1);  
 
             
-            };                                                   
+        };                                                   
           
 
 
@@ -720,7 +720,16 @@ int main(int argc,char **argv)
 		   std::cout<<"created dyn mpi"<<std::endl;
 		   cpp_dyn_gen.setFileName(fileName);
 		   std::cout<<"file name set"<<std::endl;
-	       cpp_dyn_gen.generate();	
+	       cpp_dyn_gen.generate();
+
+		}
+		if(strcmp(backendTarget, "cuda") == 0){
+		   spdyncuda::dsl_dyn_cpp_generator cpp_dyn_gen;
+		   std::cout<<"created dyn cuda"<<std::endl;
+		   cpp_dyn_gen.setFileName(fileName);
+		   std::cout<<"file name set"<<std::endl;
+	       cpp_dyn_gen.generate();
+		   	
 		}
 	 }
 	
