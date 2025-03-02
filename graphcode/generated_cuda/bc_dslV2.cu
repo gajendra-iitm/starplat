@@ -3,7 +3,7 @@
 
 #define CUDA_CHECK(err) { \
   if (err != cudaSuccess) { \
-      fprintf(stderr, "CUDA error at %s: line:%d: Error number: %d. Error name: %s. Error description: %s.\n", __FILE__, __LINE__, (int)err, cudaGetErrorName(err), cudaGetErrorString(err)); \
+      fprintf(stderr, "CUDA error at %s: line:%d\n Error number: %d\n Error name: %s\n Error description: %s.\n", __FILE__, __LINE__, (int)err, cudaGetErrorName(err), cudaGetErrorString(err)); \
       exit(err); \
   } \
 }
@@ -82,8 +82,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
 
   //DECLAR DEVICE AND HOST vars in params
   float* d_BC;
-  cudaMalloc(&d_BC, sizeof(float)*(V));
-  err = cudaGetLastError();
+  err = cudaMalloc(&d_BC, sizeof(float)*(V));
   CUDA_CHECK(err);
 
   //BEGIN DSL PARSING 
@@ -93,16 +92,19 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
   //MILESTONE 1: reached, initKernel device function throwing CUDA error "named symbol not found"
   //print numblocks here
   float* d_sigma;
-  cudaMalloc(&d_sigma, sizeof(float)*(V));
+  err = cudaMalloc(&d_sigma, sizeof(float)*(V));
+  CUDA_CHECK(err);
 
   float* d_delta;
-  cudaMalloc(&d_delta, sizeof(float)*(V));
+  err = cudaMalloc(&d_delta, sizeof(float)*(V));
+  CUDA_CHECK(err);
 
   //FOR SIGNATURE of SET - Assumes set for on .cu only
   std::set<int>::iterator itr;
   for(itr=sourceSet.begin();itr!=sourceSet.end();itr++) 
   {
     cudaError_t err = cudaGetLastError();
+    printf("itr value: %d\n", *itr);
     CUDA_CHECK(err);
     int src = *itr;
     //print numblocks here
@@ -111,6 +113,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
     //print numblocks here
     err = cudaGetLastError();
     CUDA_CHECK(err);
+
     initKernel<float> <<<numBlocks,threadsPerBlock>>>(V,d_sigma,(float)0);
     err = cudaGetLastError();
     CUDA_CHECK(err);
@@ -135,7 +138,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
 
     initIndex<int><<<1,1>>>(V,d_level,src, 0);
     // Check for errors during kernel launch
-    //err = cudaGetLastError();
+    err = cudaGetLastError();
     CUDA_CHECK(err);
 
     // long k =0 ;// For DEBUG
@@ -146,11 +149,12 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
       //Kernel LAUNCH
       fwd_pass<<<numBlocks,threadsPerBlock>>>(V, d_meta, d_data,d_weight, d_delta, d_sigma, d_level, d_hops_from_source, d_finished,d_BC); ///DONE from varList
       // Check for errors during kernel launch
-      //cudaError_t err = cudaGetLastError();
+      cudaError_t err = cudaGetLastError();
       CUDA_CHECK(err);
 
       incrementDeviceVar<<<1,1>>>(d_hops_from_source);
       // Check for errors during kernel launch
+      err = cudaGetLastError();
       CUDA_CHECK(err);
   
             // Synchronize the device to catch errors that occur during kernel execution
@@ -173,10 +177,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
       back_pass<<<numBlocks,threadsPerBlock>>>(V, d_meta, d_data, d_weight, d_delta, d_sigma, d_level, d_hops_from_source, d_finished
         ,d_BC); ///DONE from varList
       // Check for errors during kernel launch
-      //cudaError_t err = cudaGetLastError();
-      CUDA_CHECK(err);
-
-      //err = cudaDeviceSynchronize();
+      cudaError_t err = cudaGetLastError();
       CUDA_CHECK(err);
 
       hops_from_source--;
