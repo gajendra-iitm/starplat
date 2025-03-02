@@ -48,3 +48,41 @@ StarPlat is patented. Commercial use of the code needs licensing. The interested
 
 
 
+## Betweeness centrality
+What is betweeness centrality: 
+[Science Direct](https://www.sciencedirect.com/topics/computer-science/betweenness-centrality)
+[Wikipedia](https://en.wikipedia.org/wiki/Betweenness_centrality)
+[IITM BS Data Science video on Betweeness Centrality](https://youtu.be/Cziv7Xfl8Zs?t=211)
+
+Computing Betweeness centrality in [Python networkX library](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.centrality.betweenness_centrality.html)
+
+what is source nodes input parameter in betweeness centrality function:
+as we know the bc algorithm computes bc values for all pairs (source node, target node) of nodes in the graph; but if we need to computer bc only taking certain nodes as source nodes while taking all the other nodes as taget nodes. Then we need to supply our set of source nodes as input parameter to bc function. i.e; i need to compute bc only for 2 source nodes 0, 1: then the .txt file must have these source nodes in this format:
+```0
+1```
+
+
+--> way to do it in generated static bc cuda code bc_dslV2.cu using bc_dslV2mainCuda.cu:
+
+1) make sure to first generate the cuda backend code:
+   by cd into 'src'
+   ```cd starplat/src```
+   command to run on your terminal to *generate* "betweeness centrality (for static graphs) cuda backend code" using bc_dslV2 as input dsl:
+   ```./StarPlat -s -f ../graphcode/staticDSLCodes/bc_dslV2 -b cuda```
+   note: for executing on Google collab cell: remember to add ! before the above command.
+
+2) generating the bc_dslV2 cuda backend code by using the above command will generate two files 'bc_dslV2.cu' and 'bc_dslV2.h' 
+   in the directory ../graphcode/generated_cuda which is required for this code to run. As we have the main caller function for that code written here in this file. *Compile* using nvcc:
+   ```nvcc bc_dslV2mainCuda.cu -o bc_dslV2mainCuda -arch=sm_70 -std=c++14 -rdc=true```
+
+3) *run*: 
+   ```./bc_dslV2mainCuda.out path/to/your/graph.txt path/to/your/srcNodes.txt```
+
+--> the same can be done in python *networkX* library:
+
+```betweenness_centrality = networkx.betweenness_centrality_subset(
+    G,                     # The graph
+    sources=sourceSet,     # Source nodes
+    targets=G.nodes(),     # Target nodes (all nodes in the graph)
+    normalized=True        # Normalize the centrality values
+)```
