@@ -3,16 +3,25 @@
 
 #define CUDA_CHECK(err) { \
   if (err != cudaSuccess) { \
-      fprintf(stderr, "CUDA error at %s:%d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err)); \
+      fprintf(stderr, "CUDA error at %s: line:%d: Error number: %d. Error name: %s. Error description: %s.\n", __FILE__, __LINE__, (int)err, cudaGetErrorName(err), cudaGetErrorString(err)); \
       exit(err); \
   } \
 }
+
+// #define CUDA_CHECK(err) { \
+//   if (err != cudaSuccess) { \
+//       fprintf(stderr, "CUDA error at %d: %s. Error number: %d. Error name: %s. Error description: %s.\n", __FILE__, __LINE__, cudaGetErrorString(err), (int)err, cudaGetErrorName(err)); \
+//       exit(err); \
+//   } \
+// }
 
 //cudaError_t err = cudaGetLastError();
 
 void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
 
 {
+  cudaError_t err = cudaGetLastError();
+  CUDA_CHECK(err);
   // CSR BEGIN
   int V = g.num_nodes();
   int E = g.num_edges();
@@ -74,10 +83,14 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
   //DECLAR DEVICE AND HOST vars in params
   float* d_BC;
   cudaMalloc(&d_BC, sizeof(float)*(V));
-
+  err = cudaGetLastError();
+  CUDA_CHECK(err);
 
   //BEGIN DSL PARSING 
   initKernel<float> <<<numBlocks,threadsPerBlock>>>(V,d_BC,(float)0);
+  err = cudaGetLastError();
+  CUDA_CHECK(err);
+  //MILESTONE 1: reached, initKernel device function throwing CUDA error "named symbol not found"
   //print numblocks here
   float* d_sigma;
   cudaMalloc(&d_sigma, sizeof(float)*(V));
@@ -90,6 +103,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
   for(itr=sourceSet.begin();itr!=sourceSet.end();itr++) 
   {
     cudaError_t err = cudaGetLastError();
+    CUDA_CHECK(err);
     int src = *itr;
     //print numblocks here
 
