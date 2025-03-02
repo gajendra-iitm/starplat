@@ -8,6 +8,8 @@
   } \
 }
 
+//cudaError_t err = cudaGetLastError();
+
 void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
 
 {
@@ -76,7 +78,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
 
   //BEGIN DSL PARSING 
   initKernel<float> <<<numBlocks,threadsPerBlock>>>(V,d_BC,(float)0);
-  print numblocks here
+  //print numblocks here
   float* d_sigma;
   cudaMalloc(&d_sigma, sizeof(float)*(V));
 
@@ -87,13 +89,21 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
   std::set<int>::iterator itr;
   for(itr=sourceSet.begin();itr!=sourceSet.end();itr++) 
   {
+    cudaError_t err = cudaGetLastError();
     int src = *itr;
-    print numblocks here
+    //print numblocks here
+
     initKernel<float> <<<numBlocks,threadsPerBlock>>>(V,d_delta,(float)0);
-    print numblocks here
+    //print numblocks here
+    err = cudaGetLastError();
+    CUDA_CHECK(err);
     initKernel<float> <<<numBlocks,threadsPerBlock>>>(V,d_sigma,(float)0);
+    err = cudaGetLastError();
+    CUDA_CHECK(err);
 
     initIndex<float><<<1,1>>>(V,d_sigma,src,(float)1); //InitIndexDevice
+    err = cudaGetLastError();
+    CUDA_CHECK(err);
 
     //EXTRA vars for ITBFS AND REVBFS
     bool finished;
@@ -106,12 +116,12 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
     printf("numBlocks: %d, threadsPerBlock: %d\n");
     initKernel<int> <<<numBlocks,threadsPerBlock>>>(V,d_level,-1);
     // Check for errors during kernel launch
-    cudaError_t err = cudaGetLastError();
+    err = cudaGetLastError();
     CUDA_CHECK(err);
 
     initIndex<int><<<1,1>>>(V,d_level,src, 0);
     // Check for errors during kernel launch
-    err = cudaGetLastError();
+    //err = cudaGetLastError();
     CUDA_CHECK(err);
 
     // long k =0 ;// For DEBUG
@@ -122,7 +132,7 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
       //Kernel LAUNCH
       fwd_pass<<<numBlocks,threadsPerBlock>>>(V, d_meta, d_data,d_weight, d_delta, d_sigma, d_level, d_hops_from_source, d_finished,d_BC); ///DONE from varList
       // Check for errors during kernel launch
-      cudaError_t err = cudaGetLastError();
+      //cudaError_t err = cudaGetLastError();
       CUDA_CHECK(err);
 
       incrementDeviceVar<<<1,1>>>(d_hops_from_source);
@@ -149,10 +159,10 @@ void Compute_BC(graph& g,float* BC,std::set<int>& sourceSet)
       back_pass<<<numBlocks,threadsPerBlock>>>(V, d_meta, d_data, d_weight, d_delta, d_sigma, d_level, d_hops_from_source, d_finished
         ,d_BC); ///DONE from varList
       // Check for errors during kernel launch
-      cudaError_t err = cudaGetLastError();
+      //cudaError_t err = cudaGetLastError();
       CUDA_CHECK(err);
 
-      err = cudaDeviceSynchronize();
+      //err = cudaDeviceSynchronize();
       CUDA_CHECK(err);
 
       hops_from_source--;
