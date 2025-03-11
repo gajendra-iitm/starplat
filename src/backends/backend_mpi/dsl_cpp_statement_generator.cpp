@@ -47,13 +47,16 @@ namespace spmpi {
         sprintf(strBuffer,"for(int %s : %s.get_bfs_nodes_for_phase(phase))",bfsAbstraction->getIteratorNode()->getIdentifier(),graphIds[0]->getIdentifier());
         main.pushstr_newL(strBuffer);
         main.pushstr_newL("{");
+        if ((blockStatement*)bfsAbstraction->getRBFS()!=NULL){
         blockStatement* revBlock = (blockStatement*)bfsAbstraction->getRBFS()->getBody();
         list<statement*> revStmtLisbtt = revBlock->returnStatements();
 
-        for (statement* stmt : revStmtList) {
+        for (statement* stmt : /*revStmtList*/ revStmtLisbtt) {
             generateStatement(stmt);
-        }
 
+            
+        }
+    }
         main.pushstr_newL("}");
         main.pushstr_newL("world.barrier();");
         main.pushstr_newL("}");
