@@ -1,22 +1,22 @@
-#include"APFB_dsl_test.h"
+#include"APFB_test.h"
 
 auto mod(int a , int b)
 {
   return a - b * (a / b);
 
 }
-void APFB(graph& g , int nc)
+auto APFB(graph& g , int nc)
 {
   bool* modified=new bool[g.num_nodes()];
   bool* modified_nxt=new bool[g.num_nodes()];
+  int* rmatch=new int[g.num_nodes()];
+  int* cmatch=new int[g.num_nodes()];
   #pragma omp parallel for
   for (int t = 0; t < g.num_nodes(); t ++) 
   {
     modified[t] = false;
     modified_nxt[t] = false;
   }
-  int* rmatch=new int[g.num_nodes()];
-  int* cmatch=new int[g.num_nodes()];
   #pragma omp parallel for
   for (int t = 0; t < g.num_nodes(); t ++) 
   {
@@ -288,7 +288,15 @@ void APFB(graph& g , int nc)
     }
     int* bfsDist=new int[g.num_nodes()];
   }
-  std::cout << "Even components: " << evenComponents << std::endl;
-  std::cout << "Odd components: " << oddComponents << std::endl;
-  std::cout << "Unmatched components: " << unmatchedComponents << std::endl;
+  int totalMatching = 0;
+  #pragma omp parallel for
+  for (int v = 0; v < g.num_nodes(); v ++) 
+  {
+    if (rmatch[v] != -1 )
+      {
+      totalMatching = totalMatching + 1;
+    }
+  }
+  return totalMatching;
+
 }

@@ -128,17 +128,17 @@ void APFB(graph& g,int nc)
       noNewVertices = true;
       cudaMemcpyToSymbol(::noNewVertices, &noNewVertices, sizeof(bool), 0, cudaMemcpyHostToDevice);
       cudaMemcpyToSymbol(::NOT_VISITED, &NOT_VISITED, sizeof(int), 0, cudaMemcpyHostToDevice);
-      cudaMemcpyToSymbol(::bfsLevel, &bfsLevel, sizeof(int), 0, cudaMemcpyHostToDevice);
       cudaMemcpyToSymbol(::nc, &nc, sizeof(int), 0, cudaMemcpyHostToDevice);
-      cudaMemcpyToSymbol(::noNewPaths, &noNewPaths, sizeof(bool), 0, cudaMemcpyHostToDevice);
+      cudaMemcpyToSymbol(::bfsLevel, &bfsLevel, sizeof(int), 0, cudaMemcpyHostToDevice);
       cudaMemcpyToSymbol(::noNewVertices, &noNewVertices, sizeof(bool), 0, cudaMemcpyHostToDevice);
+      cudaMemcpyToSymbol(::noNewPaths, &noNewPaths, sizeof(bool), 0, cudaMemcpyHostToDevice);
       APFB_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_meta,d_data,d_bfsArray,d_rmatch,d_predeccesor);
       cudaDeviceSynchronize();
       cudaMemcpyFromSymbol(&NOT_VISITED, ::NOT_VISITED, sizeof(int), 0, cudaMemcpyDeviceToHost);
-      cudaMemcpyFromSymbol(&bfsLevel, ::bfsLevel, sizeof(int), 0, cudaMemcpyDeviceToHost);
       cudaMemcpyFromSymbol(&nc, ::nc, sizeof(int), 0, cudaMemcpyDeviceToHost);
-      cudaMemcpyFromSymbol(&noNewPaths, ::noNewPaths, sizeof(bool), 0, cudaMemcpyDeviceToHost);
+      cudaMemcpyFromSymbol(&bfsLevel, ::bfsLevel, sizeof(int), 0, cudaMemcpyDeviceToHost);
       cudaMemcpyFromSymbol(&noNewVertices, ::noNewVertices, sizeof(bool), 0, cudaMemcpyDeviceToHost);
+      cudaMemcpyFromSymbol(&noNewPaths, ::noNewPaths, sizeof(bool), 0, cudaMemcpyDeviceToHost);
 
 
 
@@ -175,7 +175,7 @@ void APFB(graph& g,int nc)
       cudaMemcpyToSymbol(::compressed, &compressed, sizeof(bool), 0, cudaMemcpyHostToDevice);
       cudaMemcpyToSymbol(::nc, &nc, sizeof(int), 0, cudaMemcpyHostToDevice);
       cudaMemcpyToSymbol(::compressed, &compressed, sizeof(bool), 0, cudaMemcpyHostToDevice);
-      APFB_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_compress,d_predeccesor,d_cmatch,d_compress_next,d_rmatch);
+      APFB_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_compress,d_cmatch,d_predeccesor,d_compress_next,d_rmatch);
       cudaDeviceSynchronize();
       cudaMemcpyFromSymbol(&nc, ::nc, sizeof(int), 0, cudaMemcpyDeviceToHost);
       cudaMemcpyFromSymbol(&compressed, ::compressed, sizeof(bool), 0, cudaMemcpyDeviceToHost);
@@ -203,7 +203,7 @@ void APFB(graph& g,int nc)
     } // END FIXED POINT
 
     cudaMemcpyToSymbol(::nc, &nc, sizeof(int), 0, cudaMemcpyHostToDevice);
-    APFB_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_rmatch,d_cmatch);
+    APFB_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_cmatch,d_rmatch);
     cudaDeviceSynchronize();
     cudaMemcpyFromSymbol(&nc, ::nc, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
@@ -220,13 +220,13 @@ void APFB(graph& g,int nc)
 
 
   //cudaFree up!! all propVars in this BLOCK!
-  cudaFree(d_compress_next);
   cudaFree(d_compress);
-  cudaFree(d_rmatch);
-  cudaFree(d_cmatch);
-  cudaFree(d_modified);
   cudaFree(d_bfsArray);
   cudaFree(d_predeccesor);
+  cudaFree(d_cmatch);
+  cudaFree(d_rmatch);
+  cudaFree(d_compress_next);
+  cudaFree(d_modified);
 
   //TIMER STOP
   cudaEventRecord(stop,0);

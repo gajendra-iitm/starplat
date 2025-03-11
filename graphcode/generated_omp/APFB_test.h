@@ -1,5 +1,5 @@
-#ifndef GENCPP_TRIANGLE_COUNTING_DSL_H
-#define GENCPP_TRIANGLE_COUNTING_DSL_H
+#ifndef GENCPP_APFB_TEST_H
+#define GENCPP_APFB_TEST_H
 #include<stdio.h>
 #include<stdlib.h>
 #include<limits.h>
@@ -8,6 +8,7 @@
 #include"../graph.hpp"
 #include"../atomicUtil.h"
 
-auto Compute_TC(graph& g);
+auto mod(int a , int b);
+auto APFB(graph& g , int nc);
 
 #endif

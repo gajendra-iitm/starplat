@@ -4,10 +4,10 @@
 #include<stdlib.h>
 #include<limits.h>
 #include<atomic>
-#include<omp.h>
-#include"../graph.hpp"
-#include"../atomicUtil.h"
+#include<set>
+#include<vector>
+#include"../mpi_header/graph_mpi.h"
 
-auto Compute_TC(graph& g);
+auto Compute_TC(Graph& g, boost::mpi::communicator world );
 
 #endif

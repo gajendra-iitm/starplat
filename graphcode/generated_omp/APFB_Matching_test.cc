@@ -9,7 +9,7 @@ auto APFB(graph& g , int nc)
 {
   bool* modified=new bool[g.num_nodes()];
   bool* modified_nxt=new bool[g.num_nodes()];
-  int* rmatch=new int[g.num_nodes()];
+  int* rmatch=new int[g.n˜̃um_nodes()];
   int* cmatch=new int[g.num_nodes()];
   #pragma omp parallel for
   for (int t = 0; t < g.num_nodes(); t ++) 

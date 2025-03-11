@@ -1,5 +1,5 @@
-#ifndef GENCPP_TRIANGLE_COUNTING_DSL_H
-#define GENCPP_TRIANGLE_COUNTING_DSL_H
+#ifndef GENCPP_MST_DSL1_H
+#define GENCPP_MST_DSL1_H
 #include<stdio.h>
 #include<stdlib.h>
 #include<limits.h>
@@ -8,6 +8,6 @@
 #include"../graph.hpp"
 #include"../atomicUtil.h"
 
-auto Compute_TC(graph& g);
+void Boruvka(graph& g);
 
 #endif

@@ -1,6 +1,6 @@
-#include"triangle_counting_DSL.h"
+#include"triangle_counting_dsl.h"
 
-void Compute_TC(graph& g)
+auto Compute_TC(graph& g)
 {
   long triangle_count = 0;
   #pragma omp parallel for reduction(+ : triangle_count)
@@ -8,17 +8,21 @@ void Compute_TC(graph& g)
   {
     for (int edge = g.indexofNodes[v]; edge < g.indexofNodes[v+1]; edge ++) 
     {int u = g.edgeList[edge] ;
-      if (u < v ){
+      if (u < v )
+        {
         for (int edge = g.indexofNodes[v]; edge < g.indexofNodes[v+1]; edge ++) 
         {int w = g.edgeList[edge] ;
-          if (w > v ){
-            if (g.check_if_nbr(u, w) ){
-              triangle_count = triangle_count+ 1;
+          if (w > v )
+            {
+            if (g.check_if_nbr(u, w) )
+              {
+              triangle_count = triangle_count + 1;
             }
           }
         }
       }
     }
   }
+  return triangle_count;
 
 }

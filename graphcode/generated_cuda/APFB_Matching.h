@@ -82,7 +82,7 @@ __global__ void APFB_kernel(int V, int E,int* d_rmatch,bool* d_compress){ // BEG
 } // end KER FUNC
 __device__ bool compressed ; // DEVICE ASSTMENT in .h
 
-__global__ void APFB_kernel(int V, int E,bool* d_compress,int* d_predeccesor,int* d_cmatch,bool* d_compress_next,int* d_rmatch){ // BEGIN KER FUN via ADDKERNEL
+__global__ void APFB_kernel(int V, int E,bool* d_compress,int* d_cmatch,int* d_predeccesor,bool* d_compress_next,int* d_rmatch){ // BEGIN KER FUN via ADDKERNEL
   float num_nodes  = V;
   unsigned v = blockIdx.x * blockDim.x + threadIdx.x;
   if(v >= V) return;
@@ -126,7 +126,7 @@ __global__ void APFB_kernel(int V, int E,bool* d_compress_next,bool* d_compress)
 
   } // if filter end
 } // end KER FUNC
-__global__ void APFB_kernel(int V, int E,int* d_rmatch,int* d_cmatch){ // BEGIN KER FUN via ADDKERNEL
+__global__ void APFB_kernel(int V, int E,int* d_cmatch,int* d_rmatch){ // BEGIN KER FUN via ADDKERNEL
   float num_nodes  = V;
   unsigned v = blockIdx.x * blockDim.x + threadIdx.x;
   if(v >= V) return;
