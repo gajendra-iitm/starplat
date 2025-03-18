@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <cuda.h>
-#include "../graph.hpp"
-#include "../libcuda.cuh"
+#include "/lfs/usrhome/mtech/cs23m006/new_repo/starplat/graphcode/dynamic_mst_delete_cuda/graph.hpp"
+#include "/lfs/usrhome/mtech/cs23m006/new_repo/starplat/graphcode/dynamic_mst_delete_cuda/libcuda.cuh"
 #include <cooperative_groups.h>
 
 void APFB(graph& g,int nc);
