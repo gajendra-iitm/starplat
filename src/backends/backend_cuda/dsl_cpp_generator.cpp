@@ -604,6 +604,10 @@ void dsl_cpp_generator::generateStatement(statement* stmt, bool isMainFile) {
     generateForAll((forallStmt*)stmt, isMainFile);
   }
 
+  if (stmt->getTypeofNode() == NODE_LOOPSTMT){
+    generateLoop((loopStmt*)stmt, isMainFile);
+  }
+
   if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT) {
     generateFixedPoint((fixedPointStmt*)stmt, isMainFile);
   }
@@ -1397,25 +1401,23 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll, bool isMainF
   char strBuffer[1024];
   Identifier* iterator = forAll->getIterator();
   if (forAll->isSourceProcCall()) {
-    //~ Identifier* sourceGraph = forAll->getSourceGraph();
+    Identifier* sourceGraph = forAll->getSourceGraph();
     proc_callExpr* extractElemFunc = forAll->getExtractElementFunc();
     Identifier* iteratorMethodId = extractElemFunc->getMethodId();
     if (allGraphIteration(iteratorMethodId->getIdentifier())) {
-      // char* graphId=sourceGraph->getIdentifier();
-      // char* methodId=iteratorMethodId->getIdentifier();
-      // string s(methodId);
-      // if(s.compare("nodes")==0)
-      //{
-      // cout<<"INSIDE NODES VALUE"<<"\n";
-      // sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++)
-      // ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_nodes",iterator->getIdentifier());
-      //}
-      // else
-      //;
-      // sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++)
-      // ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_edges",iterator->getIdentifier());
+      char* graphId=sourceGraph->getIdentifier();
+      char* methodId=iteratorMethodId->getIdentifier();
+      string s(methodId);
+      if(s.compare("nodes")==0)
+      {
+        // cout<<"INSIDE NODES VALUE"<<"\n";
+        sprintf(strBuffer,"for (%s %s = 0; %s < %s; %s++)","int",iterator->getIdentifier(),iterator->getIdentifier(),"V",iterator->getIdentifier());
+      }
+      // else{
+        // sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++)","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_edges",iterator->getIdentifier());
+      // }
 
-      // main.pushstr_newL(strBuffer);
+      targetFile.pushstr_space(strBuffer);
 
     } else if (neighbourIteration(iteratorMethodId->getIdentifier())) {
       //~ // THIS SHOULD NOT BE EXECUTING FOR SIMPLE FOR LOOP BUT IT IS SO .
@@ -1475,7 +1477,7 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll, bool isMainF
       }*/
 
   } else {
-    //~ std::cout << "+++++++++++++++" << '\n';
+    // std::cout << "+++++++++++++++" << '\n';
     Identifier* sourceId = forAll->getSource();
     if (sourceId != NULL) {
       if (sourceId->getSymbolInfo()->getType()->gettypeId() == TYPE_SETN) {  //FOR SET
@@ -1717,6 +1719,52 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
   }
 
   header.pushstr_newL("} // end KER FUNC");
+}
+
+// TODO: fix this
+
+void dsl_cpp_generator::addCudaLoopKernel(loopStmt* loop, int startIndex, int endIndex, int stepValue){
+  char* loopVar = loop->getIterator()->getIdentifier();
+  header.pushString("__global__ void ");
+  header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
+  header.pushString("_kerneld");
+
+  header.pushString("(int V, int E");
+  if(loop->getIsMetaUsed())
+    header.pushString(", int* d_meta");
+  if(loop->getIsDataUsed())
+    header.pushString(", int* d_data");
+  if(loop->getIsSrcUsed())
+    header.pushString(", int* d_src");
+  if(loop->getIsWeightUsed())
+    header.pushString(", int* d_weight");
+  if(loop->getIsRevMetaUsed())
+    header.pushString(", int *d_rev_meta");
+
+  header.pushstr_newL("){ // BEGIN KER FUN via ADDKERNEL");
+
+  char strBuffer[1024];
+  header.pushstr_newL("float num_nodes  = V;");
+  header.pushstr_newL("unsigned temp_loop_itr = blockIdx.x * blockDim.x + threadIdx.x;");
+
+  sprintf(strBuffer, "unsigned %s = %d + temp_loop_itr * %d;", loopVar, startIndex, stepValue);
+  header.pushstr_newL(strBuffer);
+
+  // header.pushstr_newL("auto %s = %d;", loopVar, startIndex);
+
+  sprintf(strBuffer, "if(%s >= %d) return;", loopVar,endIndex);
+  header.pushstr_newL(strBuffer);
+
+  statement* body = loop->getBody();
+  assert(body->getTypeofNode() == NODE_BLOCKSTMT);
+  blockStatement* block = (blockStatement*)body;
+  list<statement*> statementList = block->returnStatements();
+  for (statement* stmt:statementList) {
+    generateStatement(stmt, false);  //false. All these stmts should be inside kernel
+                                     //~ if (stmt->getTypeofNode() == NODE_FORALLSTMT) {
+  }
+  header.pushstr_newL("} // end KER FUNC");
+
 }
 
 void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
@@ -2029,6 +2077,93 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
       }
     }
   }
+}
+
+void dsl_cpp_generator::generateLoop(loopStmt* loop, bool isMainFile){
+  dslCodePad& targetFile = isMainFile ? main : header;
+  statement* body = loop->getBody();
+  char strBuffer[1024];
+
+  if(loop->isLoop()){
+    int startIndex = loop->getStartValue()->getIntegerConstant();
+    int endIndex = loop->getEndValue()->getIntegerConstant();
+    int stepValue = loop->getStepValue()->getIntegerConstant();
+
+    int numberOfLoopIterations = (endIndex - startIndex +stepValue -1 ) / stepValue;
+    int threadsPerLoopBlock = 32;
+    int numLoopBlocks = (numberOfLoopIterations+ threadsPerLoopBlock - 1)/threadsPerLoopBlock;
+
+
+    main.pushString("auto numLoopBlocks = ");
+    char strBuffer1[1024];
+    sprintf(strBuffer1, "%d",numLoopBlocks);
+    main.pushString(strBuffer1);
+    main.pushString(";");
+    main.NewLine();
+    main.pushString("auto threadsPerLoopBlock = ");
+    char strBuffer2[1024];
+    sprintf(strBuffer2, "%d",threadsPerLoopBlock);
+    main.pushString(strBuffer2);
+    main.pushString(";");
+    main.NewLine();
+
+    main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
+    main.pushString("_kerneld");
+    main.pushString("<<<");
+    main.pushString("numLoopBlocks, threadsPerLoopBlock");
+    main.pushString(">>>");
+    main.push('(');
+    main.pushString("V,E");
+    if(loop->getIsMetaUsed())                                       // if d_meta is used
+      main.pushString(",d_meta");
+    if(loop->getIsDataUsed())                                       // if d_data is used, i.e. neighbors or is_an_edge is called          
+      main.pushString(",d_data");
+    if(loop->getIsSrcUsed())                                        // if d_src is used, i.e. nodes_to is called
+      main.pushString(",d_src");
+    if(loop->getIsWeightUsed())                                    // if d_weight is used, can never be used as of now
+      main.pushString(",d_weight");
+    if(loop->getIsRevMetaUsed())                                   // if d_rev_meta is used, i.e. nodes_to is called
+      main.pushString(",d_rev_meta");
+    main.pushString(")");
+    main.push(';');
+    main.NewLine();
+
+    main.pushString("cudaDeviceSynchronize();");
+    main.NewLine();
+    addCudaLoopKernel(loop, startIndex, endIndex, stepValue);
+  }else{
+    targetFile.pushString("for(int ");
+    targetFile.pushString(loop->getIterator()->getIdentifier());
+    targetFile.pushString(" = "); 
+    generateExpr(loop->getStartValue(),isMainFile);
+    targetFile.pushString("; ");
+    targetFile.pushString(loop->getIterator()->getIdentifier());
+    targetFile.pushString(" < ");
+    generateExpr(loop->getEndValue(), isMainFile);
+    targetFile.pushString("; ");
+    targetFile.pushString(loop->getIterator()->getIdentifier());
+    targetFile.pushString(" += ");
+    generateExpr(loop->getStepValue(), isMainFile);
+    targetFile.pushString(") {");
+    generateStatement(loop->getBody(), isMainFile);
+    targetFile.pushString("}");
+    targetFile.NewLine();
+  }
+
+  
+  // if(loop->getIsMetaUsed())                                       // if d_meta is used
+  //   main.pushString(",d_meta");
+  // if(loop->getIsDataUsed())                                       // if d_data is used, i.e. neighbors or is_an_edge is called          
+  //   main.pushString(",d_data");
+  // if(loop->getIsSrcUsed())                                        // if d_src is used, i.e. nodes_to is called
+  //   main.pushString(",d_src");
+  // if(loop->getIsWeightUsed())                                    // if d_weight is used, can never be used as of now
+  //   main.pushString(",d_weight");
+  // if(loop->getIsRevMetaUsed())                                   // if d_rev_meta is used, i.e. nodes_to is called
+  //   main.pushString(",d_rev_meta");
+
+  
+
 }
 
 void dsl_cpp_generator::generatefixedpt_filter(Expression* filterExpr,

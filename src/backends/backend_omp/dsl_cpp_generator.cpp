@@ -246,6 +246,10 @@ namespace spomp
       generateForAll((forallStmt *)stmt);
     }
 
+  if (stmt->getTypeofNode() == NODE_LOOPSTMT){
+    generateLoopStmt((loopStmt*) stmt);
+  }
+
     if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT)
     {
       generateFixedPoint((fixedPointStmt *)stmt);

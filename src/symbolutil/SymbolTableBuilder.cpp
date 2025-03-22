@@ -27,6 +27,9 @@ void setFilterAssocForForAll(std::vector<ASTNode *> parallelConstruct, Expressio
 
   for (int i = 0; i < parallelConstruct.size(); i++)
   {
+    if(parallelConstruct[i]->getTypeofNode() == NODE_LOOPSTMT){
+      return;
+    }
     if (parallelConstruct[i]->getTypeofNode() == NODE_FORALLSTMT)
     {
       forStmt = (forallStmt *)parallelConstruct[i];
@@ -165,7 +168,6 @@ void SymbolTableBuilder::buildForProc(Function *func)
     bool creationFine = create_Symbol(symbTab, id, type);
     id->getSymbolInfo()->setArgument(true);
   }
-
   buildForStatements(func->getBlockStatement());
   delete_curr_SymbolTable();
 }
@@ -259,6 +261,10 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
             {
               // iterateReverseBFS* iRBFS = (iterateReverseBFS*) parallel;
               // iRBFS->pushModifiedGlobalVariable(id->getSymbolInfo());
+            }
+            else  if(parallel->getTypeofNode() == NODE_LOOPSTMT){
+              // TODO: test MPI backend to verify if this works
+              // assert(false);
             }
             else
             {
@@ -457,23 +463,45 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
       if (extractElemFunc != NULL && parallelConstruct.size() > 0)
       {
-        forallStmt *parent = (forallStmt *)parallelConstruct.back();
-        Identifier *iteratorMethodId = extractElemFunc->getMethodId();
-        string iteratorMethodString(iteratorMethodId->getIdentifier());
-        if (iteratorMethodString == nodesToCall)
-        { // if the proc call is nodes_to, d_rev_meta is needed
-          parent->setIsRevMetaUsed();
-          currentFunc->setIsRevMetaUsed();
-          parent->setIsSrcUsed();
-          currentFunc->setIsSrcUsed();
+        ASTNode* parentStmt = parallelConstruct.back();
+        if(parentStmt->getTypeofNode() == NODE_FORALLSTMT){
+          forallStmt *parent = (forallStmt *)parallelConstruct.back();
+          Identifier *iteratorMethodId = extractElemFunc->getMethodId();
+          string iteratorMethodString(iteratorMethodId->getIdentifier());
+          if (iteratorMethodString == nodesToCall)
+          { // if the proc call is nodes_to, d_rev_meta is needed
+            parent->setIsRevMetaUsed();
+            currentFunc->setIsRevMetaUsed();
+            parent->setIsSrcUsed();
+            currentFunc->setIsSrcUsed();
+          }
+          else if (iteratorMethodString == nbrCall)
+          { // if the proc call is neighbors, d_data is needed
+            parent->setIsMetaUsed();
+            currentFunc->setIsMetaUsed();
+            parent->setIsDataUsed();
+            currentFunc->setIsDataUsed();
+          }
+        }else if(parentStmt->getTypeofNode() == NODE_LOOPSTMT){
+          loopStmt *parent = (loopStmt *)parallelConstruct.back();
+          Identifier *iteratorMethodId = extractElemFunc->getMethodId();
+          string iteratorMethodString(iteratorMethodId->getIdentifier());
+          if (iteratorMethodString == nodesToCall)
+          { // if the proc call is nodes_to, d_rev_meta is needed
+            parent->setIsRevMetaUsed();
+            currentFunc->setIsRevMetaUsed();
+            parent->setIsSrcUsed();
+            currentFunc->setIsSrcUsed();
+          }
+          else if (iteratorMethodString == nbrCall)
+          { // if the proc call is neighbors, d_data is needed
+            parent->setIsMetaUsed();
+            currentFunc->setIsMetaUsed();
+            parent->setIsDataUsed();
+            currentFunc->setIsDataUsed();
+          }
         }
-        else if (iteratorMethodString == nbrCall)
-        { // if the proc call is neighbors, d_data is needed
-          parent->setIsMetaUsed();
-          currentFunc->setIsMetaUsed();
-          parent->setIsDataUsed();
-          currentFunc->setIsDataUsed();
-        }
+        
       }
     }
 
@@ -490,6 +518,32 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     if ((backend.compare("omp") == 0 || backend.compare("amd") == 0 || backend.compare("cuda") == 0 || (backend.compare("multigpu") == 0)|| backend.compare("acc") == 0 || backend.compare("mpi") == 0 || (backend.compare("sycl") == 0)) && forAll->isForall())
     {
       if (forAll->isForall())
+      {
+        parallelConstruct.pop_back();
+        IdsInsideParallelFilter.clear();
+      }
+    }
+    break;
+  }
+  case NODE_LOOPSTMT:
+  {
+    loopStmt* loop = (loopStmt*)stmt;
+    string backend(backendTarget);
+    if ((backend.compare("cuda") == 0) || (backend.compare("omp") == 0) )
+    {
+      if (parallelConstruct.size() > 0)
+      {
+        loop->disableLoop();
+      }
+      if (loop->isLoop())
+      {
+        parallelConstruct.push_back(loop);
+      }
+    }
+    buildForStatements(loop->getBody());
+    if ( (backend.compare("cuda") == 0) || (backend.compare("omp") == 0) )
+    {
+      if (loop->isLoop())
       {
         parallelConstruct.pop_back();
         IdsInsideParallelFilter.clear();
@@ -636,7 +690,13 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           forallStmt *forAll = (forallStmt *)nearest_Parallel;
           forAll->setReductionStatement(reducStmt);
         }
+        else if (nearest_Parallel->getTypeofNode() == NODE_LOOPSTMT)
+        {
+          loopStmt *loop = (loopStmt *)nearest_Parallel;
+          loop->setReductionStatement(reducStmt);
+        }
       }
+     
     }
     else
     {
@@ -648,6 +708,10 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
         {
           forallStmt *forAll = (forallStmt *)nearest_Parallel;
           forAll->push_reduction(reducStmt->reduction_op(), reducStmt->getLeftId());
+        }
+        if(nearest_Parallel->getTypeofNode() == NODE_LOOPSTMT){
+          loopStmt *loop = (loopStmt *)nearest_Parallel;
+          loop->pushReduction(reducStmt->reduction_op(), reducStmt->getLeftId());
         }
       }
       else if (reducStmt->isContainerReduc())
@@ -889,17 +953,35 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
 
     if (s.compare(isAnEdgeCall) == 0)
     {
-      forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];
-      parentForAll->setIsMetaUsed();
-      currentFunc->setIsMetaUsed();
-      parentForAll->setIsDataUsed();
-      currentFunc->setIsDataUsed();
+      ASTNode* parentNode = parallelConstruct[0];
+      if (parentNode->getTypeofNode() == NODE_FORALLSTMT)
+      {
+        forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];
+        parentForAll->setIsMetaUsed();
+        currentFunc->setIsMetaUsed();
+        parentForAll->setIsDataUsed();
+        currentFunc->setIsDataUsed();
+      }else if(parentNode->getTypeofNode() == NODE_LOOPSTMT){
+        loopStmt *parentForAll = (loopStmt *)parallelConstruct[0];
+        parentForAll->setIsMetaUsed();
+        currentFunc->setIsMetaUsed();
+        parentForAll->setIsDataUsed();
+        currentFunc->setIsDataUsed();
+      }
     }
     if (s.compare(countOutNbrCall) == 0)
     {
-      forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];
-      parentForAll->setIsMetaUsed();
-      currentFunc->setIsMetaUsed();
+      ASTNode* parentNode = parallelConstruct[0];
+      if (parentNode->getTypeofNode() == NODE_FORALLSTMT)
+      {
+        forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];
+        parentForAll->setIsMetaUsed();
+        currentFunc->setIsMetaUsed();
+      }else if(parentNode->getTypeofNode() == NODE_LOOPSTMT){
+        loopStmt *parentForAll = (loopStmt *)parallelConstruct[0];
+        parentForAll->setIsMetaUsed();
+        currentFunc->setIsMetaUsed();
+      }
     }
 
     /*check if procedure call inside a dynamic func */
@@ -1073,14 +1155,16 @@ void SymbolTableBuilder::delete_curr_SymbolTable()
   propSymbolTables.pop_back();
 }
 
-void SymbolTableBuilder::buildST(list<Function *> funcList)
+void SymbolTableBuilder::buildST(list<Function *>funcList)
 {
 
   cout << "entered here for symbol table stuff"
        << "\n";
   list<Function *>::iterator itr;
-  for (itr = funcList.begin(); itr != funcList.end(); itr++)
-    buildForProc((*itr));
+  int count = 0;
+  for (itr = funcList.begin(); itr != funcList.end(); itr++){
+      buildForProc((*itr));
+  }
 }
 
 map<string, bool> SymbolTableBuilder::getDynamicLinkedFuncs()

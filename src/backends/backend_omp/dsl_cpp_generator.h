@@ -72,6 +72,7 @@ class dsl_cpp_generator {
   void generateWhileStmt(whileStmt* whilestmt);
   void generateSimpleForStmt(simpleForStmt* forstmt);
   virtual void generateForAll(forallStmt* forAll);
+  void generateLoopStmt(loopStmt* loopStmt);
   void generateFixedPoint(fixedPointStmt* fixedPoint);
   void generateIfStmt(ifStmt* ifstmt);
   void generateDoWhileStmt(dowhileStmt* doWhile);
@@ -93,6 +94,7 @@ class dsl_cpp_generator {
   void generate_exprUnary(Expression* expr);
   void generate_exprIndex(Expression* expr, bool islocal);
   void generateForAll_header(forallStmt* forAll);
+  void generateLoop_header(loopStmt* loop);
   void getEdgeTranslation(Expression* expr);  //translation of edge assignment.
   virtual void generateForAllSignature(forallStmt* forAll);
   void generatefixedpt_filter(Expression* filterExpr);

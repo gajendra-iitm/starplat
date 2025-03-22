@@ -26,6 +26,7 @@ class SymbolTableBuilder
 
  SymbolTableBuilder()
  {
+     parallelConstruct = std::vector<ASTNode*>();
      currVarSymbT=NULL;
      currPropSymbT=NULL;
      batchBlockEnv = NULL;

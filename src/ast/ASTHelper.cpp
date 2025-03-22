@@ -570,6 +570,12 @@ public:
 
         return forallStmtNode;
     }
+    static ASTNode* createNodeForLoopStmt(ASTNode* iterator, ASTNode* startIndex, ASTNode* endIndex, ASTNode* step, ASTNode* body){
+        statement* loopStmtNode;
+        Identifier *id = (Identifier *)iterator;
+        loopStmtNode = loopStmt::createloopStmt(id,(Expression*)startIndex,(Expression*)endIndex, (Expression*)step, (statement*)body);
+        return loopStmtNode;   
+    }
     static ASTNode *createNodeforReductionCall(int reductionOperationType, list<argument *> argList)
     {
         reductionCall *reductionCallNode = reductionCall::nodeForReductionCall(reductionOperationType, argList);

@@ -50,8 +50,8 @@
     tempNode* temporary;
      }
 %token T_INT T_FLOAT T_BOOL T_DOUBLE  T_LONG  T_AUTOREF
-%token T_FORALL T_FOR  T_P_INF  T_INF T_N_INF
-%token T_FUNC T_IF T_ELSE T_WHILE T_RETURN T_DO T_IN T_FIXEDPOINT T_UNTIL T_FILTER
+%token T_FORALL T_FOR  T_P_INF  T_INF T_N_INF T_LOOP
+%token T_FUNC T_IF T_ELSE T_WHILE T_RETURN T_DO T_IN T_FIXEDPOINT T_UNTIL T_FILTER T_TO T_BY
 %token T_ADD_ASSIGN T_SUB_ASSIGN T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_AND_ASSIGN T_XOR_ASSIGN
 %token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP
 %token T_AND T_OR T_SUM T_AVG T_COUNT T_PRODUCT T_MAX T_MIN
@@ -398,6 +398,7 @@ iteration_cf : T_FIXEDPOINT T_UNTIL '(' id ':' expression ')' blockstatements { 
 		| T_FOR '(' id T_IN id '.' proc_call  filterExpr')' blockstatements {$$=Util::createNodeForForAllStmt($3,$5,$7,$8,$10,false);};
 		| T_FOR '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, false);};
 		| T_FORALL '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, true);};
+		| T_LOOP '(' id T_IN val T_TO val T_BY val ')' blockstatements {$$ = Util::createNodeForLoopStmt($3, $5, $7, $9, $11);};
 		| T_FOR '(' primitive id '=' rhs ';' boolean_expr ';' expression ')' blockstatements {$$ = Util::createNodeForSimpleForStmt($3, $4, $6, $8, $10, $12); };
 
 filterExpr  :         { $$=NULL;};

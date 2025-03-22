@@ -2739,6 +2739,157 @@ public:
     return modifiedGlobalVars;
   }
 };
+
+class loopStmt: public statement {
+private:
+  Identifier* iterator;
+  Expression* startValue;
+  Expression* endValue;
+  Expression* stepValue;
+  statement *body;
+  bool isloop;
+  MetaDataUsed metadata;
+  set<int> reduceKeys;
+  map<int, list<Identifier *>> reductionMap;
+  bool containsreductionStatement;
+  statement *reductionStatement;
+
+public:
+  loopStmt(){
+    iterator = NULL;
+    startValue = NULL;
+    endValue = NULL;
+    stepValue = NULL;
+    body = NULL;
+    statementType = "loopStmt";
+    typeofNode = NODE_LOOPSTMT;
+    isloop = true;
+    createSymbTab();
+    metadata = MetaDataUsed();
+  }
+
+  static loopStmt* createloopStmt(Identifier* iterator, Expression* startValue, Expression* endValue, Expression* stepValue, statement* body){
+    loopStmt* new_loopStmt = new loopStmt();
+    new_loopStmt->iterator = iterator;
+    new_loopStmt->startValue = startValue;
+    new_loopStmt->endValue = endValue;
+    new_loopStmt->stepValue = stepValue;
+    new_loopStmt->body = body;
+    new_loopStmt->isloop = true;
+    body->setParent(new_loopStmt);
+    return new_loopStmt;
+  }
+
+  Identifier* getIterator(){
+    return iterator;
+  }
+
+  Expression* getStartValue(){
+    return startValue;
+  }
+
+  Expression* getEndValue(){
+    return endValue;
+  }
+
+  Expression* getStepValue(){
+    return stepValue;
+  }
+
+  statement* getBody(){
+    return body;
+  }
+
+  bool isLoop(){
+    return isloop;
+  }
+
+  void disableLoop(){
+    this->isloop = false;
+  }
+
+  bool getIsMetaUsed()
+  {
+    return metadata.isMetaUsed;
+  }
+
+  void setIsMetaUsed()
+  {
+    metadata.isMetaUsed = true;
+  }
+
+  bool getIsDataUsed()
+  {
+    return metadata.isDataUsed;
+  }
+
+  void setIsDataUsed()
+  {
+    metadata.isDataUsed = true;
+  }
+
+  bool getIsSrcUsed()
+  {
+    return metadata.isSrcUsed;
+  }
+
+  void setIsSrcUsed()
+  {
+    metadata.isSrcUsed = true;
+  }
+
+  bool getIsWeightUsed()
+  {
+    return metadata.isWeightUsed;
+  }
+
+  void setIsWeightUsed()
+  {
+    metadata.isWeightUsed = true;
+  }
+
+  bool getIsRevMetaUsed()
+  {
+    return metadata.isRevMetaUsed;
+  }
+
+  void setIsRevMetaUsed()
+  {
+    metadata.isRevMetaUsed = true;
+  }
+
+  set<int> getReduceKeys()
+  {
+    return reduceKeys;
+  }
+
+  void pushReduction(int key, Identifier *val)
+  {
+    reductionMap[key].push_back(val);
+    reduceKeys.insert(key);
+  }
+
+  void setReductionStatement(statement *stmt)
+  {
+    containsreductionStatement = true;
+    reductionStatement = stmt;
+  }
+  bool containsReductionStatement()
+  {
+    return containsreductionStatement;
+  }
+
+  list<Identifier *> getReduceIds(int key)
+  {
+    return reductionMap[key];
+  }
+
+  MetaDataUsed getMetaDataUsed()
+  {
+    return metadata;
+  }
+};
+
 class reductionCall : public ASTNode
 {
   int reductionType;

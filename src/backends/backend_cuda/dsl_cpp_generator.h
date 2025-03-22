@@ -74,6 +74,7 @@ class dsl_cpp_generator {
   void generateWhileStmt(whileStmt* whilestmt, bool isMainfile);
   void generateSimpleForStmt(simpleForStmt* forstmt, bool isMainFile);
   void generateForAll(forallStmt* forAll, bool isMainFile);
+  void generateLoop(loopStmt* loop, bool isMainFile);
   void generateFixedPoint(fixedPointStmt* fixedPoint, bool isMainFile);
   void generateIfStmt(ifStmt* ifstmt, bool isMainFile);
   void generateDoWhileStmt(dowhileStmt* doWhile, bool isMainFile);
@@ -182,6 +183,7 @@ class dsl_cpp_generator {
   void generateAtomicDeviceAssignmentStmt(assignment* asmt, bool isMainFile);
   void generateDeviceAssignmentStmt(assignment* asmt, bool isMainFile);
   void addCudaKernel(forallStmt* forAll);
+  void addCudaLoopKernel(loopStmt* loop, int startIndex, int endIndex, int stepValue);
   void generateCallList(list<formalParam*> paramList, dslCodePad& targetFile);
   void generateCudaMallocParams(list<formalParam*> paramList);
   void generateCudaMemCpyParams(list<formalParam*> paramList);

@@ -42,6 +42,9 @@ NEGATE [-]
 "while"   {printf("Keyword while: %s", yytext);  return T_WHILE;}
 "do"      {printf("Keyword do: %s", yytext);  return T_DO;}
 "in"      {printf("Keyword in ");  return T_IN;}
+"loop"    {printf("Keyword loop "); return T_LOOP;}
+"to"      {printf("Keyword to "); return T_TO;}
+"by"      {printf("Keyword by "); return T_BY;}
 "fixedPoint" {printf("Keyword fixedPoint"); return T_FIXEDPOINT;}
 "until"      {printf("Keyword until");  return T_UNTIL;}
 "iterateInBFS"  {printf("iterateInBFS");  return T_BFS;}
