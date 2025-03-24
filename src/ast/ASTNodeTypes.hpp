@@ -897,6 +897,11 @@ public:
   {
     return check_isGraphType(typeId);
   }
+
+  bool isGeomCompleteGraphType()
+  {
+    return check_isGeomCompleteGraphType(typeId);
+  }
   
   bool isGNNType()
   {

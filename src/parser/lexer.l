@@ -121,6 +121,7 @@ NEGATE [-]
 "Graph" 	{printf("Graph Type"); return T_GRAPH;}
 "GNN"       {printf("GNN Type\n"); return T_GNN;}
 "dirGraph" 	{printf("Directed Graph Type");  return T_DIR_GRAPH;}
+"geomCompleteGraph" {printf("Geometric Complete Graph Type");  return T_GEOMCOMPLETEGRAPH;}
 "node" 		{printf("Node Type");  return T_NODE;}
 "edge" 		{printf("Edge Type");return T_EDGE;}
 "propNode" {printf("Node Property");  return T_NP;}

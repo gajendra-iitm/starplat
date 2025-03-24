@@ -12,25 +12,15 @@
 #include <unordered_set>
 #include "graph_ompv2.hpp"
 #include "OMP_GNN.hpp"
+#include "abstractGraph.hpp"
 
 #ifdef __CUDACC__
 #include "CUDA_GNN.cuh"
 #endif
 
 
-class edge
-{
-public:
-  int32_t source;
-  int32_t destination;
-  int32_t weight;
-  int32_t id; /* -unique Id for each edge.
-                 -useful in adding properties to edges. */
-  int dir;
-};
-
-// bool counter=true;
-class graph
+//bool counter=true;
+class graph : public AbstractGraph 
 {
 private:
   int32_t nodesTotal;

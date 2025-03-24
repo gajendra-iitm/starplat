@@ -133,6 +133,8 @@ void dsl_cpp_generator::generation_begin() {
   addIncludeToFile("cuda.h", header, true);
   header.pushString("#include ");
   addIncludeToFile("../graph.hpp", header, false);
+    header.pushString("#include ");
+  addIncludeToFile("../geomCompleteGraph.hpp", header, false);
   header.pushString("#include ");
   //addIncludeToFile("../libcuda.cuh", header, false);
   addIncludeToFile("../dynamic_mst_delete_cuda/libcuda.cuh", header, false);
@@ -3384,10 +3386,11 @@ const char* dsl_cpp_generator::convertToCppType(Type* type) {
     }
   } else if (type->isNodeEdgeType()) {
     return "int";  // need to be modified.
-
+  } else if (type->isGeomCompleteGraphType()){
+    return "geomCompleteGraph&";
   } else if (type->isGraphType()) {
     return "graph&";
-  } else if (type->isCollectionType()) {
+  }else if (type->isCollectionType()) {
     int typeId = type->gettypeId();
 
     switch (typeId) {
@@ -3510,6 +3513,13 @@ void dsl_cpp_generator::generateCudaMemcpy(const char* dVar, const char* cVar,
 
 void dsl_cpp_generator::generateCSRArrays(const char* gId, Function* func) {
   char strBuffer[1024];
+  bool isGeomCompleteGraph = false;
+  for(auto &params : func->getParamList()){
+    if(params->getType()->gettypeId() == TYPE::TYPE_GEOMCOMPLETEGRAPH ){
+      isGeomCompleteGraph = true;
+      break;
+    }
+  }
 
   sprintf(strBuffer, "int V = %s.num_nodes();",
           gId);  // assuming DSL  do not contain variables as V and E
@@ -3552,44 +3562,91 @@ void dsl_cpp_generator::generateCSRArrays(const char* gId, Function* func) {
     main.pushstr_newL("h_rev_meta = (int *)malloc( (V+1)*sizeof(int));");
   main.NewLine();
 
-  if(func->getIsMetaUsed() || func->getIsRevMetaUsed()) {
-    main.pushstr_newL("for(int i=0; i<= V; i++) {");
-    main.pushstr_newL("int temp;");
-    if(func->getIsMetaUsed()) {
-      sprintf(strBuffer, "temp = %s.indexofNodes[i];", gId);
-      main.pushstr_newL(strBuffer);
-      main.pushstr_newL("h_meta[i] = temp;");
+  if(isGeomCompleteGraph){
+    if(func->getIsMetaUsed() || func->getIsRevMetaUsed()) {
+      main.pushstr_newL("int temp = 0;");
+      main.pushstr_newL("for(int i=0; i<= V; i++) {");
+      int count = 0;
+      if(func->getIsMetaUsed()) {
+        main.pushstr_newL("h_meta[i] = temp;");
+        sprintf(strBuffer, "temp = temp + V - 1;");
+        main.pushstr_newL(strBuffer);
+      }
+      // TODO: handle reverse edges
+      // if(func->getIsRevMetaUsed()) {
+      //   sprintf(strBuffer, "temp = %s.rev_indexofNodes[i];", gId);
+      //   main.pushstr_newL(strBuffer);
+      //   main.pushstr_newL("h_rev_meta[i] = temp;");
+      // }
+      main.pushstr_newL("}");
+      main.NewLine();
+
     }
-    if(func->getIsRevMetaUsed()) {
-      sprintf(strBuffer, "temp = %s.rev_indexofNodes[i];", gId);
-      main.pushstr_newL(strBuffer);
-      main.pushstr_newL("h_rev_meta[i] = temp;");
-    }
-    main.pushstr_newL("}");
-    main.NewLine();
+  }else{
+    if(func->getIsMetaUsed() || func->getIsRevMetaUsed()) {
+      main.pushstr_newL("for(int i=0; i<= V; i++) {");
+      main.pushstr_newL("int temp;");
+      if(func->getIsMetaUsed()) {
+        sprintf(strBuffer, "temp = %s.indexofNodes[i];", gId);
+        main.pushstr_newL(strBuffer);
+        main.pushstr_newL("h_meta[i] = temp;");
+      }
+      if(func->getIsRevMetaUsed()) {
+        sprintf(strBuffer, "temp = %s.rev_indexofNodes[i];", gId);
+        main.pushstr_newL(strBuffer);
+        main.pushstr_newL("h_rev_meta[i] = temp;");
+      }
+      main.pushstr_newL("}");
+      main.NewLine();
+    } 
   }
 
-  if(func->getIsDataUsed() || func->getIsSrcUsed() || func->getIsWeightUsed()) {
-    main.pushstr_newL("for(int i=0; i< E; i++) {");
-    main.pushstr_newL("int temp;");
-    if(func->getIsDataUsed()) {
-      sprintf(strBuffer, "temp = %s.edgeList[i];", gId);
+  if(!isGeomCompleteGraph){
+     main.pushstr_newL("for(int i=0; i< E; i++) {");
+      main.pushstr_newL("int temp;");
+      if(func->getIsDataUsed()) {
+        sprintf(strBuffer, "temp = %s.edgeList[i];", gId);
+        main.pushstr_newL(strBuffer);
+        main.pushstr_newL("h_data[i] = temp;");
+      }
+      if(func->getIsSrcUsed()) {
+        sprintf(strBuffer, "temp = %s.srcList[i];", gId);
+        main.pushstr_newL(strBuffer);
+        main.pushstr_newL("h_src[i] = temp;");
+      }
+      if(func->getIsWeightUsed()) {
+        main.pushstr_newL("temp = edgeLen[i];");
+        main.pushstr_newL("h_weight[i] = temp;");
+      }
+      main.pushstr_newL("}");
+      main.NewLine();
+  }else{
+    if(func->getIsDataUsed() || func->getIsSrcUsed() || func->getIsWeightUsed()) {
+      sprintf(strBuffer,"auto edgeCount = 0;", gId);
       main.pushstr_newL(strBuffer);
-      main.pushstr_newL("h_data[i] = temp;");
+      main.pushstr_newL("for(int i=0; i< V; i++) {");
+      main.pushstr_newL("for(int j=0; j< V - 1; j++) {");
+      if(func->getIsDataUsed()) {
+        sprintf(strBuffer, "auto temp = %s.getNeighbourFromEdge(i,j);", gId);
+        main.pushstr_newL(strBuffer);
+        main.pushstr_newL("h_data[edgeCount++] = temp;");
+      }
+      // if(func->getIsSrcUsed()) {
+      //   sprintf(strBuffer, "temp = %s.srcList[i];", gId);
+      //   main.pushstr_newL(strBuffer);
+      //   main.pushstr_newL("h_src[i] = temp;");
+      // }
+      // if(func->getIsWeightUsed()) {
+      //   main.pushstr_newL("temp = edgeLen[i];");
+      //   main.pushstr_newL("h_weight[i] = temp;");
+      // }
+      main.pushstr_newL("}");
+      main.pushstr_newL("}");
+      main.NewLine();
     }
-    if(func->getIsSrcUsed()) {
-      sprintf(strBuffer, "temp = %s.srcList[i];", gId);
-      main.pushstr_newL(strBuffer);
-      main.pushstr_newL("h_src[i] = temp;");
-    }
-    if(func->getIsWeightUsed()) {
-      main.pushstr_newL("temp = edgeLen[i];");
-      main.pushstr_newL("h_weight[i] = temp;");
-    }
-    main.pushstr_newL("}");
-    main.NewLine();
   }
 
+  
   //to handle rev_offset array for pageRank only // MOVED TO PREV FOR LOOP
   //~ main.pushstr_newL("for(int i=0; i<= V; i++) {");
   //~ sprintf(strBuffer, "int temp = %s.rev_indexofNodes[i];", gId);
@@ -3653,7 +3710,7 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
     // added here
     const char* parName = (*itr)->getIdentifier()->getIdentifier();
     // cout << "param:" <<  parName << endl;
-    if (!isMainFile && type->isGraphType()) {
+    if (!isMainFile && (type->isGraphType() || type->isGeomCompleteGraphType())) {
       genCSR = true;
       gId = parName;
     }
@@ -3862,7 +3919,7 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
       //~ varList.push_back(*vv);
       //~ varList.push_back({"double *", str,false});
       //~ Identifier* id = (*itr)->getIdentifier();
-      if (type->isGraphType()) {
+      if (type->isGraphType() || type->isGeomCompleteGraphType()) {
         std::cout << "========== SET TRUE" << '\n';
         genCSR = true;
         //~ gId = parName;

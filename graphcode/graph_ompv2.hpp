@@ -1,3 +1,6 @@
+#ifndef STARPLAT_GRAPH_OMPV2_HPP
+#define STARPLAT_GRAPH_OMPV2_HPP
+
 #include "update.hpp"
 #include <climits>
 #include "omp.h"
@@ -449,3 +452,4 @@ void updateCSRDel_omp(int numnodes, int numEdges, int32_t* indexofNodes, int32_t
 
 
 
+#endif

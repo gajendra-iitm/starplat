@@ -737,6 +737,9 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       parallelConstruct.push_back(iBFS);
     }
 
+    auto graph = iBFS->getGraphCandidate();
+    findSymbolId(graph);
+
     currentFunc->setIsMetaUsed();   // d_meta is used in itrbfs
     iBFS->setIsMetaUsed();          // d_meta is used in itrbfs
     currentFunc->setIsDataUsed();   // d_data is used in itrbfs

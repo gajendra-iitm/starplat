@@ -12,6 +12,7 @@ enum TYPE
   TYPE_GRAPH,
   TYPE_GNN,
   TYPE_DIRGRAPH,
+  TYPE_GEOMCOMPLETEGRAPH,
   TYPE_LIST,
   TYPE_SETN,
   TYPE_SETE,
@@ -49,7 +50,11 @@ inline bool check_isCollectionType(int typeId)
 }
 inline bool check_isGraphType(int typeId)
 {
-  return ((typeId == TYPE_GRAPH) || (typeId == TYPE_DIRGRAPH));
+  return ((typeId == TYPE_GRAPH) || (typeId == TYPE_DIRGRAPH)) || (typeId == TYPE_GEOMCOMPLETEGRAPH);
+}
+inline bool check_isGeomCompleteGraphType(int typeId)
+{
+  return (typeId==TYPE_GEOMCOMPLETEGRAPH);
 }
 inline bool check_isGNNType(int typeId)
 {

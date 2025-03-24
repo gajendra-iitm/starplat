@@ -54,6 +54,7 @@ namespace spomp
     addIncludeToFile("../graph.hpp", header, false);
     header.pushString("#include");
     addIncludeToFile("../atomicUtil.h", header, false);
+  addIncludeToFile("../geomCompleteGraph.hpp", header, false);
     header.NewLine();
     main.pushString("#include");
     sprintf(temp, "%s.h", fileName);
@@ -79,42 +80,53 @@ namespace spomp
     main->pushstr_newL("levelCount[phase] = bfsCount;");
   }
 
-  void add_BFSIterationLoop(dslCodePad *main, iterateBFS *bfsAbstraction)
-  {
-    char strBuffer[1024];
-    char *iterNode = bfsAbstraction->getIteratorNode()->getIdentifier();
-    char *graphId = bfsAbstraction->getGraphCandidate()->getIdentifier();
-    main->pushstr_newL("while ( bfsCount > 0 )");
-    main->pushstr_newL("{");
-    main->pushstr_newL(" int prev_count = bfsCount ;");
-    main->pushstr_newL("bfsCount = 0 ;");
-    main->pushstr_newL("#pragma omp parallel for");
-    sprintf(strBuffer, "for( %s %s = %s; %s < prev_count ; %s++)", "int", "l", "0", "l", "l");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "int %s = levelNodes[phase][%s] ;", iterNode, "l");
-    main->pushstr_newL(strBuffer);
-    sprintf(strBuffer, "for(%s %s = %s.%s[%s] ; %s < %s.%s[%s+1] ; %s++) ", "int", "edge", graphId, "indexofNodes", iterNode, "edge", graphId, "indexofNodes", iterNode, "edge");
-    main->pushString(strBuffer);
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", "nbr", graphId, "edgeList", "edge");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("int dnbr ;");
-    main->pushstr_newL("if(bfsDist[nbr]<0)");
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "dnbr = %s(&bfsDist[nbr],-1,bfsDist[%s]+1);", "__sync_val_compare_and_swap", iterNode);
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("if (dnbr < 0)");
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "%s %s = %s();", "int", "num_thread", "omp_get_thread_num");
-    // sprintf(strBuffer,"int %s = bfsCount.fetch_add(%s,%s) ;","loc","1","std::memory_order_relaxed");
-    main->pushstr_newL(strBuffer);
-    sprintf(strBuffer, " levelNodes_later[%s].push_back(%s) ;", "num_thread", "nbr");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("}");
-    main->pushstr_newL("}");
-    main->pushstr_newL("}");
+void add_BFSIterationLoop(dslCodePad* main, iterateBFS* bfsAbstraction) {
+  char strBuffer[1024];
+  char* iterNode = bfsAbstraction->getIteratorNode()->getIdentifier();
+  char* graphId = bfsAbstraction->getGraphCandidate()->getIdentifier();
+  bool isGeomCompleteGraph = false;
+  if(bfsAbstraction->getGraphCandidate()->getSymbolInfo()->getType()->gettypeId() == TYPE_GEOMCOMPLETEGRAPH ){
+    isGeomCompleteGraph = true;
   }
+  main->pushstr_newL("while ( bfsCount > 0 )");
+  main->pushstr_newL("{");
+  main->pushstr_newL(" int prev_count = bfsCount ;");
+  main->pushstr_newL("bfsCount = 0 ;");
+  main->pushstr_newL("#pragma omp parallel for");
+  sprintf(strBuffer, "for( %s %s = %s; %s < prev_count ; %s++)", "int", "l", "0", "l", "l");
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "int %s = levelNodes[phase][%s] ;", iterNode, "l");
+  main->pushstr_newL(strBuffer);
+  if(isGeomCompleteGraph){
+    sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s()-1; %s++) ","int","edge","0","edge","g","num_nodes","edge");
+  }else{
+    sprintf(strBuffer, "for(%s %s = %s.%s[%s] ; %s < %s.%s[%s+1] ; %s++) ", "int", "edge", graphId, "indexofNodes", iterNode, "edge", graphId, "indexofNodes", iterNode, "edge");    
+  }
+  main->pushString(strBuffer);
+  main->pushstr_newL("{");
+  if(isGeomCompleteGraph){
+    sprintf(strBuffer, "%s %s = %s.getNeighbourFromEdge(%s,%s) ;", "int", "nbr", "g", iterNode, "edge");
+  }else{
+    sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", "nbr", graphId, "edgeList", "edge");
+  }
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("int dnbr ;");
+  main->pushstr_newL("if(bfsDist[nbr]<0)");
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "dnbr = %s(&bfsDist[nbr],-1,bfsDist[%s]+1);", "__sync_val_compare_and_swap", iterNode);
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("if (dnbr < 0)");
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "%s %s = %s();", "int", "num_thread", "omp_get_thread_num");
+  //sprintf(strBuffer,"int %s = bfsCount.fetch_add(%s,%s) ;","loc","1","std::memory_order_relaxed");
+  main->pushstr_newL(strBuffer);
+  sprintf(strBuffer, " levelNodes_later[%s].push_back(%s) ;", "num_thread", "nbr");
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("}");
+  main->pushstr_newL("}");
+  main->pushstr_newL("}");
+}
 
   void add_RBFSIterationLoop(dslCodePad *main, iterateBFS *bfsAbstraction)
   {
@@ -1017,104 +1029,130 @@ namespace spomp
     return (extractString == "elements");
   }
 
-  void dsl_cpp_generator::generateForAllSignature(forallStmt *forAll)
+
+void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
+{
+
+  char strBuffer[1024];
+  Identifier* iterator=forAll->getIterator();
+  if(forAll->isSourceProcCall())
   {
-
-    char strBuffer[1024];
-    Identifier *iterator = forAll->getIterator();
-    if (forAll->isSourceProcCall())
-    {
-      Identifier *sourceGraph = forAll->getSourceGraph();
-      proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
-      Identifier *iteratorMethodId = extractElemFunc->getMethodId();
-      if (allGraphIteration(iteratorMethodId->getIdentifier()))
-      {
-        char *graphId = sourceGraph->getIdentifier();
-        char *methodId = iteratorMethodId->getIdentifier();
-        string s(methodId);
-        if (s.compare("nodes") == 0)
-        {
-          cout << "INSIDE NODES VALUE" << "\n";
-          sprintf(strBuffer, "for (%s %s = 0; %s < %s.%s(); %s ++) ", "int", iterator->getIdentifier(), iterator->getIdentifier(), graphId, "num_nodes", iterator->getIdentifier());
-        }
-        else
-          sprintf(strBuffer, "for (%s %s = 0; %s < %s.%s(); %s ++) ", "int", iterator->getIdentifier(), iterator->getIdentifier(), graphId, "num_edges", iterator->getIdentifier());
-
-        main.pushstr_newL(strBuffer);
-      }
-      else if (neighbourIteration(iteratorMethodId->getIdentifier()))
-      {
-
-        char *graphId = sourceGraph->getIdentifier();
-        char *methodId = iteratorMethodId->getIdentifier();
-        string s(methodId);
-        if (s.compare("neighbors") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ", "int", "edge", graphId, "indexofNodes", nodeNbr->getIdentifier(), "edge", graphId, "indexofNodes", nodeNbr->getIdentifier(), "edge");
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", iterator->getIdentifier(), graphId, "edgeList", "edge"); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        }
-        if (s.compare("nodes_to") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ", "int", "edge", graphId, "rev_indexofNodes", nodeNbr->getIdentifier(), "edge", graphId, "rev_indexofNodes", nodeNbr->getIdentifier(), "edge");
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", iterator->getIdentifier(), graphId, "srcList", "edge"); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        }
-        if (s.compare("inOutNbrs") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (edge %s_edges: %s.getInOutNbrs(%s)) ", nodeNbr->getIdentifier(), graphId, nodeNbr->getIdentifier());
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s_edges.destination ;", "int", iterator->getIdentifier(), nodeNbr->getIdentifier()); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        } // statement to a different method.                                                                                                  //statement to a different method.
-      }
+    Identifier* sourceGraph=forAll->getSourceGraph();
+    proc_callExpr* extractElemFunc=forAll->getExtractElementFunc();
+    Identifier* iteratorMethodId=extractElemFunc->getMethodId();
+    bool isGeomCompleteGraph = false;
+    if(sourceGraph->getSymbolInfo()->getType()->gettypeId() == TYPE_GEOMCOMPLETEGRAPH ){
+      isGeomCompleteGraph = true;
     }
-    else if (forAll->isSourceField())
+    if(allGraphIteration(iteratorMethodId->getIdentifier()))
     {
-      /*PropAccess* sourceField=forAll->getPropSource();
-      Identifier* dsCandidate = sourceField->getIdentifier1();
-      Identifier* extractId=sourceField->getIdentifier2();
-
-      if(dsCandidate->getSymbolInfo()->getType()->gettypeId()==TYPE_SETN)
+      char* graphId=sourceGraph->getIdentifier();
+      char* methodId=iteratorMethodId->getIdentifier();
+      string s(methodId);
+      if(s.compare("nodes")==0)
       {
-        main.pushstr_newL("std::set<int>::iterator itr;");
-        sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",dsCandidate->getIdentifier(),dsCandidate->getIdentifier());
-        main.pushstr_newL(strBuffer);
+        cout<<"INSIDE NODES VALUE"<<"\n";
+        sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++) ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_nodes",iterator->getIdentifier());
+      }
+      else
+      {
+        sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++) ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_edges",iterator->getIdentifier());
       }
 
-      /*
-      if(elementsIteration(extractId->getIdentifier()))
-        {
-          Identifier* collectionName=forAll->getPropSource()->getIdentifier1();
-          int typeId=collectionName->getSymbolInfo()->getType()->gettypeId();
-          if(typeId==TYPE_SETN)
-          {
-            main.pushstr_newL("std::set<int>::iterator itr;");
-            sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",collectionName->getIdentifier(),collectionName->getIdentifier());
-            main.pushstr_newL(strBuffer);
-          }
-        }*/
-    }
-    else if (forAll->isSourceExpr())
-    {
+      main.pushstr_newL(strBuffer);
 
-      Expression *expr = forAll->getSourceExpr();
-      Expression *mapExpr = expr->getMapExpr();
-      Identifier *mapId = mapExpr->getId();
+    }
+    else if(neighbourIteration(iteratorMethodId->getIdentifier()))
+    { 
+       
+       char* graphId=sourceGraph->getIdentifier();
+       char* methodId=iteratorMethodId->getIdentifier();
+       string s(methodId);
+       if(s.compare("neighbors")==0)
+       {
+       list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s()-1; %s ++) ","int","edge","0","edge","g","num_nodes","edge");
+       }else{
+        sprintf(strBuffer,"for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ","int","edge",graphId,"indexofNodes",nodeNbr->getIdentifier(),"edge",graphId,"indexofNodes",nodeNbr->getIdentifier(),"edge");
+       }
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"%s %s = %s.%s(%s, %s) ;","int",iterator->getIdentifier(),graphId,"getNeighbourFromEdge",nodeNbr->getIdentifier(), "edge"); 
+       }else{
+        sprintf(strBuffer,"%s %s = %s.%s[%s] ;","int",iterator->getIdentifier(),graphId,"edgeList","edge"); //needs to move the addition of
+       }
+       main.pushstr_newL(strBuffer);
+       }
+       if(s.compare("nodes_to")==0)
+       {
+        list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       if(isGeomCompleteGraph){
+        // Assumption, it doesn't matter since it's a complete graph, the reverse index is the same as the index because all nodes are connected to each other
+        sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s(); %s ++) ","int","edge","0","edge","g","num_nodes","edge");
+       }else{
+        sprintf(strBuffer,"for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ","int","edge",graphId,"rev_indexofNodes",nodeNbr->getIdentifier(),"edge",graphId,"rev_indexofNodes",nodeNbr->getIdentifier(),"edge");
+       }
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"%s %s = %s.%s(%s, %s) ;","int",iterator->getIdentifier(),graphId,"getNeighbourFromEdge",nodeNbr->getIdentifier(), "edge"); 
+       }else{
+        sprintf(strBuffer,"%s %s = %s.%s[%s] ;","int",iterator->getIdentifier(),graphId,"edgeList","edge"); //needs to move the addition of
+       }
+       main.pushstr_newL(strBuffer);
+       }  
+       if(s.compare("inOutNbrs")==0)
+       {
+        list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       sprintf(strBuffer,"for (edge %s_edges: %s.getInOutNbrs(%s)) ",nodeNbr->getIdentifier(),graphId,nodeNbr->getIdentifier());
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       sprintf(strBuffer,"%s %s = %s_edges.destination ;","int",iterator->getIdentifier(),nodeNbr->getIdentifier()); //needs to move the addition of
+       main.pushstr_newL(strBuffer);
+       }                                                                                                //statement to a different method.                                                                                                  //statement to a different method.
+
+    }
+  }
+  else if(forAll->isSourceField())
+  {
+    /*PropAccess* sourceField=forAll->getPropSource();
+    Identifier* dsCandidate = sourceField->getIdentifier1();
+    Identifier* extractId=sourceField->getIdentifier2();
+    
+    if(dsCandidate->getSymbolInfo()->getType()->gettypeId()==TYPE_SETN)
+    {
+      main.pushstr_newL("std::set<int>::iterator itr;");
+      sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",dsCandidate->getIdentifier(),dsCandidate->getIdentifier());
+      main.pushstr_newL(strBuffer);
+    }
+        
+    /*
+    if(elementsIteration(extractId->getIdentifier()))
+      {
+        Identifier* collectionName=forAll->getPropSource()->getIdentifier1();
+        int typeId=collectionName->getSymbolInfo()->getType()->gettypeId();
+        if(typeId==TYPE_SETN)
+        {
+          main.pushstr_newL("std::set<int>::iterator itr;");
+          sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",collectionName->getIdentifier(),collectionName->getIdentifier());
+          main.pushstr_newL(strBuffer);
+        }
+      }*/
+
+  }
+   else if(forAll->isSourceExpr()){
+  
+  Expression* expr = forAll->getSourceExpr();
+  Expression* mapExpr = expr->getMapExpr();
+  Identifier* mapId = mapExpr->getId();
 
       cout << "ENTERED................................................." << "\n";
 
@@ -2776,25 +2814,30 @@ namespace spomp
           string funcIdString(funcId);
           map<string, bool> dynamicFuncs = frontEndContext.getDynamicLinkFuncs();
 
-          if (dynamicFuncs.find(funcIdString) != dynamicFuncs.end() && dynamicFuncs[funcIdString])
-            return "edge";
-          else
-            return "int"; // need to be modified.
-        }
-      }
-      else
-        return "int";
-    }
-    else if (type->isGraphType())
-    {
-      return "graph&";
-    }
-    else if (type->isGNNType())
-    {
-      return "GNN ";
-    }
-    else if (type->isCollectionType())
-    {
+        if(dynamicFuncs.find(funcIdString) != dynamicFuncs.end() && dynamicFuncs[funcIdString])
+           return "edge";
+        else
+          return "int"; //need to be modified.
+         
+     }
+    } 
+   else
+      return "int"; 
+      
+  }
+  else if(type->isGraphType())
+  {
+    return "graph&";
+  }
+  else if(type->isGeomCompleteGraphType()){
+    return "geomCompleteGraph&";
+  }
+   else if (type->isGNNType())
+  {
+    return "GNN ";
+  }
+  else if(type->isCollectionType())
+  { 
 
       printf("Collection Type \n");
       int typeId = type->gettypeId();

@@ -8,7 +8,7 @@
 #include <cstring>
 #include <climits>
 // #include "./generated_omp/v_cover.cc"
-#include "./generated_omp/dynamicBatchTCV2_dyn.cc"
+#include "./generated_cuda/triangle_counting_dsl.cu"
 int main(int argc, char*argv[]) {
     char* filePath;
 
@@ -31,13 +31,13 @@ int main(int argc, char*argv[]) {
     g.parseGraph();
      std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
      std::cout << "Number of edges: " << g.num_edges() << std::endl;
-    double starttime = omp_get_wtime();
-    long numberOfTriangles= staticTC(g);
-    double endtime = omp_get_wtime();
+    // double starttime = omp_get_wtime();
+    Compute_TC(g);
+    // double endtime = omp_get_wtime();
     // for (int i = 0; i < g.num_nodes(); i++) {
     //     std::cout<< vc[i] << std::endl;
     // }
-    std::cout << "Number of triangles present: " << numberOfTriangles << std::endl;
-    std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
+    // std::cout << "Number of triangles present: " << numberOfTriangles << std::endl;
+    // std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
     return 0;
     }
