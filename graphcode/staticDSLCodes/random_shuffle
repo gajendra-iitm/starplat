@@ -1,0 +1,12 @@
+function Compute_RandomShuffle(Graph g) {
+   long triangle_count = 0;
+   g.randomShuffle();
+   forall(v in g.nodes()) {
+        triangle_count += 1;
+        g.randomShuffle();
+        forall(u in g.neighbors(v)) {
+            triangle_count += 1;
+        }
+   }
+   return triangle_count;
+ }

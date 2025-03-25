@@ -2732,8 +2732,12 @@ void dsl_cpp_generator::generate_exprProcCall(Expression* expr,
     //~ Identifier* objectId = proc->getId1();
     sprintf(strBuffer, "%s(%s, %s, %s, %s)", "findNeighborSorted", srcId->getIdentifier(), destId->getIdentifier(), "d_meta", "d_data");
     targetFile.pushString(strBuffer);
+  } else if(methodId == "randomShuffle"){
+    char strBuffer[1024];
+    sprintf(strBuffer, "%s(%s, %s, %s);", "shuffleNeighbors","d_meta", "d_data", "V");
+    targetFile.pushstr_newL(strBuffer);
 
-  } else {
+  }else {
     char strBuffer[1024];
     list<argument*> argList = proc->getArgList();
     Identifier* objectId = proc->getId1();

@@ -121,6 +121,36 @@ public:
     return foundEdge; // TODO: Maybe return a default value?
   }
 
+  void randomShuffle(){
+  
+    auto rd = std::random_device {}; 
+    auto rng = std::default_random_engine {rd()};
+    for(int i=0;i<=nodesTotal;i++)
+      {
+        std::vector<edge>& edgeOfVertex=edges[i];
+        std::shuffle(edgeOfVertex.begin(),edgeOfVertex.end(), rng);
+      }
+
+    std::shuffle(graph_edge.begin(), graph_edge.end(), rng);
+    int edge_no=0;
+
+    for(int i=0;i<=nodesTotal;i++) //change to 1-nodesTotal.
+    {
+      std::vector<edge> edgeofVertex=edges[i];
+      indexofNodes[i]=edge_no;
+      std::vector<edge>::iterator itr;
+      for(itr=edgeofVertex.begin();itr!=edgeofVertex.end();itr++)
+      {
+        edgeList[edge_no]=(*itr).destination;
+        edgeLen[edge_no]=(*itr).weight;
+        edge_no++;
+      }
+    }
+    indexofNodes[nodesTotal+1]=edge_no;//change to nodesTotal+1.
+    
+  }
+
+
   // library function to check candidate vertex is in the path from root to dest in SPT.
   bool inRouteFromSource(int candidate, int dest, int *parent)
   {
@@ -707,15 +737,16 @@ public:
       }
     }
 
-    /* convert to revCSR */
-    int prefix_sum = 0;
-    for (int i = 0; i <= nodesTotal; i++)
-    {
-      int temp = prefix_sum;
-      prefix_sum = prefix_sum + rev_indexofNodes[i];
-      rev_indexofNodes[i] = temp;
-    }
-    rev_indexofNodes[nodesTotal + 1] = prefix_sum;
+    
+      /* convert to revCSR */
+      int prefix_sum = 0;
+      for(int i=0;i<=nodesTotal;i++)
+        {
+          int temp = prefix_sum;
+          prefix_sum = prefix_sum + rev_indexofNodes[i];
+          rev_indexofNodes[i]=temp;
+        }
+        rev_indexofNodes[nodesTotal+1] = prefix_sum;
 
     /* store the sources in srcList */
 #pragma omp parallel for num_threads(4)

@@ -1,4 +1,5 @@
 #include <cuda.h>
+#include <curand_kernel.h>
 
 template <typename T>
 __global__ void initKernel0(T* init_array, T id, T init_value) {  // MOSTLY 1 thread kernel inits one type value at index id
@@ -46,6 +47,27 @@ __global__ void incrementDeviceVar(T* d_var) {
 template <typename T>
 __global__ void decrementDeviceVar(T* d_var) {
   *d_var = *d_var - 1;
+}
+
+__device__ void shuffleNeighbors(int *d_data, int *d_meta, int V)
+{
+  curandState state;
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  unsigned long long seed = 42;
+  curand_init(seed, idx, 0, &state);
+  for(int i = 0; i<V; i++)
+  {
+    int start = d_meta[i];
+    int end = d_meta[i+1]-1;
+    int range = end - start + 1;
+    for(int j = start; j<=end; j++)
+    {
+      int r = curand_uniform(&state);
+      int temp = d_data[j];
+      d_data[j] = d_data[start + r];
+      d_data[start + r] = temp;
+    }
+  }
 }
 
 
