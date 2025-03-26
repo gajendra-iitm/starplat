@@ -658,7 +658,7 @@ private:
   list<argument *> sizeExprList;
   Type *innerTypeSize;
   Type *outerTargetType;
-  Identifier* id;
+  Identifier *id;
   int num;
 
 public:
@@ -679,6 +679,13 @@ public:
     type->typeId = typeIdSent;
     type->rootType = rootTypeSent;
     type->setTypeofNode(NODE_TYPE);
+    return type;
+  }
+
+  static Type *createForPointType(int typeIdSent)
+  {
+    Type *type = new Type();
+    type->typeId = typeIdSent;
     return type;
   }
 
@@ -744,7 +751,6 @@ public:
 
     return type;
   }
-
 
   static Type *createForNodeMapType(int typeIdSent, Type *innerType)
   {
@@ -824,6 +830,11 @@ public:
   bool isCollectionType()
   {
     return check_isCollectionType(typeId);
+  }
+
+  bool isPointType()
+  {
+    return check_isPointType(typeId);
   }
 
   bool isGraphType()
@@ -922,7 +933,7 @@ public:
     return sizeExprList;
   }
 
-  Identifier* getId()
+  Identifier *getId()
   {
     return id;
   }

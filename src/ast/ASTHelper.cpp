@@ -73,6 +73,11 @@ public:
         return frontEndContext.getCurrentFuncType();
     }
 
+    static void setThrustUsed(bool thrustUsedFlag)
+    {
+        frontEndContext.setThrustUsed(thrustUsedFlag);
+    }
+
     static ASTNode *createFuncNode(ASTNode *id, list<formalParam *> formalParamList)
     {
         Identifier *funcId = (Identifier *)id;
@@ -210,6 +215,12 @@ public:
 
         return typeNode;
     }
+    static ASTNode *createPointTypeNode(int typeId)
+    {
+        Type *pointTypeNode = Type::createForPointType(typeId);
+        return pointTypeNode;
+    }
+
     static ASTNode *createGraphTypeNode(int typeId, Identifier *targetGraph)
     {
         Type *typeNode = Type::createForGraphType(typeId, 2, targetGraph);
@@ -538,11 +549,11 @@ public:
         reductionCallStmt *reductionStmtNode;
         if (leftSide->getTypeofNode() == NODE_ID)
         {
-            reductionStmtNode = reductionCallStmt::id_reducCallStmt((Identifier *)leftSide, (reductionCall *)reductionStmtNode);
+            reductionStmtNode = reductionCallStmt::id_reducCallStmt((Identifier *)leftSide, (reductionCall *)reductionCallNode);
         }
         if (leftSide->getTypeofNode() == NODE_PROPACCESS)
         {
-            reductionStmtNode = reductionCallStmt::propId_reducCallStmt((PropAccess *)leftSide, (reductionCall *)reductionStmtNode);
+            reductionStmtNode = reductionCallStmt::propId_reducCallStmt((PropAccess *)leftSide, (reductionCall *)reductionCallNode);
         }
         return reductionStmtNode;
     }

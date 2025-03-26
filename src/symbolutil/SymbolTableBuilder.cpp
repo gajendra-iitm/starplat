@@ -628,11 +628,14 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       reductionCall *reduceExpr = reducStmt->getReducCall();
       checkReductionExpr(reduceExpr);
 
-      ASTNode *nearest_Parallel = parallelConstruct.back();
-      if (nearest_Parallel->getTypeofNode() == NODE_FORALLSTMT)
+      if (parallelConstruct.size() > 0)
       {
-        forallStmt *forAll = (forallStmt *)nearest_Parallel;
-        forAll->setReductionStatement(reducStmt);
+        ASTNode *nearest_Parallel = parallelConstruct.back();
+        if (nearest_Parallel->getTypeofNode() == NODE_FORALLSTMT)
+        {
+          forallStmt *forAll = (forallStmt *)nearest_Parallel;
+          forAll->setReductionStatement(reducStmt);
+        }
       }
     }
     else
@@ -647,7 +650,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           forAll->push_reduction(reducStmt->reduction_op(), reducStmt->getLeftId());
         }
       }
-      else if (reducStmt->isContainerReduc()) 
+      else if (reducStmt->isContainerReduc())
       {
         printf ("Skipped symbol table entry for container reduction\n") ;
       }

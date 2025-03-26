@@ -1,3 +1,16 @@
+//make sure to first generate the static bc OpenMP backend code:
+//by cd into 'src'
+//command to run on your terminal to generate "betweeness centrality (for static graphs) OpenMP backend code" using bc_dslV2 as input dsl:
+// ./StarPlat -s -f ../graphcode/staticDSLCodes/bc_dslV2 -b omp
+//for executing on Google collab: remember to add ! before the all the commands.
+
+//generating the bc_dslV2 OpenMP backend code by using the above command will generate two files 'bc_dslV2.cc' and 'bc_dslV2.h' 
+//in the directory ../graphcode/generated_omp which is required for this code to run
+//as we have the main caller function for that code written here in this file.
+//TO COMPILE: g++ -o main bc_dslV2main.cpp -fopenmp
+//TO RUN: ./main 
+//then enter the <path_to_graph_file> when prompted.
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,7 +20,10 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
-// #include "./generated_omp/v_cover.cc"
+
+//tested for Static BC OpenMP generated code (generated_omp) uncomment the below line to use.
+//#include "../generated_omp/bc_dslV2.cc"
+
 int main(int argc, char*argv[]) {
     char* filePath;
 
@@ -24,38 +40,40 @@ int main(int argc, char*argv[]) {
         return 1;
     }
 
+    //get our graph object 'g'
     graph g(filePath);
+
+    int numOfNodes = g.num_nodes();
+    int numOfEdges = g.num_edges();
+    
+    
     // Define the set of source nodes
     std::set<int> sourceSet;
-    for (int i = 0; i < g.num_nodes(); ++i) {
+    for (int i = 0; i < numOfNodes; ++i) {
         sourceSet.insert(i); // Assuming nodes are numbered from 0 to num_nodes()-1
     }
 
-    // Define the BC property
-    std::map<int, float> BC;
+    //allocate memory for BC array for storing BC values.
+    float *BC = (float *) malloc(numOfNodes * sizeof(float)) ;
+
+    //parse our grpah 'g' to extract the properties like nodes and edges.
     g.parseGraph();
-   std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
-    std::cout << "Number of edges: " << g.num_edges() << std::endl;
 
-    // Define the set of source nodes
-    std::set<int> sourceSet;
-    for (int i = 0; i < g.num_nodes(); ++i) {
-        sourceSet.insert(i); // Assuming nodes are numbered from 0 to num_nodes()-1
-    }
+    printf("Number of nodes: %d\n" , numOfNodes);
+    printf("Number of edges: %d\n" , numOfEdges);
 
-    // Define the BC property
-    std::map<int, float> BC;
 
     double starttime = omp_get_wtime();
-    Compute_BC(g, BC, sourceSet); // Call the Compute_BC function
+    //calling the Compute_BC function
+    Compute_BC(g, BC, sourceSet);
     double endtime = omp_get_wtime();
 
-    std::cout << "\nTime taken: " << endtime - starttime << " seconds" << std::endl;
+    printf("Time taken: %lf\n", endtime -starttime);
 
-    // // Output BC values for all nodes
-    // for (const auto& entry : BC) {
-    //     std::cout << "Node " << entry.first << " BC: " << entry.second << std::endl;
-    // }
-
-    return 0;
+    for(int i=0; i<numOfNodes; i++){
+        printf("Node %d BC value: %f\n",i,BC[i]);
     }
+
+    //free(BC);
+    return 0;
+}

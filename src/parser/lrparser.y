@@ -55,7 +55,7 @@
 %token T_ADD_ASSIGN T_SUB_ASSIGN T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_AND_ASSIGN T_XOR_ASSIGN
 %token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP
 %token T_AND T_OR T_SUM T_AVG T_COUNT T_PRODUCT T_MAX T_MIN
-%token T_GRAPH T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET
+%token T_GRAPH T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_POINT T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET
 %token T_NP  T_EP
 %token T_LIST T_SET_NODES T_SET_EDGES  T_FROM
 %token T_BFS T_REVERSE
@@ -74,7 +74,7 @@
 %type <pList> paramList
 %type <node> statement blockstatements assignment declaration proc_call control_flow reduction return_stmt batch_blockstmt on_add_blockstmt on_delete_blockstmt
 %type <node> type type1 type2 type3
-%type <node> primitive graph collections property container nodemap vector hashmap hashset
+%type <node> primitive graph collections structs property container nodemap vector hashmap hashset
 %type <node> id leftSide rhs expression oid val boolean_expr unary_expr indexExpr tid  
 %type <node> bfs_abstraction filterExpr reverse_abstraction
 %type <nodeList> leftList rightList
@@ -235,6 +235,7 @@ declaration : type1 id   {
 type1: primitive {$$=$1; };
 	| graph {$$=$1;};
 	| collections { $$=$1;};
+	| structs {$$=$1;};
 
 
 primitive: T_INT { $$=Util::createPrimitiveTypeNode(TYPE_INT);};
@@ -259,6 +260,8 @@ collections : T_LIST { $$=Util::createCollectionTypeNode(TYPE_LIST,NULL);};
 		| nodemap   {$$ = $1;}
 		| hashmap {$$ = $1;}
 	    | hashset {$$ = $1;}
+
+structs: T_POINT { $$=Util::createPointTypeNode(TYPE_POINT);};
 
 container : T_CONTAINER '<' type '>' '(' arg_list ',' type ')' {$$ = Util::createContainerTypeNode(TYPE_CONTAINER, $3, $6->AList, $8);}
           | T_CONTAINER '<' type '>' '(' arg_list ')' { $$ =  Util::createContainerTypeNode(TYPE_CONTAINER, $3, $6->AList, NULL);}
@@ -301,6 +304,7 @@ expression : proc_call { $$=$1;};
 	         | expression '-' expression { $$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_SUB);};
 	         | expression '*' expression {$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MUL);};
 	         | expression'/' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_DIV);};
+			 | expression '%' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MOD);};
              | expression T_AND_OP expression {$$=Util::createNodeForLogicalExpr($1,$3,OPERATOR_AND);};
 	         | expression T_OR_OP  expression {$$=Util::createNodeForLogicalExpr($1,$3,OPERATOR_OR);};
 	         | expression T_LE_OP expression {$$=Util::createNodeForRelationalExpr($1,$3,OPERATOR_LE);};
@@ -324,7 +328,13 @@ unary_expr :   expression T_INC_OP {$$=Util::createNodeForUnaryExpr($1,OPERATOR_
 			 |  expression T_DEC_OP {$$=Util::createNodeForUnaryExpr($1,OPERATOR_DEC);}; 			 
 
 proc_call : leftSide '(' arg_list ')' { 
-                                       
+										ASTNode* proc_callId = $1;
+										if(proc_callId->getTypeofNode()==NODE_ID){
+											Identifier* id = (Identifier*)proc_callId;
+											if(strcmp(id->getIdentifier(),"tsort")==0){
+												frontEndContext.setThrustUsed(true);
+											}
+										}
                                        $$ = Util::createNodeForProcCall($1,$3->AList,NULL); 
 
 									    };
@@ -593,7 +603,12 @@ int main(int argc,char **argv)
    
    
    int error=yyparse();
-   printf("error val %d\n",error);
+   printf("Parsing done\n");
+   if(error!=0)
+   {
+	   fprintf(stderr,"Parsing Error!\n");
+	   exit(-1);
+   }
 
 
 	if(error!=1)

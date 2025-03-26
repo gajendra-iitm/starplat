@@ -25,6 +25,20 @@
  }                                                                     \
 }
 
+// atomicAdd for double types is not supported on all CUDA architectures. 
+// Specifically, atomicAdd for double was introduced in CUDA 8.0 for devices with compute capability 6.0 (Pascal) and later. 
+// If you're compiling for an older architecture (e.g., sm_60), you might get compile time errors.
+// hence implemented our own custom atomicAdd for double types using atomicCAS (compare and swap).
+
+__device__ double atomicAddDouble(double* address, double val) {
+  unsigned long long int* address_as_ull = (unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+      assumed = old;
+      old = atomicCAS(address_as_ull, assumed, __double_as_longlong(val + __longlong_as_double(assumed)));
+  } while (assumed != old);
+  return __longlong_as_double(old);
+}
 
 template <typename T>
 __global__ void initKernel(unsigned nSize,T* dArray,T initVal){

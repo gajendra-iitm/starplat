@@ -132,6 +132,7 @@ NEGATE [-]
 "nodeMap"  {printf("nodeMap type"); return T_NODEMAP;}
 "hashMap"  {printf("hashMap type"); return T_HASHMAP;}
 "hashSet"  {printf("hashSet type"); return T_HASHSET;}
+"Point" {printf("Point type"); return T_POINT;}
 
 
  /* Numbers and Identifies */

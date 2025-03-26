@@ -93,4 +93,14 @@ int FrontEndContext::getCurrentFuncType()
         return count;
       }
 
+   bool FrontEndContext::getThrustUsed()
+   {
+      return thrustUsed;
+   }
+
+   void FrontEndContext::setThrustUsed(bool thrustUsedFlag)
+   {
+      thrustUsed = thrustUsedFlag;
+   }
+
   

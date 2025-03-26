@@ -46,8 +46,7 @@ void dsl_cpp_generator::generation_begin() {
   header.pushString("#include");
   addIncludeToFile("../graph.hpp", header, false);
   header.pushString("#include");
-  //addIncludeToFile("../atomicUtil.h", header, false);
-  addIncludeToFile("../dynamic_mst_delete_cuda/libcuda.cuh", header, false);
+  addIncludeToFile("../atomicUtil.h", header, false);
   header.NewLine();
   main.pushString("#include");
   sprintf(temp, "%s.h", fileName);

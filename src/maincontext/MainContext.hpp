@@ -21,7 +21,7 @@ class FrontEndContext
   int inFuncCount;
   int decFuncCount;
   int dynFuncCount;
-  
+  bool thrustUsed;
 
 
   public:
@@ -32,7 +32,7 @@ class FrontEndContext
     inFuncCount = 0;
     decFuncCount = 0;
     dynFuncCount = 0;
-  
+    thrustUsed = false;
   }
 
  /* static FrontEndContext* getInstance()
@@ -55,6 +55,8 @@ class FrontEndContext
   int getCurrentFuncType();
   void incrementCurrentFuncCount();
   int getCurrentFuncCount();
+  bool getThrustUsed();
+  void setThrustUsed(bool thrustUsedFlag);
 
 };
 

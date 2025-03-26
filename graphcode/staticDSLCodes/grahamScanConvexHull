@@ -1,0 +1,302 @@
+function xComparator(Point a, Point b)
+{
+    if (a.x != b.x)
+    {
+        return a.x < b.x;
+    }
+    else
+    {
+        return a.y < b.y;
+    }
+}
+
+function crossProduct(Point p1, Point p2, Point p3)
+{
+    return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+}
+
+function findExtremePoints(container<Point> points, int start, int hull_size, container<int> stackArr, bool findRightmost)
+{
+    int extremeIdx = 0;
+    int tempIdx = 1;
+    while (tempIdx < hull_size)
+    {
+        int curr = stackArr[start + tempIdx];
+        int extreme = stackArr[start + extremeIdx];
+        Point curPoint = points[curr];
+        Point extremePoint = points[extreme];
+        if (findRightmost == 1)
+        {
+            if (curPoint.x > extremePoint.x || (curPoint.x == extremePoint.x && curPoint.y > extremePoint.y))
+            {
+                extremeIdx = tempIdx;
+            }
+        }
+        else
+        {
+            if (curPoint.x < extremePoint.x || (curPoint.x == extremePoint.x && curPoint.y < extremePoint.y))
+            {
+                extremeIdx = tempIdx;
+            }
+        }
+        tempIdx++;
+    }
+    return extremeIdx;
+}
+
+function updateTangent(bool done, int movingHullStart, int movingPoint, int movingHullSize, int pivotHullStart, int pivotPoint, bool isCCW, container<Point> points, container<int> stackArr)
+{
+    int nextPoint;
+    if (isCCW == 1)
+    {
+        nextPoint = (movingPoint + 1) % movingHullSize;
+    }
+    else
+    {
+        nextPoint = (movingPoint - 1 + movingHullSize) % movingHullSize;
+    }
+    int curMovingPointInd = stackArr[movingHullStart + movingPoint];
+    int curPivotPointInd = stackArr[pivotHullStart + pivotPoint];
+    int nextMovingPointInd = stackArr[movingHullStart + nextPoint];
+    if ((crossProduct(points[curPivotPointInd], points[curMovingPointInd], points[nextMovingPointInd]) < 0 && isCCW == 1) || (crossProduct(points[curPivotPointInd], points[curMovingPointInd], points[nextMovingPointInd]) > 0 && isCCW == 0))
+    {
+        movingPoint = nextPoint;
+        done = false;
+    }
+    else
+    {
+        if (crossProduct(points[curPivotPointInd], points[curMovingPointInd], points[nextMovingPointInd]) == 0)
+        {
+            Point curMovingPoint = points[curMovingPointInd];
+            Point curPivotPoint = points[curPivotPointInd];
+            Point nextMovingPoint = points[nextMovingPointInd];
+            double oldDistance = (curMovingPoint.x - curPivotPoint.x) * (curMovingPoint.x - curPivotPoint.x) + (curMovingPoint.y - curPivotPoint.y) * (curMovingPoint.y - curPivotPoint.y);
+            double newDistance = (nextMovingPoint.x - curPivotPoint.x) * (nextMovingPoint.x - curPivotPoint.x) + (nextMovingPoint.y - curPivotPoint.y) * (nextMovingPoint.y - curPivotPoint.y);
+            if (newDistance > oldDistance)
+            {
+                movingPoint = nextPoint;
+                done = false;
+            }
+        }
+    }
+    container<int>(2) result;
+    result[0] = movingPoint;
+    result[1] = done;
+    return result;
+}
+
+function findTangents(container<Point> points, int gid1, int gid2, int group_size, container<int> stackArr, container<int> stackSize, container<int> tangents)
+{
+    int start1 = gid1 * group_size;
+    int start2 = gid2 * group_size;
+    int hull1_size = stackSize[gid1];
+    int hull2_size = stackSize[gid2];
+    int upper_a = findExtremePoints(points, start1, hull1_size, stackArr, true);
+    int upper_b = findExtremePoints(points, start2, hull2_size, stackArr, false);
+    int lower_a = upper_a;
+    int lower_b = upper_b;
+    bool done = false;
+    container<int>(2) result;
+    while (done == 0)
+    {
+        done = true;
+        result = updateTangent(done, start1, upper_a, hull1_size, start2, upper_b, true, points, stackArr);
+        upper_a = result[0];
+        done = done && (result[1] == 1);
+        result = updateTangent(done, start2, upper_b, hull2_size, start1, upper_a, false, points, stackArr);
+        upper_b = result[0];
+        done = done && (result[1] == 1);
+    }
+    done = false;
+    while (done == 0)
+    {
+        done = true;
+        result = updateTangent(done, start1, lower_a, hull1_size, start2, lower_b, false, points, stackArr);
+        lower_a = result[0];
+        done = done && (result[1] == 1);
+        result = updateTangent(done, start2, lower_b, hull2_size, start1, lower_a, true, points, stackArr);
+        lower_b = result[0];
+        done = done && (result[1] == 1);
+    }
+    tangents[0] = upper_a;
+    tangents[1] = upper_b;
+    tangents[2] = lower_a;
+    tangents[3] = lower_b;
+}
+
+function mergeTwoHulls(container<Point> points, int gid1, int gid2, int group_size, container<int> stackArr, container<int> stackSize)
+{
+    container<int>(4) tangents;
+    findTangents(points, gid1, gid2, group_size, stackArr, stackSize, tangents);
+    int start1 = gid1 * group_size;
+    int start2 = gid2 * group_size;
+    int hull1_size = stackSize[gid1];
+    int hull2_size = stackSize[gid2];
+    int upper_a = tangents[0];
+    int upper_b = tangents[1];
+    int lower_a = tangents[2];
+    int lower_b = tangents[3];
+    container<int> mergedHull;
+    int curIdx = upper_a;
+    while (curIdx != lower_a)
+    {
+        mergedHull.push_back(stackArr[start1 + curIdx]);
+        curIdx = (curIdx + 1) % hull1_size;
+    }
+    mergedHull.push_back(stackArr[start1 + lower_a]);
+    curIdx = lower_b;
+    while (curIdx != upper_b)
+    {
+        mergedHull.push_back(stackArr[start2 + curIdx]);
+        curIdx = (curIdx + 1) % hull2_size;
+    }
+    mergedHull.push_back(stackArr[start2 + upper_b]);
+    curIdx = 0;
+    while (curIdx < mergedHull.size())
+    {
+        stackArr[start1 + curIdx] = mergedHull[curIdx];
+        curIdx = curIdx + 1;
+    }
+    stackSize[gid1] = mergedHull.size();
+    stackSize[gid2] = 0;
+}
+
+function grahamScanConvexHull(int n, container<Point> points, int k)
+{
+    int group_size = (n + k - 1) / k;
+    tsort(points.begin(), points.end(), xComparator);
+    container<int>(k) L;
+    container<int>(n, 0) stackArr;
+    container<int>(k, 0) stackSize;
+    forall(v in L)
+    {
+        L[v] = v;
+    }
+    forall(gid in L)
+    {
+        int start = gid * group_size;
+        int end;
+        end = Min((gid + 1) * group_size, n);
+        if (start >= n)
+        {
+            stackSize[gid] = 0;
+        }
+        else
+        {
+            int pivotIdx = start;
+            Point startPoint = points[start];
+            double lowestY = startPoint.y;
+            int temp = start + 1;
+            while (temp < end)
+            {
+                Point currentPivot = points[pivotIdx];
+                Point tempPoint = points[temp];
+                if (tempPoint.y < lowestY ||
+                    (tempPoint.y == lowestY && tempPoint.x < currentPivot.x))
+                {
+                    pivotIdx = temp;
+                    lowestY = tempPoint.y;
+                }
+                temp++;
+            }
+            Point pivot = points[pivotIdx];
+            temp = start;
+            while (temp < end)
+            {
+                int temp2 = temp + 1;
+                while (temp2 < end)
+                {
+                    Point tempPoint = points[temp];
+                    Point temp2Point = points[temp2];
+                    double dx1 = tempPoint.x - pivot.x;
+                    double dy1 = tempPoint.y - pivot.y;
+                    double dx2 = temp2Point.x - pivot.x;
+                    double dy2 = temp2Point.y - pivot.y;
+                    double cross = dx1 * dy2 - dy1 * dx2;
+                    if (cross == 0)
+                    {
+                        double dist1 = dx1 * dx1 + dy1 * dy1;
+                        double dist2 = dx2 * dx2 + dy2 * dy2;
+
+                        if (dist2 < dist1)
+                        {
+                            Point temp_swap = points[temp];
+                            points[temp] = points[temp2];
+                            points[temp2] = temp_swap;
+                        }
+                    }
+                    else if (cross < 0)
+                    {
+                        Point temp_swap = points[temp];
+                        points[temp] = points[temp2];
+                        points[temp2] = temp_swap;
+                    }
+                    temp2++;
+                }
+                temp++;
+            }
+            if (end - start < 3)
+            {
+                int temp = start;
+                while (temp < end)
+                {
+                    stackArr[temp] = temp;
+                    temp++;
+                }
+                stackSize[gid] = end - start;
+            }
+            else
+            {
+                int stackIndex = gid * group_size;
+                stackArr[stackIndex] = start;
+                stackArr[stackIndex + 1] = start + 1;
+                stackSize[gid] = 2;
+                temp = start + 2;
+                while (temp < end)
+                {
+                    bool shouldContinuePopping = true;
+                    while (stackSize[gid] >= 2 && shouldContinuePopping)
+                    {
+                        int topIdx = stackIndex + stackSize[gid] - 1;
+                        int top = stackArr[topIdx];
+                        int nextTopIdx = stackIndex + stackSize[gid] - 2;
+                        int nextTop = stackArr[nextTopIdx];
+                        Point topPoint = points[top];
+                        Point nextTopPoint = points[nextTop];
+                        Point tempPoint = points[temp];
+                        double cross = (nextTopPoint.x - topPoint.x) * (tempPoint.y - topPoint.y) -
+                                       (nextTopPoint.y - topPoint.y) * (tempPoint.x - topPoint.x);
+                        if (cross < 0)
+                        {
+                            shouldContinuePopping = false;
+                        }
+                        else
+                        {
+                            stackSize[gid] = stackSize[gid] - 1;
+                        }
+                    }
+                    stackArr[stackIndex + stackSize[gid]] = temp;
+                    stackSize[gid] = stackSize[gid] + 1;
+                    temp++;
+                }
+            }
+        }
+    }
+    int curIdx = 1;
+    while (curIdx < k)
+    {
+        if (stackSize[curIdx] != 0)
+        {
+            mergeTwoHulls(points, 0, curIdx, group_size, stackArr, stackSize);
+        }
+        curIdx = curIdx + 1;
+    }
+    container<Point> finalHull;
+    int elemNum = 0;
+    while (elemNum < stackSize[0])
+    {
+        finalHull.push_back(points[stackArr[elemNum]]);
+        elemNum = elemNum + 1;
+    }
+    return finalHull;
+}
