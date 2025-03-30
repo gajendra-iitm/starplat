@@ -6,12 +6,14 @@ void performUpdatesAssociation(PropAccess *expr, ASTNode *preprocessEnv)
   if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
   {
     onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
-    updatesId = onAddStmt->getUpdateId();
+    // updatesId = onAddStmt->getUpdateId();
+    updatesId = onAddStmt->getIteratorId();
   }
   else
   {
     onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-    updatesId = onDeleteStmt->getUpdateId();
+    // updatesId = onDeleteStmt->getUpdateId();
+    updatesId =onDeleteStmt->getIteratorId();
   }
   Identifier *id1 = expr->getIdentifier1();
   string updatesIdName(updatesId->getIdentifier());
@@ -172,6 +174,7 @@ void SymbolTableBuilder::buildForProc(Function *func)
 
 void SymbolTableBuilder::buildForStatements(statement *stmt)
 {
+  std::cout<<"HIMA BUILD FOR STATEMENTS\n";
   bool searchSuccess = false;
   switch (stmt->getTypeofNode())
   {
@@ -252,11 +255,13 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
             }
             else if (parallel->getTypeofNode() == NODE_ITRBFS)
             {
+              std::cout<<"258 BFS\n";
               // iterateBFS* iBFS = (iterateBFS*) parallel;
               // iBFS->pushModifiedGlobalVariable(id->getSymbolInfo());
             }
             else if (parallel->getTypeofNode() == NODE_ITRRBFS)
             {
+              std::cout<<"264 BFS\n";
               // iterateReverseBFS* iRBFS = (iterateReverseBFS*) parallel;
               // iRBFS->pushModifiedGlobalVariable(id->getSymbolInfo());
             }
@@ -357,7 +362,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
 
   case NODE_FORALLSTMT:
   {
-
+    std::cout<<"HIMA IS A GOOD GIRL 0 \n";
     forallStmt *forAll = (forallStmt *)stmt;
     Identifier *source1 = forAll->isSourceProcCall() ? forAll->getSourceGraph() : NULL;
 
@@ -428,6 +433,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       /* the assignment statements(arithmetic & logical) within the block of a for statement that
          is itself within a IterateInBFS abstraction are signaled to become atomic while code
          generation. */
+         std::cout<<"HIMA IS A GOOD GIRL 1\n";
       iterateBFS *parent = (iterateBFS *)parallelConstruct[0];
       cout << "parent type: " << parent->getTypeofNode() << endl;
       proc_callExpr *extractElem = forAll->getExtractElementFunc();
@@ -454,7 +460,9 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     }
     else
     { // if for all statement has a proc call
+      std::cout<<"HIMA IS A GOOD GIRL 2\n";
       proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
+      std::cout<<"HIMA IS A GOOD GIRL 2 parallel "<<parallelConstruct.size()<<"\n";
       if (extractElemFunc != NULL && parallelConstruct.size() > 0)
       {
         forallStmt *parent = (forallStmt *)parallelConstruct.back();
@@ -466,6 +474,20 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           currentFunc->setIsRevMetaUsed();
           parent->setIsSrcUsed();
           currentFunc->setIsSrcUsed();
+          if(preprocessEnv!=NULL){
+              if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
+              {
+                std::cout<<"HIMA IS A GOOD GIRL 3\n";
+                onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
+                onAddStmt->getMetaDataUsed()->isRevMetaUsed = true;
+                onAddStmt->getMetaDataUsed()->isSrcUsed = true; 
+              }
+              else
+              {
+                onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
+                // TODO
+              }
+          }
         }
         else if (iteratorMethodString == nbrCall)
         { // if the proc call is neighbors, d_data is needed
@@ -473,9 +495,62 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           currentFunc->setIsMetaUsed();
           parent->setIsDataUsed();
           currentFunc->setIsDataUsed();
+          if(preprocessEnv!=NULL){
+              if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
+              {
+                std::cout<<"HIMA IS A GOOD GIRL\n";
+                onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
+                onAddStmt->getMetaDataUsed()->isMetaUsed = true;
+                onAddStmt->getMetaDataUsed()->isDataUsed = true; 
+              }
+              else
+              {
+                onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
+                // TODO
+              }
+          }
+        }
+      }
+      else if(extractElemFunc != NULL && preprocessEnv!=NULL){
+        Identifier *iteratorMethodId = extractElemFunc->getMethodId();
+        string iteratorMethodString(iteratorMethodId->getIdentifier());
+        if (iteratorMethodString == nodesToCall)
+        { // if the proc call is nodes_to, d_rev_meta is needed
+          currentFunc->setIsRevMetaUsed();
+          currentFunc->setIsSrcUsed();
+          if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
+          {
+            std::cout<<"HIMA IS A GOOD GIRL 4\n";
+            onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
+            onAddStmt->getMetaDataUsed()->isRevMetaUsed = true;
+            onAddStmt->getMetaDataUsed()->isSrcUsed = true; 
+          }
+          else
+          {
+            onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
+            // TODO
+          }
+        }
+        else if (iteratorMethodString == nbrCall)
+        { // if the proc call is neighbors, d_data is needed
+          currentFunc->setIsMetaUsed();
+          currentFunc->setIsDataUsed();
+          if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
+          {
+            std::cout<<"HIMA IS A GOOD GIRL 5\n";
+            onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
+            onAddStmt->getMetaDataUsed()->isMetaUsed = true;
+            onAddStmt->getMetaDataUsed()->isDataUsed = true; 
+          }
+          else
+          {
+            onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
+            // TODO
+          }
         }
       }
     }
+
 
     buildForStatements(forAll->getBody());
 
@@ -529,7 +604,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       }
       if ((*itr)->getTypeofNode() == NODE_ITRBFS)
       {
-
+        std::cout<<"605 BFS\n";
         itrIBFS = itr;
 
         flag = true;
@@ -664,6 +739,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
   }
   case NODE_ITRBFS:
   {
+    std::cout<<"737 BFS\n";
     iterateBFS *iBFS = (iterateBFS *)stmt;
     string backend(backendTarget);
 
@@ -727,7 +803,13 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     batchBlock *batchBlockBound = (batchBlock *)batchBlockEnv;
     /*if(batchBlockBound->getUpdateId()==NULL)
        batchBlockBound->setUpdateId(onAddStmt->getUpdateId());*/
+    std::cout<<"Reaching NODE_ONADDBLOCK\n";
     preprocessEnv = onAddStmt;
+    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isWeightUsed = true;
+    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isMetaUsed = true;
+    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isDataUsed = true;
+    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isSrcUsed = true;
+    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isRevMetaUsed = true;
     buildForStatements(onAddStmt->getStatements());
     preprocessEnv = NULL;
     break;
@@ -863,8 +945,9 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     Expression *indexExpr = pExpr->getIndexExpr();
     int curFuncType = currentFunc->getFuncType();
     char *procId = methodId->getIdentifier();
-
+    
     string s(methodId->getIdentifier());
+    std::cout<<"$$$$$$$$$$$$$$$$METHOD CALL$$$$$$$$$$$"<<s<<"\n";
     if (id != NULL)
       ifFine = findSymbolId(id);
 
@@ -894,6 +977,7 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
       currentFunc->setIsMetaUsed();
       parentForAll->setIsDataUsed();
       currentFunc->setIsDataUsed();
+      // if(preprocessEnv!=NULL) preprocessEnv->
     }
     if (s.compare(countOutNbrCall) == 0)
     {
@@ -910,10 +994,8 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     }
     else
     {
-
       char *funcId = currentFunc->getIdentifier()->getIdentifier();
       string funcIdString(funcId);
-
       if (dynamicLinkedFunc.find(funcIdString) != dynamicLinkedFunc.end() && dynamicLinkedFunc[funcIdString])
       {
         dynamicLinkedFunc[procIdString] = true;
@@ -998,6 +1080,50 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
   {
     cout << expr->getPropId()->getIdentifier1()->getIdentifier() << "\n";
     ifFine = findSymbolPropId(expr->getPropId());
+    string s(((PropAccess *)(expr->getPropId()))->getIdentifier2()->getIdentifier());
+    std::cout<<"####### Weight hopefully######"<<s<<"\n";
+    if(s.compare(weightcall)==0){
+      if(currentFunc!=NULL) currentFunc->setIsWeightUsed();
+      if(parallelConstruct.size()>0) {
+        forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];
+       parentForAll->setIsWeightUsed();
+       }
+      if(preprocessEnv!=NULL) {
+        std::cout<<"STEP 1\n";
+        if(true){
+            std::cout<<"STEP 2\n";
+            Identifier *updatesId = NULL;
+            onAddBlock *onAddStmt = NULL;
+            onDeleteBlock *onDeleteStmt = NULL;
+            if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
+            {
+              onAddStmt = (onAddBlock *)preprocessEnv;
+              updatesId = onAddStmt->getIteratorId();
+            }
+            else
+            {
+              onDeleteStmt = (onDeleteBlock *)preprocessEnv;
+              updatesId =onDeleteStmt->getIteratorId();
+            }
+            std::cout<<"STEP 2\n";
+            string updatesIdName(updatesId->getIdentifier());
+            std::cout<<"STEP 3\n";
+            if (updatesIdName.compare(expr->getPropId()->getIdentifier1()->getIdentifier())!=0 ){
+              std::cout<<"STEP 4\n";
+              if(onAddStmt!=NULL){
+                std::cout<<"STEP 5\n";
+                MetaDataUsed *m = onAddStmt->getMetaDataUsed();
+                 std::cout<<"STEP 6\n";
+                 if(m==NULL) std::cout<<"*********METADATA IS NULL********\n";
+                m->isWeightUsed = true;
+                std::cout<<"STEP 7\n";
+              }
+              // ADD DELETE
+            }
+              
+        }
+      }
+    }
     if (preprocessEnv != NULL && expr->getPropId()->getIdentifier1()->getSymbolInfo() == NULL)
     {
 

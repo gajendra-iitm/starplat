@@ -1,0 +1,40 @@
+function computeBC (Graph g , int n,int source,propEdge<int> residual_capacity, propEdge<int> rev_residual_capacity,propNode<int> height,propEdge<int>reverse_edge) {
+
+g.attachNodeProperty(height=n);
+source.height = 0;
+   // propNode<bool> scanned;
+   // g.attachNodeProperty(scanned=false);
+   // source.scanned = true;
+ iterateInBFS (v in g.nodes() from source ) {
+   if(!v.scanned){
+      v.level = -1;
+
+   } else {
+      v.height = v.level;
+      for(w in g.neighbors(v)){
+         int e = g.get_edge(v,w);
+         if(e.rev_residual_capacity>0 && w.level==-1){
+            w.scanned = true;
+            
+            w.level = 
+         }
+      }
+      for(w in g.nodes_to(v)){
+         int rev = g.get_edge(w,v);
+         int e = rev.reverse_edge;
+         if(e!=-1){
+            if(e.residual_capacity>0){
+               w.scanned = true;
+               w.height  = curheight;
+            }
+         }
+      }
+   }
+
+
+ }
+
+iterateInReverse( v != src ) {
+
+}
+}

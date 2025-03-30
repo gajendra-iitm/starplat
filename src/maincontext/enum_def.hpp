@@ -29,6 +29,7 @@ enum TYPE
   TYPE_AUTOREF,
   TYPE_HEAP,
   TYPE_MAP,
+  TYPE_UPDATE,
 };
 
 inline bool check_isNodeEdgeType(int typeId)

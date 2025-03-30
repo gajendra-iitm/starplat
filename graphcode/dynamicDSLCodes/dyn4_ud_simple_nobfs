@@ -1,0 +1,448 @@
+Static staticMaxFlow (Graph g, int source0, int sink0, propEdge<int> residual_capacity,propEdge<int> rev_residual_capacity,propEdge<int> reverse_edge, propNode<int> excess,propEdge<int> parallel_edge,int kernel_cycles0) {
+    propNode<int> height;
+    g.attachNodeProperty (height = 0) ;
+    source0.height = g.num_nodes();
+	int num_nodes = g.num_nodes();
+    g.attachNodeProperty(excess=0);
+	forall(v in g.nodes()){
+		for(dst in g.neighbors(v)){
+			edge e1 = g.get_edge(v,dst);
+			e1.residual_capacity = e1.weight;
+			e1.rev_residual_capacity = 0;
+			e1.parallel_edge = -1;
+			for( pnbr in g.neighbors(dst)){
+				edge p = g.get_edge(dst,pnbr);
+				if(pnbr==v){
+					e1.parallel_edge = p;
+					e1.rev_residual_capacity = p.weight;
+				}
+			}
+		}
+		for(src in g.nodes_to(v)){
+			edge rev = g.get_edge(src,v);
+			for(vv in g.neighbors(src)){
+				edge e = g.get_edge(src,vv);
+				if(vv==v){
+					rev.reverse_edge = e;
+				}
+			}	
+			for( dst in g.neighbors(v) ){
+				edge fe = g.get_edge(v,dst);
+				if(dst==src){
+					rev.reverse_edge = -1;
+				}
+			}
+		}
+	}
+	    
+	forall (v in g.nodes().filter(v==source0)) {
+      for(vv in g.neighbors(v)){
+			  edge forward_edge = g.get_edge(v, vv) ;
+			  int d = forward_edge.residual_capacity;
+			  if(d>0){
+				vv.excess += d;
+			  	v.excess-= d;
+			  	forward_edge.residual_capacity -= d;
+			  	forward_edge.rev_residual_capacity += d;
+			  	int p = forward_edge.parallel_edge;
+			  	if(p !=-1){
+					p.residual_capacity += d;
+					p.rev_residual_capacity -= d;
+			  	}
+			  }
+
+		  }
+
+		for(vv in g.nodes_to(v)){
+			  edge backward_edge = g.get_edge(vv, v) ;
+			  int forward_edge = backward_edge.reverse_edge;
+			  if(forward_edge!=-1) {
+				int d = forward_edge.rev_residual_capacity;
+			  	if(d>0) {
+					vv.excess += d;
+			  		v.excess-=d;
+			  		forward_edge.residual_capacity -= d;
+			  		forward_edge.rev_residual_capacity += d;
+				}
+			  }
+
+		  }
+
+    }
+
+	bool flag1=true;
+	do{
+		flag1 = false;
+
+
+        forall (v in g.nodes().filter(v.excess>0 && v!=source0 && v!=sink0 && v.height<num_nodes)) {
+			flag1 = true;
+			int cycle = kernel_cycles0;
+			do {
+				if(v.excess>0 && v.height<V ){
+
+					int hh = INT_MAX;
+					int v_0 = -1;
+					int forward_edge = -1;
+					int backward_edge = -1;
+					for(vv in g.neighbors(v)) {
+						edge e = g.get_edge(v,vv);
+						if(vv.height<hh && e.residual_capacity >0){
+							v_0=vv;
+							hh=vv.height;
+							forward_edge = e;
+						}
+					}
+					for(vv in g.nodes_to(v)) {
+						edge rev = g.get_edge(vv,v);
+						edge e = rev.reverse_edge;
+						if(e!=-1){
+							if(vv.height<hh && e.rev_residual_capacity >0){
+								v_0=vv;
+								hh=vv.height;
+								backward_edge = e;
+								forward_edge = -1;
+							}
+						}
+
+					}
+
+					if(v.height>hh && v_0!=-1){
+						if(forward_edge!=-1){
+							int fec = forward_edge.residual_capacity;
+							int p = forward_edge.parallel_edge;
+							int d=fec;
+							if(v.excess<fec){
+								d=v.excess;
+							}
+							v.excess -= d ;
+        			    	v_0.excess += d ;
+							forward_edge.residual_capacity -= d ;
+        			    	forward_edge.rev_residual_capacity += d ;
+							if(p!=-1){
+								p.residual_capacity += d;
+								p.rev_residual_capacity -= d;
+
+							}
+						} else {
+							int fec = backward_edge.rev_residual_capacity;
+							int d=fec;
+							if(v.excess<fec){
+								d=v.excess;
+							}
+							v.excess -= d ;
+        			    	v_0.excess += d ;
+							backward_edge.rev_residual_capacity -= d ;
+        			    	backward_edge.residual_capacity += d ;
+						}
+
+					}
+					else if(v_0!=-1){
+						v.height = hh + 1;
+					}
+				}
+				cycle = cycle - 1;
+			} while(cycle>0);
+			
+        }
+    }while(flag1); 
+}
+Incremental(Graph g, int source1, int sink1, propEdge<int>parallel_edge , propEdge<int> residual_capacity,propEdge<int> rev_residual_capacity,propEdge<int> reverse_edge,propNode<int>excess, propNode<int> height,int kernel_cycles1) {
+    g.attachNodeProperty (height = 0) ;
+    source1.height = g.num_nodes();
+	int num_nodes1 = g.num_nodes();
+
+	    
+	forall (v in g.nodes().filter(v==source1)) {
+      for(vv in g.neighbors(v)){
+			  edge forward_edge = g.get_edge(v, vv) ;
+			  int d = forward_edge.residual_capacity;
+			  if(d>0){
+				vv.excess += d;
+			  	v.excess-= d;
+			  	forward_edge.residual_capacity -= d;
+			  	forward_edge.rev_residual_capacity += d;
+			  	int p = forward_edge.parallel_edge;
+			  	if(p !=-1){
+					p.residual_capacity += d;
+					p.rev_residual_capacity -= d;
+			  	}
+			  }
+
+		  }
+
+		for(vv in g.nodes_to(v)){
+			  edge backward_edge = g.get_edge(vv, v) ;
+			  int forward_edge = backward_edge.reverse_edge;
+			  if(forward_edge!=-1) {
+				int d = forward_edge.rev_residual_capacity;
+			  	if(d>0) {
+					vv.excess += d;
+			  		v.excess-=d;
+			  		forward_edge.residual_capacity -= d;
+			  		forward_edge.rev_residual_capacity += d;
+				}
+			  }
+
+		  }
+
+    }
+
+	bool flag2=true;
+	do{
+		flag2 = false;
+        forall (v in g.nodes().filter(v.excess>0 && v!=source1 && v!=sink1 && v.height<num_nodes1)) {
+			flag2 = true;
+			int cycle = kernel_cycles1;
+			do {
+				if(v.excess>0 && v.height<V ){
+
+					int hh = INT_MAX;
+					int v_0 = -1;
+					int forward_edge = -1;
+					int backward_edge = -1;
+					for(vv in g.neighbors(v)) {
+						edge e = g.get_edge(v,vv);
+						if(vv.height<hh && e.residual_capacity >0){
+							v_0=vv;
+							hh=vv.height;
+							forward_edge = e;
+						}
+					}
+					for(vv in g.nodes_to(v)) {
+						edge rev = g.get_edge(vv,v);
+						edge e = rev.reverse_edge;
+						if(e!=-1){
+							if(vv.height<hh && e.rev_residual_capacity >0){
+								v_0=vv;
+								hh=vv.height;
+								backward_edge = e;
+								forward_edge = -1;
+							}
+						}
+
+					}
+
+					if(v.height>hh && v_0!=-1){
+						if(forward_edge!=-1){
+							int fec = forward_edge.residual_capacity;
+							int p = forward_edge.parallel_edge;
+							int d=fec;
+							if(v.excess<fec){
+								d=v.excess;
+							}
+							v.excess -= d ;
+        			    	v_0.excess += d ;
+							forward_edge.residual_capacity -= d ;
+        			    	forward_edge.rev_residual_capacity += d ;
+							if(p!=-1){
+								p.residual_capacity += d;
+								p.rev_residual_capacity -= d;
+
+							}
+						} else {
+							int fec = backward_edge.rev_residual_capacity;
+							int d=fec;
+							if(v.excess<fec){
+								d=v.excess;
+							}
+							v.excess -= d ;
+        			    	v_0.excess += d ;
+							backward_edge.rev_residual_capacity -= d ;
+        			    	backward_edge.residual_capacity += d ;
+						}
+
+					}
+					else if(v_0!=-1){
+						v.height = hh + 1;
+					}
+				}
+				cycle = cycle - 1;
+			} while(cycle>0);
+			
+        }
+    }while(flag2); 
+}
+
+Decremental(Graph g, int source2, int sink2, propEdge<int>parallel_edge, propEdge<int> residual_capacity,propEdge<int> rev_residual_capacity,propEdge<int> reverse_edge,propNode<int>excess, propNode<int> height,int kernel_cycles2) {
+    g.attachNodeProperty (height = 0) ;
+    sink2.height = g.num_nodes();
+	int num_nodes2 = g.num_nodes();
+	    
+	forall (v in g.nodes().filter(v==sink2)) {
+      	for(vv in g.neighbors(v)){
+			  edge forward_edge = g.get_edge(v, vv) ;
+			  int d = forward_edge.rev_residual_capacity;
+			  if(d>0){
+				v.excess += d;
+			  	vv.excess -= d;
+			  	forward_edge.rev_residual_capacity -= d;
+			  	forward_edge.residual_capacity += d;
+			  	int p = forward_edge.parallel_edge;
+			  	if(p !=-1){
+					p.residual_capacity -= d;
+					p.rev_residual_capacity += d;
+			  	}
+			  }
+
+		  }
+
+		for(vv in g.nodes_to(v)){
+			  edge backward_edge = g.get_edge(vv, v) ;
+			  int forward_edge = backward_edge.reverse_edge;
+			  if(forward_edge!=-1) {
+				int d = forward_edge.residual_capacity;
+			  	if(d>0) {
+					v.excess += d;
+			  		vv.excess-=d;
+			  		forward_edge.residual_capacity += d;
+			  		forward_edge.rev_residual_capacity -= d;
+				}
+			  }
+
+		  }
+
+    }
+
+	bool flag3=true;
+	do{
+		flag3 = false;
+        forall (v in g.nodes().filter(v.excess<0 && v!=source2 && v!=sink2 && v.height<num_nodes2)) {
+			flag3 = true;
+			int cycle = kernel_cycles2;
+			do {
+				if(v.excess<0 && v.height<V ){
+
+					int hh = INT_MAX;
+					int v_0 = -1;
+					int inward_edge = -1;
+					int outward_edge = -1;
+					for(vv in g.neighbors(v)) {
+						edge e = g.get_edge(v,vv);
+						if(vv.height<hh && e.rev_residual_capacity >0){
+							v_0=vv;
+							hh=vv.height;
+							outward_edge = e;
+						}
+					}
+					for(vv in g.nodes_to(v)) {
+						edge rev = g.get_edge(vv,v);
+						edge e = rev.reverse_edge;
+						if(e!=-1){
+							if(vv.height<hh && e.residual_capacity >0){
+								v_0=vv;
+								hh=vv.height;
+								inward_edge = e;
+								outward_edge = -1;
+							}
+						}
+
+					}
+
+					if(v.height>hh && v_0!=-1){
+						if(outward_edge!=-1){
+							int fec = outward_edge.rev_residual_capacity;
+							int p = outward_edge.parallel_edge;
+							int d=fec;
+							if(v.excess<fec){
+								d =  v.excess *(-1);
+							}
+							v.excess += d ;
+        			    	v_0.excess -= d ;
+							outward_edge.rev_residual_capacity -= d ;
+       			   			outward_edge.residual_capacity += d ;
+							if(p!=-1){
+								p.residual_capacity -= d;
+								p.rev_residual_capacity += d;
+							}
+						} else {
+							int fec = inward_edge.rev_residual_capacity;
+							int d=fec;
+							if(v.excess<fec){
+								d= v.excess *(-1);
+							}
+							v.excess += d ;
+        			    	v_0.excess -= d ;
+
+							inward_edge.residual_capacity -= d ;
+          					inward_edge.rev_residual_capacity += d ;
+						}
+
+					}
+					else if(v_0!=-1){
+						v.height = hh + 1;
+					}
+				}
+				cycle = cycle - 1;
+			} while(cycle>0);
+			
+        }
+    }while(flag3); 
+}
+Dynamic recalculate_max_flow(Graph g, updates<g> updateBatch, int batchSize, int source,int cycle){
+	int sink = 0;
+    propEdge<int>residual_capacity;
+    propEdge<int> rev_residual_capacity;
+    propEdge<int> reverse_edge;
+	propNode<int> excess;
+	propEdge<int> parallel_edge;
+	propNode<int> height;
+	g.attachNodeProperty(excess=0);
+	staticMaxFlow (g,source,sink,residual_capacity,rev_residual_capacity,reverse_edge,excess,parallel_edge,cycle);
+    Batch(updateBatch:batchSize) {
+        OnAdd(u in updateBatch.currentBatch()):{
+            int uedge = -1;
+            int src = u.source;
+            int dest = u.destination;
+            int new_capacity = u.weight;
+            for(dd in g.neighbors(src)){
+              if(dd==dest){
+                  uedge = g.get_edge(src,dd);
+              }
+            }
+			uedge.residual_capacity = uedge.residual_capacity + new_capacity-uedge.weight;
+			int p = uedge.parallel_edge;
+			if(p!=-1) p.rev_residual_capacity = p.rev_residual_capacity + new_capacity - uedge.weight;
+            uedge.weight = new_capacity;
+            
+        }   
+
+		forall( v in g.nodes()){
+			for(dest in g.neighbors(v)){
+				edge e = g.get_edge(v,dest);
+				if(e.residual_capacity<0){
+					e.rev_residual_capacity = e.rev_residual_capacity + e.residual_capacity;
+					e.residual_capacity = 0;
+				} else if(e.rev_residual_capacity <0 ){
+					e.residual_capacity = e.residual_capacity + e.rev_residual_capacity;
+					e.rev_residual_capacity = 0;
+				}
+			}
+			int e1 = 0;
+      		for(nbr in g.neighbors(v)){
+        		edge e = g.get_edge(v,nbr);
+				int f = e.weight-e.residual_capacity;
+        	  	e1=e1-f;
+      		}
+			for(src in g.nodes_to(v)){
+				int rev = g.get_edge(src,v);
+				int e = rev.reverse_edge;
+				if(e!=-1){
+					e1=e1+e.rev_residual_capacity;
+				}
+				
+			}
+			v.excess = e1;
+		}
+
+
+		Decremental(g,source,sink,parallel_edge,residual_capacity,rev_residual_capacity,reverse_edge,excess,height,cycle);        
+        Incremental(g,source,sink,parallel_edge,residual_capacity,rev_residual_capacity,reverse_edge,excess,height,cycle);
+    } 
+
+	forall(v in g.nodes()){
+		if(v.excess<0 && v!=source){
+			sink.excess+=v.excess;
+		}
+	}
+}

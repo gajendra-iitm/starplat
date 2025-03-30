@@ -1,0 +1,44 @@
+Static staticMaxFlow (Graph g, int source2, int sink2, propEdge<int> residual_capacity,propEdge<int> rev_residual_capacity,propEdge<int> reverse_edge, propNode<int> excess,propEdge<int> parallel_edge,int kernel_cycle) {
+    propNode<int> height;
+    g.attachNodeProperty (height = 0) ;
+    source2.height = g.num_nodes();
+	int V = g.num_nodes();
+    g.attachNodeProperty(excess=0);
+	forall(v in g.nodes()){
+		for(dst in g.neighbors(v)){
+			edge e1 = g.get_edge(v,dst);
+			e1.residual_capacity = e1.weight;
+			e1.rev_residual_capacity = 0;
+			e1.parallel_edge = -1;
+			for( pnbr in g.neighbors(dst)){
+				edge p = g.get_edge(dst,pnbr);
+				if(pnbr==v){
+					e1.parallel_edge = p;
+					e1.rev_residual_capacity = p.weight;
+				}
+			}
+		}
+		for(src in g.nodes_to(v)){
+			edge rev = g.get_edge(src,v);
+			for(vv in g.neighbors(src)){
+				edge e = g.get_edge(src,vv);
+				if(vv==v){
+					rev.reverse_edge = e;
+				}
+			}	
+			for( dst in g.neighbors(v) ){
+				edge fe = g.get_edge(v,dst);
+				if(dst==src){
+					rev.reverse_edge = -1;
+				}
+			}
+		}
+	}
+
+		forall (v in g.nodes().filter(v==source2)) {
+			for(vv in g.neighbors(v)){
+		  }
+		}
+	    
+
+}

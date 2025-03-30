@@ -75,12 +75,16 @@ public:
 
     void addVariable(Identifier *iden, int type)
     {
+        std::cout<<"TRYING TO ADDVARIABLE:"<<iden->getIdentifier()<<"\n";
         if (iden->getSymbolInfo() == NULL)  // To not include the iterators in the list
             return;
-        if (type & 1)
-            readVars.insert({iden->getSymbolInfo(), iden});
-        if (type & 2)
-            writeVars.insert({iden->getSymbolInfo(), iden});
+        if (type & 1){
+            std::cout<<" ADDED VARIABLE:"<<iden->getIdentifier()<<"\n";
+            readVars.insert({iden->getSymbolInfo(), iden});}
+        if (type & 2){
+            std::cout<<" ADDED VARIABLE:"<<iden->getIdentifier()<<"\n";
+            writeVars.insert({iden->getSymbolInfo(), iden});}
+        
     }
 
     void addPropAccess(PropAccess *prop, int type)
@@ -247,6 +251,14 @@ public:
                 result.push_back(iden.second);
         }
         return result;
+    }
+    void printVars(){
+        list<Identifier *> vars = getVariables();
+        std::cout<<"Printing Vars: ";
+        for(Identifier *id:vars ){
+            std::cout<<id->getIdentifier()<<" , ";
+        }  
+        std::cout<<"\n";
     }
 
     void clear()

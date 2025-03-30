@@ -52,10 +52,11 @@ function do_max_flow (Graph g, int source, int sink) {
 				}
 				v.excess -= d ;
         	    v_0.excess += d ;
+				// atomicAdd(&v_0.excess,d);
 				forward_edge.residual_capacity -= d ;
         	    backward_edge.residual_capacity += d ;
 			}
-			else if(lv!=-1){
+			else if(v_0!=-1){
 				v.height = hh + 1;
 			}
         }

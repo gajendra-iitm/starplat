@@ -1,0 +1,30 @@
+1) void dsl_dyn_cpp_generator::generateIncremental(Function* incrementalFunc, bool isMainFile ) --> omp only 
+2) void dsl_dyn_cpp_generator::generateDecremental(Function* decrementalFunc, bool isMainFile) --> omp only 
+3) void dsl_dyn_cpp_generator::generateInDecHeader(Function* func, bool isMainFile) --> no problem as of now
+4) void dsl_dyn_cpp_generator::generateDynamicFunc(Function* func, bool isMainFile)  --> omp only 
+5) void dsl_dyn_cpp_generator::generateDynamicHeader(Function* func, bool isMainFile)--> no problem as of now
+6) void dsl_dyn_cpp_generator::generateFunction(ASTNode* proc) --> no problem as of now
+7) void dsl_dyn_cpp_generator::generateForAllSignature(forallStmt* forAll, bool isMainFile) --> no problem as of now
+8) void dsl_dyn_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) --> mix of cuda and omp
+9) void dsl_dyn_cpp_generator::generate_exprPropId(PropAccess* propId, bool isMainFile) --> doesnt seem cuda - .id is used
+10) void dsl_dyn_cpp_generator::generate_exprProcCall(Expression* expr, bool isMainFile) --> no problem as of now 
+11) void dsl_dyn_cpp_generator::generateStatement(statement* stmt, bool isMainFile)--> no problem as of now 
+12) void dsl_dyn_cpp_generator::generateBatchBlock(batchBlock* batchStmt, bool isMainFile) --> no problem as of now except
+ insideBatchBlock = true;
+13) void dsl_dyn_cpp_generator::generateOnAddBlock(onAddBlock* onaddStmt, bool isMainFile) --> not sure
+14) void dsl_dyn_cpp_generator::generateOnDeleteBlock(onDeleteBlock* ondeleteStmt, bool isMainFile) --> not sure
+15) bool dsl_dyn_cpp_generator::generate()--> no problem as of now
+16) void dsl_dyn_cpp_generator::generation_begin() --> no problem as of now
+17) void dsl_dyn_cpp_generator::generation_end() --> no implementation
+18) void dsl_dyn_cpp_generator::setBatchEnvIds(Identifier* updatesId) --> no problem as of now
+19) void dsl_dyn_cpp_generator::setPreprocessEnv() --> variable not defined
+insidePreprocessEnv = true;
+20) bool dsl_dyn_cpp_generator::getPreprocessEnv() --> variable not defined
+insidePreprocessEnv = true;
+21) void dsl_dyn_cpp_generator::resetPreprocessEnv() --> variable not defined
+insidePreprocessEnv = true;
+22) Identifier* dsl_dyn_cpp_generator::getUpdatesId() --> no problem as of now
+23) void dsl_dyn_cpp_generator::resetBatchEnv() --> no problem as of now
+24) bool dsl_dyn_cpp_generator::openFileforOutput() --> no problem as of now
+25) void dsl_dyn_cpp_generator::closeOutputFile() --> no problem as of now
+26) void dsl_dyn_cpp_generator::generateFreeInCurrentBatch() --> commented out seems like incomplete or not suitable

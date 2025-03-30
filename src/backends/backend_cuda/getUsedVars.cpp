@@ -3,6 +3,7 @@
 usedVariables getVarsStatement(statement* stmt);
 usedVariables getVarsExpr(Expression *expr)
 {
+  std::cout<<"VARS EXPR"<<endl;
     usedVariables result;
 
     if (expr->isIdentifierExpr())
@@ -13,8 +14,10 @@ usedVariables getVarsExpr(Expression *expr)
     else if (expr->isPropIdExpr())
     {
         PropAccess *propExpr = expr->getPropId();
+        std::cout<<"PROP MUST BE IG 0!!! :"<<propExpr->getIdentifier2()->getIdentifier()<<endl;
         result.addVariable(propExpr->getIdentifier1(), READ);
         result.addVariable(propExpr->getIdentifier2(), READ);
+        // result.printVars();
     }
     else if (expr->isUnary())
     {
@@ -27,7 +30,9 @@ usedVariables getVarsExpr(Expression *expr)
                 result.addVariable(uExpr->getId(), READ_WRITE);
             else if (uExpr->isPropIdExpr())
             {
+              
                 PropAccess* propId = uExpr->getPropId();
+                std::cout<<"PROP MUST BE IG 1!!! :"<<propId->getIdentifier2()->getIdentifier()<<endl;
                 result.addVariable(propId->getIdentifier1(), READ);
                 result.addVariable(propId->getIdentifier2(), READ_WRITE);
             }
@@ -44,6 +49,7 @@ usedVariables getVarsExpr(Expression *expr)
 
 usedVariables getVarsWhile(whileStmt *stmt)
 {
+  std::cout<<"VARS WHILE"<<endl;
   usedVariables currVars = getVarsExpr(stmt->getCondition());
   currVars.merge(getVarsStatement(stmt->getBody()));
 
@@ -53,6 +59,7 @@ usedVariables getVarsWhile(whileStmt *stmt)
 
 usedVariables getVarsDoWhile(dowhileStmt *stmt)
 {
+  std::cout<<"VARS DOWHILE"<<endl;
   usedVariables currVars = getVarsExpr(stmt->getCondition());
   currVars.merge(getVarsStatement(stmt->getBody()));
 
@@ -61,6 +68,7 @@ usedVariables getVarsDoWhile(dowhileStmt *stmt)
 
 usedVariables getVarsAssignment(assignment *stmt)
 {
+  std::cout<<"VARS ASSIGNMENT"<<endl;
   usedVariables currVars;
   if (stmt->lhs_isProp())
   {
@@ -78,6 +86,7 @@ usedVariables getVarsAssignment(assignment *stmt)
 
 usedVariables getVarsIf(ifStmt *stmt)
 {
+  std::cout<<"VARS IF"<<endl;
   usedVariables currVars = getVarsExpr(stmt->getCondition());
   currVars.merge(getVarsStatement(stmt->getIfBody()));
   if (stmt->getElseBody() != NULL)
@@ -88,6 +97,7 @@ usedVariables getVarsIf(ifStmt *stmt)
 
 usedVariables getVarsFixedPoint(fixedPointStmt *stmt)
 {
+  std::cout<<"VARS FIXED POINT"<<endl;
   usedVariables currVars = getVarsExpr(stmt->getDependentProp());
   currVars.addVariable(stmt->getFixedPointId(), READ);
   currVars.merge(getVarsStatement(stmt->getBody()));
@@ -97,6 +107,7 @@ usedVariables getVarsFixedPoint(fixedPointStmt *stmt)
 
 usedVariables getVarsReduction(reductionCallStmt *stmt)
 {
+  std::cout<<"VARS REDUCTION"<<endl;
   usedVariables currVars;
 
   auto getVarsReductionCall = [&currVars](reductionCall* callExpr) -> void
@@ -185,6 +196,7 @@ usedVariables getVarsReduction(reductionCallStmt *stmt)
 
 usedVariables getVarsUnary(unary_stmt *stmt)
 {
+  std::cout<<"VARS UNARY"<<endl;
   Expression *unaryExpr = stmt->getUnaryExpr();
   Expression *varExpr = unaryExpr->getUnaryExpr();
 
@@ -217,6 +229,7 @@ usedVariables getVarsBFS(iterateBFS *stmt)
 
 usedVariables getVarsForAll(forallStmt *stmt)
 {
+  std::cout<<"VARS FORALL"<<endl;
   usedVariables currVars = getVarsStatement(stmt->getBody());
   currVars.removeVariable(stmt->getIterator(), READ_WRITE);
 
@@ -247,6 +260,7 @@ usedVariables getVarsForAll(forallStmt *stmt)
 
 usedVariables getVarsBlock(blockStatement *blockStmt)
 {
+  std::cout<<"GETVARSBLOCK"<<endl;
   list<statement *> stmtList = blockStmt->returnStatements();
   list<Identifier *> declVars;
 
@@ -255,28 +269,37 @@ usedVariables getVarsBlock(blockStatement *blockStmt)
   {
     if (stmt->getTypeofNode() == NODE_DECL)
     {
+      std::cout<<"NODE_DECL"<<endl;
       declaration *decl = (declaration *)stmt;
       declVars.push_back(decl->getdeclId());
 
       if (decl->isInitialized())
       {
         usedVariables exprVars = getVarsExpr(decl->getExpressionAssigned());
+        // exprVars.printVars();
         for (Identifier *dVars : declVars)
           exprVars.removeVariable(dVars, READ_WRITE);
-
+        
         currVars.merge(exprVars);
       }
     }
     else
     {
+      std::cout<<"NOT NODE_DECL"<<endl;
       usedVariables stmtVars = getVarsStatement(stmt);
+      // stmtVars.printVars();
       for (Identifier *dVars : declVars)
         stmtVars.removeVariable(dVars, READ_WRITE);
 
       currVars.merge(stmtVars);
     }
   }
-
+  std::cout<<"Removers: ";
+  for(Identifier* id:declVars){
+    std::cout<<id->getIdentifier()<<" , ";
+  }
+  std::cout<<endl;
+  currVars.printVars();
   return currVars;
 }
 /* Function: getDeclaredPropertyVarsOfBlock
@@ -287,6 +310,7 @@ usedVariables getVarsBlock(blockStatement *blockStmt)
  */
 usedVariables getDeclaredPropertyVarsOfBlock(blockStatement *blockStmt)
 {
+  std::cout<<"VARS DECLAREDPROPS"<<endl;
   list<statement *> stmtList = blockStmt->returnStatements();
   list<Identifier *> declVars;
 
@@ -306,6 +330,7 @@ usedVariables getDeclaredPropertyVarsOfBlock(blockStatement *blockStmt)
 
 usedVariables getVarsStatement(statement *stmt)
 {
+  std::cout<<"VARS STATEMENTs"<<endl;
   switch (stmt->getTypeofNode())
   {
   case NODE_BLOCKSTMT:

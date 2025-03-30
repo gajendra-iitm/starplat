@@ -1,0 +1,8 @@
+function f1(Graph g){
+    forall(src in g.nodes()){
+        for(nbr in g.neighbors(src)){
+            edge e = g.get_edge(src,nbr);
+            int x = e.weight;
+        }
+    }
+}

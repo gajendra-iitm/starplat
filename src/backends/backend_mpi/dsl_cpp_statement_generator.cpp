@@ -9,9 +9,11 @@ namespace spmpi
 {
     void dsl_cpp_generator::generateBFSAbstraction(iterateBFS *bfsAbstraction)
     {
+        std::cout<<"12 inside bfs\n";
         vector<Identifier *> graphIds = graphId[curFuncType][curFuncCount()];
         insideParallelConstruct.push_back(bfsAbstraction);
         char strBuffer[1024];
+        std::cout<<"15 inside bfs\n";
         sprintf(strBuffer, "%s.create_bfs_dag(%s);", graphIds[0]->getIdentifier(), bfsAbstraction->getRootNode()->getIdentifier());
         main.pushstr_newL(strBuffer);
 
@@ -27,24 +29,27 @@ namespace spmpi
         main.pushstr_newL(strBuffer);
         main.pushstr_newL("{");
         statement *body = bfsAbstraction->getBody();
+        std::cout<<"32 inside bfs\n";
         assert(body->getTypeofNode() == NODE_BLOCKSTMT);
         blockStatement *block = (blockStatement *)body;
         list<statement *> statementList = block->returnStatements();
 
         bAnalyzer analyser;
-
+        std::cout<<"38 inside bfs\n";
         for (statement *stmt : statementList)
         {
             generateStatement(stmt);
         }
         main.pushstr_newL("}");
         // Add fat barriers to sync the atomicAdds on the properties
+        std::cout<<"45 inside bfs\n";
         auto propsResponsibleByBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(block);
         for (string prop : propsResponsibleByBFS)
         {
             sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
+        std::cout<<"52 inside bfs\n";
         main.pushstr_newL("world.barrier();");
         main.pushstr_newL("}");
 
@@ -55,25 +60,30 @@ namespace spmpi
         sprintf(strBuffer, "for(int %s : %s.get_bfs_nodes_for_phase(phase))", bfsAbstraction->getIteratorNode()->getIdentifier(), graphIds[0]->getIdentifier());
         main.pushstr_newL(strBuffer);
         main.pushstr_newL("{");
+        std::cout<<"63 inside bfs\n";
         blockStatement *revBlock = (blockStatement *)bfsAbstraction->getRBFS()->getBody();
+        std::cout<<"65 inside bfs\n";
         list<statement *> revStmtList = revBlock->returnStatements();
-
+std::cout<<"67 inside bfs\n";
         for (statement *stmt : revStmtList)
         {
             generateStatement(stmt);
         }
-
+        std::cout<<"72 inside bfs\n";
         main.pushstr_newL("}");
 
         // Add fat barriers to sync the atomicAdds on the properties
+        std::cout<<"76 inside bfs\n";
         auto propsResponsibleByRBFS = analysisForAll->getPropertiesModifiedWithAtomicOps(revBlock);
         for (string prop : propsResponsibleByRBFS)
         {
             sprintf(strBuffer, "%s.syncAtomicAddsAndWrites();", prop.c_str());
             main.pushstr_newL(strBuffer);
         }
+        std::cout<<"82 inside bfs\n";
         main.pushstr_newL("world.barrier();");
         main.pushstr_newL("}");
+        std::cout<<"86 inside bfs\n";
         insideParallelConstruct.pop_back();
     }
 

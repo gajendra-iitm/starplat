@@ -1,4 +1,4 @@
-w#include "analyserUtil.cpp"
+#include "analyserUtil.cpp"
 
 usedVariables getVarsExpr(Expression *expr)
 {

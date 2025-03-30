@@ -51,7 +51,7 @@ Static staticMaxFlow (Graph g, int source, int sink, propEdge<int> residual_capa
 				forward_edge.residual_capacity -= d ;
         	    backward_edge.residual_capacity += d ;
 			}
-			else if(lv!=-1){
+			else if(v_0!=-1){
 				v.height = hh + 1;
 			}
         }
@@ -62,7 +62,7 @@ Static staticMaxFlow (Graph g, int source, int sink, propEdge<int> residual_capa
 
 Incremental(Graph g, int source, int sink,propNode<int> excess,propEdge<int> residual_capacity) {
   propNode<int> height;
-  g,attachNodeProperty(height = 0);
+  g.attachNodeProperty(height = 0);
   source.height = g.num_nodes();
     
 	bool flag=true;
@@ -95,7 +95,7 @@ Incremental(Graph g, int source, int sink,propNode<int> excess,propEdge<int> res
 			  	forward_edge.residual_capacity -= d ;
           	    backward_edge.residual_capacity += d ;
 			  }
-			  else if(lv!=-1){
+			  else if(v_0!=-1){
 			  	v.height = hh + 1;
 			  }
       }
@@ -105,7 +105,7 @@ Incremental(Graph g, int source, int sink,propNode<int> excess,propEdge<int> res
 Decremental(Graph g, int source, int sink,propNode<int> excess,propEdge<int> residual_capacity) {
   
   propNode<int> height2;
-  g,attachNodeProperty(height2 = 0);
+  g.attachNodeProperty(height2 = 0);
   sink.height2 = g.num_nodes();
 
   forall(v in g.neighbors(sink)){

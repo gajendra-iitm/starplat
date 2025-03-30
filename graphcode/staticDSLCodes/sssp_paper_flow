@@ -1,0 +1,61 @@
+function computeSSSP (Graph g ,node src ) {
+    propNode<int> dist ;
+    propNode<bool> modified ;
+    g.attachNodeProperty(dist = INF , modified = False ) ;
+    src.modified = True ;
+    src.dist=0;
+    bool finished = False ;
+    fixedPoint until ( finished : !modified ) {
+        forall ( v in g.nodes().filter(modified==true )) {
+            flag1 = true;
+                int hh = INT_MAX;
+			    int v_0 = -1;
+			    int forward_edge = -1;
+			    int backward_edge = -1;
+                for(vv in g.neighbors(v)) {
+				    edge e = g.get_edge(v,vv);
+				    if(vv.height<hh && e.residual_capacity>0){
+				    	v_0=vv;
+				    	hh=vv.height;
+				    	forward_edge = e;
+				    }
+			    }
+                for(vv in g.nodes_to(v)) {
+				    edge rev = g.get_edge(vv,v);
+				    edge e = rev.reverse_edge;
+				    if(vv.height<hh && e.rev_residual_capacity >0){
+				    	v_0=vv;
+				    	hh=vv.height;
+				    	backward_edge = e;
+				    	forward_edge = -1;
+				    }
+			    }
+                if(v.height>hh && v_0!=-1){
+				    if(forward_edge!=-1){
+				    	int fec = forward_edge.residual_capacity;
+				    	int d=fec;
+				    	if(v.excess<fec){
+				    		d=v.excess;
+				    	}
+				    	v.excess -= d ;
+        	        	v_0.excess += d ;
+				    	forward_edge.residual_capacity -= d ;
+        	        	forward_edge.rev_residual_capacity += d ;
+				    } else {
+				    	int fec = backward_edge.rev_residual_capacity;
+				    	int d=fec;
+				    	if(v.excess<fec){
+				    		d=v.excess;
+				    	}
+				    	v.excess -= d ;
+        	        	v_0.excess += d ;
+				    	backward_edge.rev_residual_capacity -= d ;
+        	        	backward_edge.residual_capacity += d ;
+				    }
+			    } else if(v_0!=-1){
+				    v.height = hh + 1;
+			    }
+            
+        }
+    }
+}

@@ -143,6 +143,7 @@ public:
   {
 
     Identifier *idNode = new Identifier();
+    
     idNode->identifier = new char[strlen(id) + 1];
     strcpy(idNode->identifier, id);
     idNode->accessType = 0;
@@ -157,6 +158,8 @@ public:
     idNode->forall_filter_association = false;
     idNode->used_inside_forall_filter_and_changed_inside_forall_body = false;
     // std::cout<<"IDENTIFIER = "<<idNode->getIdentifier()<<" "<<strlen(idNode->getIdentifier());
+    // Type* t = new Type();
+    // idNode->idInfo = new TableEntry(idNode,NULL);
     return idNode;
   }
 
@@ -283,6 +286,7 @@ public:
 
   void setUpdateAssociation(Identifier *updateId_sent)
   {
+    std::cout<<"$$$$$$$$$$$$$$$$$$$$$$$$$I am supposed to be called!\n";
     updates_association = updateId_sent;
   }
 
@@ -520,8 +524,8 @@ public:
     incrementalFunc->paramList = paramList;
     incrementalFunc->setTypeofNode(NODE_FUNC);
     incrementalFunc->setFuncType(INCREMENTAL_FUNC);
+    incrementalFunc->functionId = Identifier::createIdNode("incremental");
     // incrementalFunc->retType = retType;
-
     return incrementalFunc;
   }
 
@@ -532,6 +536,7 @@ public:
     decrementalFunc->paramList = paramList;
     decrementalFunc->setTypeofNode(NODE_FUNC);
     decrementalFunc->setFuncType(DECREMENTAL_FUNC);
+    decrementalFunc->functionId = Identifier::createIdNode("decremental");
     // decrementalFunc->retType = retType;
 
     return decrementalFunc;
@@ -812,7 +817,9 @@ public:
   {
     return rootType;
   }
-
+  void setTypeId(int typeSent){
+    typeId = typeSent;
+  }
   int gettypeId()
   {
     return typeId;
@@ -1989,14 +1996,17 @@ private:
   Identifier *updateId;
   proc_callExpr *updateFunc;
   blockStatement *statements;
+  MetaDataUsed *metadata;
 
 public:
   onAddBlock()
   {
+    std::cout<<"HELLO0\n";
     itertorId = NULL;
     updateId = NULL;
     updateFunc = NULL;
     statements = NULL;
+    metadata = NULL;
   }
 
   static onAddBlock *createNodeForOnAddBlock(Identifier *iteratorSent, Identifier *sourceId, proc_callExpr *sourceFunc, statement *statements_sent)
@@ -2006,6 +2016,7 @@ public:
     onAddNode->itertorId = iteratorSent;
     onAddNode->updateId = sourceId;
     onAddNode->updateFunc = sourceFunc;
+    onAddNode->metadata = new MetaDataUsed();
     onAddNode->setTypeofNode(NODE_ONADDBLOCK);
     statements_sent->setParent(onAddNode);
     iteratorSent->setParent(onAddNode);
@@ -2032,6 +2043,9 @@ public:
   proc_callExpr *getUpdateFunc()
   {
     return updateFunc;
+  }
+  MetaDataUsed *getMetaDataUsed(){
+    return metadata;
   }
 };
 

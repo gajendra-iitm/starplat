@@ -1,7 +1,7 @@
 // FOR BC: nvcc bc_dsl_v2.cu -arch=sm_60 -std=c++14 -rdc=true # HW must support CC 6.0+ Pascal or after
 #include "sssp_paper.h"
 
-void computeSSSP(graph& g)
+void computeSSSP(graph& g,int src)
 
 {
   // CSR BEGIN
@@ -43,7 +43,7 @@ void computeSSSP(graph& g)
   // CSR END
   //LAUNCH CONFIG
   const unsigned threadsPerBlock = 512;
-  unsigned numThreads   = (V < threadsPerBlock)? 512: V;
+  unsigned numThreads   = (V < threadsPerBlock)? V: 512;
   unsigned numBlocks    = (V+threadsPerBlock-1)/threadsPerBlock;
 
 
@@ -58,8 +58,6 @@ void computeSSSP(graph& g)
   //DECLAR DEVICE AND HOST vars in params
 
   //BEGIN DSL PARSING 
-  int src = 0; // asst in .cu
-
   int* d_dist;
   cudaMalloc(&d_dist, sizeof(int)*(V));
 
@@ -85,7 +83,7 @@ void computeSSSP(graph& g)
 
     finished = true;
     cudaMemcpyToSymbol(::finished, &finished, sizeof(bool), 0, cudaMemcpyHostToDevice);
-    computeSSSP_kernel<<<numBlocks, threadsPerBlock>>>(V,E,d_meta,d_data,d_modified);
+    computeSSSP_kernel_1<<<numBlocks, threadsPerBlock>>>(V,E,d_meta,d_data,d_modified,d_modified_next);
     cudaDeviceSynchronize();
 
 

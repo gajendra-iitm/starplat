@@ -3,23 +3,19 @@
 #define GENCPP_SSSP_PAPER_H
 #include <stdio.h>
 #include <stdlib.h>
-#include "ParallelHeapCudaClass.cu"
-#include "deepak_map_cuda.cu"
 #include <limits.h>
 #include <cuda.h>
 #include "../graph.hpp"
-#include "../libcuda.cuh"
+#include "../dynamic_mst_delete_cuda/libcuda.cuh"
 #include <cooperative_groups.h>
 
-void computeSSSP(graph& g);
+void computeSSSP(graph& g,int src);
 
 
-
-__device__ int src ; // DEVICE ASSTMENT in .h
 
 __device__ bool finished ; // DEVICE ASSTMENT in .h
 
-__global__ void computeSSSP_kernel(int V, int E, int* d_meta, int* d_data,bool* d_modified,bool* d_modified_next){ // BEGIN KER FUN via ADDKERNEL
+__global__ void computeSSSP_kernel_1(int V, int E, int* d_meta, int* d_data,bool* d_modified,bool* d_modified_next){ // BEGIN KER FUN via ADDKERNEL
   float num_nodes  = V;
   unsigned v = blockIdx.x * blockDim.x + threadIdx.x;
   if(v >= V) return;
