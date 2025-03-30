@@ -1,7 +1,5 @@
 #include "dsl_dyn_cpp_generator.hpp"
 #include "../../ast/ASTHelper.cpp"
-// #include "getUsedVars.cpp"
-// #include "dsl_cpp_generator.cpp"
 
 namespace spdyncuda{
 
@@ -21,7 +19,6 @@ namespace spdyncuda{
 // }
   dsl_dyn_cpp_generator::  dsl_dyn_cpp_generator()
   {
-    std::cout<<"I AM SUPPOSED TO EXIST\n";
     batchEnvSizeId = NULL;
     updatesId = NULL;
     isDynamic = true;
@@ -49,29 +46,53 @@ Identifier* dsl_dyn_cpp_generator::getUpdatesId()
 
 void dsl_dyn_cpp_generator::generateOnDeleteBlock(onDeleteBlock* onDeleteStmt, bool isMainFile)
 {
-
   // dslCodePad& targetFile = isMainFile ? main : header;
-  //  setPreprocessEnv();
+    // setPreprocessEnv();
+
    char strBuffer[1024];
-   Identifier* updatesId = onDeleteStmt->getUpdateId();
+  Identifier* updatesId = onDeleteStmt->getUpdateId();
    proc_callExpr* updatesFunc = onDeleteStmt->getUpdateFunc();
    string methodId = (updatesFunc->getMethodId()->getIdentifier());
 
    if(methodId == "currentBatch")
    {
-     sprintf(strBuffer,"for(int batchIndex = updateIndex ; batchIndex < (updateIndex+batchSize) && batchIndex < %s.size() ; batchIndex++){",updatesId->getIdentifier());
+      usedVariables usedVars = getVarsBlock(onDeleteStmt->getStatements());
+  list<Identifier*> vars = usedVars.getVariables();
+      addOnDeletekernel(onDeleteStmt,isMainFile,vars);
+     std::cout<<"After Kernel\n";
+     sprintf(strBuffer,"OnDelete_kernel<<<updateBlocks,updateThreads>>>(d_%s,batchElements",updatesId->getIdentifier());
+     main.pushString(strBuffer);
+     MetaDataUsed *m = onDeleteStmt->getMetaDataUsed(); 
+     if(m->isMetaUsed)
+        main.pushString(", d_meta");
+    if(m->isDataUsed)
+      main.pushString(", d_data");
+  if(m->isSrcUsed)
+    main.pushString(", d_src");
+  if(m->isWeightUsed)
+    main.pushString(", d_weight");
+  if(m->isRevMetaUsed)
+    main.pushString(", d_rev_meta");
+  //  std::cout<<"OnADD KERNEL After Normal HEADERS\n";
+  for (Identifier* iden : vars) {
+    if(iden->getSymbolInfo()==NULL) continue;
+    Type* type = iden->getSymbolInfo()->getType();
+    if (type->isPropType()) {
+      sprintf(strBuffer, ", d_%s", iden->getIdentifier());
+      main.pushString(/*createParamName(*/ strBuffer);
+      if(iden->getSymbolInfo()->getId()->get_fp_association()) { // If id has a fp association then _next must also be added as a parameter
+        sprintf(strBuffer, ", d_%s_next",iden->getIdentifier());
+        main.pushString(/*createParamName(*/ strBuffer);
+      }
+    } else {
+      std::cout<<"vars not property:"<<iden->getIdentifier()<<"\n";
+    }
+  }
+    sprintf(strBuffer,");");
      main.pushstr_newL(strBuffer);
-     sprintf(strBuffer,"if(%s[batchIndex].type == 'd')",updatesId->getIdentifier());
-     main.pushstr_newL(strBuffer);
-     main.pushstr_newL("{");
-     sprintf(strBuffer, "update %s = %s[batchIndex] ;",onDeleteStmt->getIteratorId()->getIdentifier(), updatesId->getIdentifier());
-     main.pushstr_newL(strBuffer);
-     generateBlock(onDeleteStmt->getStatements(),true,true);
-     main.NewLine();
-     main.pushstr_newL("}");
-     main.pushstr_newL("}");
+    
    }
-   
+
   //  resetPreprocessEnv();
 
 
@@ -161,11 +182,11 @@ void dsl_dyn_cpp_generator::generateBatchBlock(batchBlock* batchStmt, bool isMai
   
   // list<formalParam*> paramList = currentFunc->getParamList();
   // list<formalParam*>::iterator itr;
-  std::cout<<"164 BATCH BLOCK\n";
+  
   Identifier* updateId = batchStmt->getUpdateId();
-  std::cout<<"166 BATCH BLOCK\n";
+  
   char * updateIdentifier = updateId->getIdentifier();
-  std::cout<<"168 BATCH BLOCK\n";
+  
   // auto updateTypeId = updatesId->getSymbolInfo()->getType();
   // std::cout<<"170 BATCH BLOCK\n";
   // auto targetGraph = updateTypeId->getTargetGraph();
@@ -293,7 +314,7 @@ void dsl_dyn_cpp_generator::generateStatement(statement* stmt, bool isMainFile )
     std::cout<<"DYN GENERATING STATEMENT TYPE:"<<stmt->getTypeofNode()<<"\n";
     if(stmt->getTypeofNode() == NODE_BATCHBLOCKSTMT)
        {
-        std::cout<<"TRYING TO GENERATE BATCG STATEMENT TYPE:"<<stmt->getTypeofNode()<<"\n";
+        std::cout<<"TRYING TO GENERATE BATCH STATEMENT TYPE:"<<stmt->getTypeofNode()<<"\n";
          generateBatchBlock((batchBlock*)stmt, isMainFile);
 
        }
@@ -343,6 +364,19 @@ void dsl_dyn_cpp_generator::generate_exprProcCall(Expression* expr, bool isMainF
    else if(methodId == "currentBatch")
       {
           // TODO
+          // char strBuffer[1024];
+          // list<argument*> argList = proc->getArgList();
+          // assert(argList.size() == 1);
+          // printf("Get expression Family %d\n",argList.front()->getExpr()->getExpressionFamily());
+          // assert(argList.front()->getExpr()->getExpressionFamily() == EXPR_INTCONSTANT);
+          // int updateType = argList.front()->getExpr()->getIntegerConstant();
+
+          // if(updateType == 0)
+          //    sprintf(strBuffer,"%s.%s(%s, %s, %s)",graphId[curFuncType][curFuncCount()][0]->getIdentifier(),"getDeletesFromBatch","updateIndex","batchSize",updatesId->getIdentifier());
+          // else
+          //    sprintf(strBuffer,"%s.%s(%s, %s, %s)",graphId[curFuncType][curFuncCount()][0]->getIdentifier(),"getAddsFromBatch","updateIndex","batchSize",updatesId->getIdentifier());
+          // main.pushString(strBuffer);   
+
       }   
    else if(methodId == "Incremental" || methodId == "Decremental") 
         {
@@ -1240,6 +1274,8 @@ void dsl_dyn_cpp_generator::generateDynamicFunc(Function* dynFunc, bool isMainFi
 void dsl_dyn_cpp_generator::generateFunction(ASTNode* func)
 {
 
+  
+  std::cout<<"Inside GenerateFunction \n";
   //dslCodePad& targetFile = isMainFile ? main : header;
   Function* function = (Function*)func;
   if(function->getFuncType() == STATIC_FUNC)
@@ -1394,18 +1430,18 @@ void dsl_dyn_cpp_generator::addOnAddkernel(onAddBlock* onAddStmt,bool isMainFile
     header.pushString(", int *d_rev_meta");
    std::cout<<"OnADD KERNEL After Normal HEADERS\n";
   for (Identifier* iden : vars) {
-    std::cout<<"INSIDE LOOP 0 "<<iden->getIdentifier()<<"\n";
+    // std::cout<<"INSIDE LOOP 0 "<<iden->getIdentifier()<<"\n";
     if(iden->getSymbolInfo()==NULL) continue;
     Type* type = iden->getSymbolInfo()->getType();
-    std::cout<<"INSIDE LOOP 1\n";
+    // std::cout<<"INSIDE LOOP 1\n";
     if (type->isPropType()) {
-      std::cout<<"INSIDE LOOP 2\n";
+      // std::cout<<"INSIDE LOOP 2\n";
       char strBuffer[1024];
       sprintf(strBuffer, ",%s d_%s", convertToCppType(type), iden->getIdentifier());
-      std::cout<<"INSIDE LOOP 3\n";
+      // std::cout<<"INSIDE LOOP 3\n";
       header.pushString(/*createParamName(*/ strBuffer);
       if(iden->getSymbolInfo()->getId()->get_fp_association()) { // If id has a fp association then _next must also be added as a parameter
-          std::cout<<"INSIDE LOOP 4\n";
+          // std::cout<<"INSIDE LOOP 4\n";
         sprintf(strBuffer, ",%s d_%s_next", convertToCppType(type), iden->getIdentifier());
         header.pushString(/*createParamName(*/ strBuffer);
       }
@@ -1432,6 +1468,78 @@ void dsl_dyn_cpp_generator::addOnAddkernel(onAddBlock* onAddStmt,bool isMainFile
 
   header.pushstr_newL("} // end KER FUNC");
 }
+
+void dsl_dyn_cpp_generator::addOnDeletekernel(onDeleteBlock* onDeleteStmt,bool isMainFile,list<Identifier*> vars){
+  const char* updateVar = onDeleteStmt->getIteratorId()->getIdentifier();
+  const char* batchVar = onDeleteStmt->getUpdateId()->getIdentifier();
+  char strBuffer[1024];
+
+  Function* currentFunc = getCurrentFunc();
+  if(currentFunc==NULL) std::cout<<"NULL CURRENT FUNC\n";
+  // usedVariables usedVars = getVarsBlock(onAddStmt->getStatements());
+
+ 
+  header.pushString("__global__ void ");
+  // header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
+  header.pushString("OnDelete_kernel");
+
+  header.pushString("(update* d_");
+  header.pushString(batchVar);
+  header.pushString(", int batchelements");
+   std::cout<<"OnDelete KERNEL METADATA HEADERS\n";
+   if(onDeleteStmt->getMetaDataUsed()==NULL)  std::cout<<"METADATA NULL\n";
+   MetaDataUsed *m = onDeleteStmt->getMetaDataUsed();
+  if(m->isMetaUsed)
+    header.pushString(", int* d_meta");
+  if(m->isDataUsed)
+    header.pushString(", int* d_data");
+  if(m->isSrcUsed)
+    header.pushString(", int* d_src");
+  if(m->isWeightUsed)
+    header.pushString(", int* d_weight");
+  if(m->isRevMetaUsed)
+    header.pushString(", int *d_rev_meta");
+   std::cout<<"OnDelete KERNEL After Normal HEADERS\n";
+  for (Identifier* iden : vars) {
+    // std::cout<<"INSIDE LOOP 0 "<<iden->getIdentifier()<<"\n";
+    if(iden->getSymbolInfo()==NULL) continue;
+    Type* type = iden->getSymbolInfo()->getType();
+    // std::cout<<"INSIDE LOOP 1\n";
+    if (type->isPropType()) {
+      // std::cout<<"INSIDE LOOP 2\n";
+      char strBuffer[1024];
+      sprintf(strBuffer, ",%s d_%s", convertToCppType(type), iden->getIdentifier());
+      // std::cout<<"INSIDE LOOP 3\n";
+      header.pushString(/*createParamName(*/ strBuffer);
+      if(iden->getSymbolInfo()->getId()->get_fp_association()) { // If id has a fp association then _next must also be added as a parameter
+          // std::cout<<"INSIDE LOOP 4\n";
+        sprintf(strBuffer, ",%s d_%s_next", convertToCppType(type), iden->getIdentifier());
+        header.pushString(/*createParamName(*/ strBuffer);
+      }
+    } else {
+
+      std::cout<<"vars not property:"<<iden->getIdentifier()<<"\n";
+    }
+  }
+
+
+
+
+  header.pushstr_newL("){ // BEGIN KER FUN via ADDKERNEL");
+  header.pushstr_newL("unsigned tid = blockIdx.x * blockDim.x + threadIdx.x;");
+  header.pushstr_newL("if(tid >= batchelements) return;");
+  sprintf(strBuffer,"update %s = d_%s[tid];",updateVar,batchVar );
+  header.pushstr_newL(strBuffer);
+  sprintf(strBuffer,"if( %s.type!='d') return;",updateVar);
+  header.pushstr_newL(strBuffer);
+  for (statement* stmt : (onDeleteStmt->getStatements())->returnStatements()) {
+    generateStatement(stmt, false);  //false. All these stmts should be inside kernel
+                                     //~ if (stmt->getTypeofNode() == NODE_FORALLSTMT) {
+  }
+
+  header.pushstr_newL("} // end KER FUNC");
+}
+
 void dsl_dyn_cpp_generator::generateBatchInitializer(){
   const char* graph ; graph = "g"; // TODO 
   char strBuffer[1024];

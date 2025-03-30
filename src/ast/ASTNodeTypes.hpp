@@ -1941,6 +1941,7 @@ private:
   Identifier *updateId;
   proc_callExpr *updateFunc;
   blockStatement *statements;
+  MetaDataUsed *metadata;
 
 public:
   onDeleteBlock()
@@ -1950,6 +1951,7 @@ public:
     updateId = NULL;
     updateFunc = NULL;
     statements = NULL;
+    metadata = NULL;
   }
 
   static onDeleteBlock *createNodeForOnDeleteBlock(Identifier *iteratorSent, Identifier *sourceId, proc_callExpr *sourceFunc, statement *statements_sent)
@@ -1959,6 +1961,7 @@ public:
     onDeleteNode->updateId = sourceId;
     onDeleteNode->updateFunc = sourceFunc;
     onDeleteNode->statements = (blockStatement *)statements_sent;
+    onDeleteNode->metadata = new MetaDataUsed();
     onDeleteNode->setTypeofNode(NODE_ONDELETEBLOCK);
     statements_sent->setParent(onDeleteNode);
     iteratorSent->setParent(onDeleteNode);
@@ -1986,6 +1989,9 @@ public:
   {
     return updateFunc;
   }
+  MetaDataUsed *getMetaDataUsed(){
+    return metadata;
+  }
 };
 
 class onAddBlock : public statement
@@ -2001,7 +2007,7 @@ private:
 public:
   onAddBlock()
   {
-    std::cout<<"HELLO0\n";
+
     itertorId = NULL;
     updateId = NULL;
     updateFunc = NULL;

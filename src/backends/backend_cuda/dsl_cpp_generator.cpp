@@ -29,7 +29,6 @@ namespace spcuda {
     decFuncCount = 0;
     isDynamic = false;
     isInsideBatch = false;
-    std::cout<<"I AM NOT SUPPOSED TO EXIST\n";
   }
 
 void dsl_cpp_generator::generateInitkernel(const char* name) {
@@ -51,8 +50,6 @@ void dsl_cpp_generator::generateInitkernelStr(const char* inVarType, const char*
   sprintf(strBuffer, "initKernel<%s> <<<numBlocks,threadsPerBlock>>>(V,%s,%s);", inVarType, inVarName, initVal);
   main.pushstr_newL(strBuffer);
 }
-
-
 void dsl_cpp_generator::generateInitkernel1(
     assignment* assign, bool isMainFile) {  // const char* typ,
   //~ initKernel<double> <<<numBlocks,numThreads>>>(V,d_BC, 0.0);
@@ -76,7 +73,6 @@ std::cout<<"40 convertToCppType\n";
   main.NewLine();
 }
 
-
 void dsl_cpp_generator::generateLaunchConfig(const char* name) {
   //~ LAUNCH CONFIG
   //~ const unsigned threadsPerBlock = 512;                                   //
@@ -99,9 +95,6 @@ void dsl_cpp_generator::generateLaunchConfig(const char* name) {
   main.NewLine();
   // main.pushstr_newL("}");
 }
-
-
-
 
 void dsl_cpp_generator::generateCudaMemCpyStr(const char* sVarName,
                                               const char* tVarName,
@@ -620,12 +613,12 @@ void dsl_cpp_generator::generateStatement(statement* stmt, bool isMainFile) {
     generateBlock((blockStatement*)stmt, false, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_DECL) {
-    std::cout<<"INSIDE NODE_DECL\n";
+    
     generateVariableDecl((declaration*)stmt, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_ASSIGN) {
     // generateAssignmentStmt((assignment*)stmt);
-    std::cout<<"INSIDE NODE_ASSIGN\n";
+    
     assignment* asst = (assignment*)stmt;
     if (asst->isDeviceAssignment())
       generateDeviceAssignmentStmt(asst, isMainFile);
@@ -1669,7 +1662,6 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
   
   header.pushString("__global__ void ");
   header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
-  std::cout<<"addCudaKernel 1649\n";
   header.pushString("_kernel_"+to_string(kernel_counter));
 
   header.pushString("(int V, int E");
@@ -1808,7 +1800,7 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
       }
     }
     /*memcpy to symbol*/
-    std::cout<<"1784 generateForall\n";
+
     main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
     main.pushString("_kernel_"+to_string(kernel_counter));
     main.pushString("<<<");
@@ -1829,7 +1821,6 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
     // main.pushString(",d_modified_next");
     //  if(currentFunc->getParamList().size()!=0)
     // main.pushString(",");
-    
     if (!isOptimized) {
       std::cout<< "NOT OPTIMESED ---------------" << '\n';
       usedVariables usedVars = getVarsForAll(forAll);
@@ -1878,7 +1869,6 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
     if (!isOptimized) {
       usedVariables usedVars = getVarsForAll(forAll);
       list<Identifier*> vars = usedVars.getVariables();
-      std::cout<<"generateForall 1850\n";
       for (Identifier* iden : vars) {
         if(iden->getSymbolInfo()!=NULL){
                   Type* type = iden->getSymbolInfo()->getType();
@@ -1913,7 +1903,7 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
     //~ // cout<<"FORALL BODY
     //~ // TYPE"<<(forAll->getBody()->getTypeofNode()==NODE_BLOCKSTMT);
     //~ }
-    std::cout<<"BEFORE ADDCUDA KERNEL\n";
+
     addCudaKernel(forAll);
 
   }
@@ -2471,11 +2461,10 @@ void dsl_cpp_generator::generate_exprRelational(Expression* expr,
 void dsl_cpp_generator::generate_exprIdentifier(Identifier* id,
                                                 bool isMainFile) {
   dslCodePad& targetFile = isMainFile ? main : header;
-  std::cout<<"HELLO I AM FINE 0\n";
+  
   bool reqToprint = false;
   if(id->getSymbolInfo()!=NULL){
       Type *t = id->getSymbolInfo()->getType();
-  std::cout<<"HELLO I AM FINE 1\n";
   // if(isInsideBatch &&  t->isPropType()) targetFile.pushString("d_");
   if(isDynamic &&  t->isPropType()) targetFile.pushString("d_");
   if(isInsideBatch && t->isGraphType()) {
@@ -2701,7 +2690,7 @@ void dsl_cpp_generator::generate_exprPropId(
       if( isDynamic ){
         bool updateAccess = false;
         if(id1->getUpdateAssociation()!=NULL){
-          std::cout<<"?????????????????MY ACTUAL UPDATE:"<<id1->getUpdateAssociation()->getIdentifier()<<"\n";
+          std::cout<<"MY ACTUAL UPDATE:"<<id1->getUpdateAssociation()->getIdentifier()<<"\n";
           string uu(id1->getUpdateAssociation()->getIdentifier());
           if(uu.compare(id1->getIdentifier())==0) updateAccess = true;
 
@@ -3594,11 +3583,10 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
   //~ false;  // to generate csr or not in main.cpp file if graph is a parameter
   const char*
       gId;  // to generate csr or not in main.cpp file if graph is a parameter
-      int cnt = 0;
   for (itr = paramList.begin(); itr != paramList.end(); itr++) {
     arg_currNo++;
     argumentTotal--;
-    std::cout<<"ALIVE IN LOOP"<<cnt++<<"\n";
+
     Type* type = (*itr)->getType();
     // targetFile.pushString(convertToCppType(type));
 

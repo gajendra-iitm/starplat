@@ -25,6 +25,7 @@ class dsl_dyn_cpp_generator:public spcuda::dsl_cpp_generator
  void generateIncrementalDecremental(Function* incrementalFunc, bool isMainFile );
 //  void generateDecremental(Function* decrementalFunc, bool isMainFile);
 void addOnAddkernel(onAddBlock* onAddStmt,bool isMainFile,list<Identifier*> vars);
+void addOnDeletekernel(onDeleteBlock* onDeleteStmt,bool isMainFile,list<Identifier*> vars);
  void generateInDecHeader(Function* func, bool isMainFile);
  void generateDynamicFunc(Function* func, bool isMainFile);
  void generateDynamicHeader(Function* func, bool isMainFile);

@@ -38,26 +38,6 @@ class dsl_cpp_generator {
 
 
  public:
-  // dsl_cpp_generator() {
-  //   // added here
-  //   genCSR = false;
-  //   isHeader = false;
-  //   kernelCount = 0;
-  //   gName = new char[25];
-
-  //   headerFile = NULL;
-  //   bodyFile = NULL;
-  //   fileName = new char[1024];
-  //   currentFunc = NULL;
-  //   isOptimized = false;
-
-  //   genFuncCount = 0;
-  //   staticFuncCount = 0;
-  //   inFuncCount = 0;
-  //   decFuncCount = 0;
-  //   isDynamic = false;
-  //   std::cout<<"I AM NOT SUPPOSED TO EXIST\n";
-  // }
   dsl_cpp_generator();
 
   void generateNestedContainer(Type* type,bool isMainFile);
