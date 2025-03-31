@@ -174,7 +174,7 @@ void SymbolTableBuilder::buildForProc(Function *func)
 
 void SymbolTableBuilder::buildForStatements(statement *stmt)
 {
-  std::cout<<"HIMA BUILD FOR STATEMENTS\n";
+  std::cout<<"INSIDE BUILD FOR STATEMENTS\n";
   bool searchSuccess = false;
   switch (stmt->getTypeofNode())
   {
@@ -255,13 +255,11 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
             }
             else if (parallel->getTypeofNode() == NODE_ITRBFS)
             {
-              std::cout<<"258 BFS\n";
               // iterateBFS* iBFS = (iterateBFS*) parallel;
               // iBFS->pushModifiedGlobalVariable(id->getSymbolInfo());
             }
             else if (parallel->getTypeofNode() == NODE_ITRRBFS)
             {
-              std::cout<<"264 BFS\n";
               // iterateReverseBFS* iRBFS = (iterateReverseBFS*) parallel;
               // iRBFS->pushModifiedGlobalVariable(id->getSymbolInfo());
             }
@@ -362,7 +360,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
 
   case NODE_FORALLSTMT:
   {
-    std::cout<<"HIMA IS A GOOD GIRL 0 \n";
     forallStmt *forAll = (forallStmt *)stmt;
     Identifier *source1 = forAll->isSourceProcCall() ? forAll->getSourceGraph() : NULL;
 
@@ -433,7 +430,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       /* the assignment statements(arithmetic & logical) within the block of a for statement that
          is itself within a IterateInBFS abstraction are signaled to become atomic while code
          generation. */
-         std::cout<<"HIMA IS A GOOD GIRL 1\n";
       iterateBFS *parent = (iterateBFS *)parallelConstruct[0];
       cout << "parent type: " << parent->getTypeofNode() << endl;
       proc_callExpr *extractElem = forAll->getExtractElementFunc();
@@ -460,9 +456,8 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     }
     else
     { // if for all statement has a proc call
-      std::cout<<"HIMA IS A GOOD GIRL 2\n";
       proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
-      std::cout<<"HIMA IS A GOOD GIRL 2 parallel "<<parallelConstruct.size()<<"\n";
+      std::cout<<" parallelConstruct Size "<<parallelConstruct.size()<<"\n";
       if (extractElemFunc != NULL && parallelConstruct.size() > 0)
       {
         forallStmt *parent = (forallStmt *)parallelConstruct.back();
@@ -477,7 +472,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           if(preprocessEnv!=NULL){
               if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
               {
-                std::cout<<"HIMA IS A GOOD GIRL 3\n";
                 onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
                 onAddStmt->getMetaDataUsed()->isRevMetaUsed = true;
                 onAddStmt->getMetaDataUsed()->isSrcUsed = true; 
@@ -485,7 +479,8 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
               else
               {
                 onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-                // TODO
+                onDeleteStmt->getMetaDataUsed()->isRevMetaUsed = true;
+                onDeleteStmt->getMetaDataUsed()->isSrcUsed = true; 
               }
           }
         }
@@ -498,7 +493,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           if(preprocessEnv!=NULL){
               if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
               {
-                std::cout<<"HIMA IS A GOOD GIRL\n";
                 onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
                 onAddStmt->getMetaDataUsed()->isMetaUsed = true;
                 onAddStmt->getMetaDataUsed()->isDataUsed = true; 
@@ -506,7 +500,8 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
               else
               {
                 onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-                // TODO
+                onDeleteStmt->getMetaDataUsed()->isMetaUsed = true;
+                onDeleteStmt->getMetaDataUsed()->isDataUsed = true; 
               }
           }
         }
@@ -520,7 +515,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           currentFunc->setIsSrcUsed();
           if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
           {
-            std::cout<<"HIMA IS A GOOD GIRL 4\n";
             onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
             onAddStmt->getMetaDataUsed()->isRevMetaUsed = true;
             onAddStmt->getMetaDataUsed()->isSrcUsed = true; 
@@ -528,7 +522,8 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           else
           {
             onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-            // TODO
+            onDeleteStmt->getMetaDataUsed()->isRevMetaUsed = true;
+            onDeleteStmt->getMetaDataUsed()->isSrcUsed = true; 
           }
         }
         else if (iteratorMethodString == nbrCall)
@@ -537,7 +532,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           currentFunc->setIsDataUsed();
           if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
           {
-            std::cout<<"HIMA IS A GOOD GIRL 5\n";
             onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
             onAddStmt->getMetaDataUsed()->isMetaUsed = true;
             onAddStmt->getMetaDataUsed()->isDataUsed = true; 
@@ -545,12 +539,12 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           else
           {
             onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-            // TODO
+            onDeleteStmt->getMetaDataUsed()->isMetaUsed = true;
+            onDeleteStmt->getMetaDataUsed()->isDataUsed = true; 
           }
         }
       }
     }
-
 
     buildForStatements(forAll->getBody());
 
@@ -604,7 +598,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
       }
       if ((*itr)->getTypeofNode() == NODE_ITRBFS)
       {
-        std::cout<<"605 BFS\n";
         itrIBFS = itr;
 
         flag = true;
@@ -739,7 +732,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
   }
   case NODE_ITRBFS:
   {
-    std::cout<<"737 BFS\n";
     iterateBFS *iBFS = (iterateBFS *)stmt;
     string backend(backendTarget);
 
@@ -803,13 +795,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     batchBlock *batchBlockBound = (batchBlock *)batchBlockEnv;
     /*if(batchBlockBound->getUpdateId()==NULL)
        batchBlockBound->setUpdateId(onAddStmt->getUpdateId());*/
-    std::cout<<"Reaching NODE_ONADDBLOCK\n";
     preprocessEnv = onAddStmt;
-    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isWeightUsed = true;
-    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isMetaUsed = true;
-    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isDataUsed = true;
-    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isSrcUsed = true;
-    // ((onAddBlock *)preprocessEnv)->getMetaDataUsed()->isRevMetaUsed = true;
     buildForStatements(onAddStmt->getStatements());
     preprocessEnv = NULL;
     break;
@@ -945,9 +931,8 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     Expression *indexExpr = pExpr->getIndexExpr();
     int curFuncType = currentFunc->getFuncType();
     char *procId = methodId->getIdentifier();
-    
+
     string s(methodId->getIdentifier());
-    std::cout<<"$$$$$$$$$$$$$$$$METHOD CALL$$$$$$$$$$$"<<s<<"\n";
     if (id != NULL)
       ifFine = findSymbolId(id);
 
@@ -977,7 +962,6 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
       currentFunc->setIsMetaUsed();
       parentForAll->setIsDataUsed();
       currentFunc->setIsDataUsed();
-      // if(preprocessEnv!=NULL) preprocessEnv->
     }
     if (s.compare(countOutNbrCall) == 0)
     {
@@ -994,8 +978,10 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     }
     else
     {
+
       char *funcId = currentFunc->getIdentifier()->getIdentifier();
       string funcIdString(funcId);
+      
       if (dynamicLinkedFunc.find(funcIdString) != dynamicLinkedFunc.end() && dynamicLinkedFunc[funcIdString])
       {
         dynamicLinkedFunc[procIdString] = true;
