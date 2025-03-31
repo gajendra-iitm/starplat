@@ -5,7 +5,7 @@ propNode<bool> isChanged)
 {
   bool finished = False;
 
-while(!finished)
+ while(!finished)
  {
    finished = true;
    forall (v in g.nodes().filter(isChanged == True) )
