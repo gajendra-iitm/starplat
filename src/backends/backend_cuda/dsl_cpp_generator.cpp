@@ -3228,7 +3228,6 @@ void dsl_cpp_generator::generateFunc(ASTNode* proc) {
 
   // Assuming one function!
   main.pushstr_newL("//TIMER STOP");
-
   generateStopTimer();
   main.NewLine();
   // generateCudaMemCpyParams(func->getParamList());
