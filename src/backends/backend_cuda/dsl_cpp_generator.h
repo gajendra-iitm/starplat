@@ -34,8 +34,6 @@ class dsl_cpp_generator {
   bool isOptimized;
   bool isDynamic;
   bool isInsideBatch;
-  
-
 
  public:
   dsl_cpp_generator();

@@ -2,7 +2,6 @@
 #define CU_DSL_DYN_CPP_GENERATOR
 
 #include "dsl_cpp_generator.h"
-// #include "getUsedVars.h"
 
 
 namespace spdyncuda{
@@ -15,21 +14,12 @@ class dsl_dyn_cpp_generator:public spcuda::dsl_cpp_generator
  public:
   
   dsl_dyn_cpp_generator();
-  // {
-  //   std::cout<<"I AM SUPPOSED TO EXIST\n";
-  //   batchEnvSizeId = NULL;
-  //   updatesId = NULL;
-  //   isDynamic = true;
-  // }
-
  void generateIncrementalDecremental(Function* incrementalFunc, bool isMainFile );
-//  void generateDecremental(Function* decrementalFunc, bool isMainFile);
 void addOnAddkernel(onAddBlock* onAddStmt,bool isMainFile,list<Identifier*> vars);
 void addOnDeletekernel(onDeleteBlock* onDeleteStmt,bool isMainFile,list<Identifier*> vars);
  void generateInDecHeader(Function* func, bool isMainFile);
  void generateDynamicFunc(Function* func, bool isMainFile);
  void generateDynamicHeader(Function* func, bool isMainFile);
-// void generateBlock()
  void generateBlock(blockStatement* blockStmt, bool includeBrace, bool isMainFile);
  void generateFunction(ASTNode* proc);
  void generateForAllSignature(forallStmt* forAll, bool isMainFile);

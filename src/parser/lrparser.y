@@ -498,10 +498,10 @@ tid : id '.' id '.' id {// Identifier* id1=(Identifier*)Util::createIdentifierNo
 				   $$=Util::createPropIdNode($1,$3);
 				    };
 id : ID   { 
-	        $$=Util::createIdentifierNode($1);  
+	         $$=Util::createIdentifierNode($1);  
 
             
-        };                                                   
+        	};                                                   
           
 
 

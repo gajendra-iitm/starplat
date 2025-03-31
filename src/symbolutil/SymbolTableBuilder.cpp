@@ -6,13 +6,11 @@ void performUpdatesAssociation(PropAccess *expr, ASTNode *preprocessEnv)
   if (preprocessEnv->getTypeofNode() == NODE_ONADDBLOCK)
   {
     onAddBlock *onAddStmt = (onAddBlock *)preprocessEnv;
-    // updatesId = onAddStmt->getUpdateId();
     updatesId = onAddStmt->getIteratorId();
   }
   else
   {
     onDeleteBlock *onDeleteStmt = (onDeleteBlock *)preprocessEnv;
-    // updatesId = onDeleteStmt->getUpdateId();
     updatesId =onDeleteStmt->getIteratorId();
   }
   Identifier *id1 = expr->getIdentifier1();
@@ -346,7 +344,7 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
         Identifier *tableId = depId->getSymbolInfo()->getId();
         printf("%s\n", tableId->getIdentifier());
         //printf("\n");
-        tableId->set_redecl();                            // explained in the ASTNodeTypes
+        tableId->set_redecl();                            // explweightcallained in the ASTNodeTypes
         tableId->set_fpassociation();                     // explained in the ASTNodeTypes
         tableId->set_fpId(fixedPointId->getIdentifier()); // explained in the ASTNodeTypes
         tableId->set_fpIdNode(fixedPointId);              // explained in the ASTNodeTypes
@@ -1068,7 +1066,7 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     ifFine = findSymbolPropId(expr->getPropId());
     string s(((PropAccess *)(expr->getPropId()))->getIdentifier2()->getIdentifier());
     std::cout<<"####### Weight hopefully######"<<s<<"\n";
-    if(s.compare(weightcall)==0){
+    if(s.compare("weight")==0){
       if(currentFunc!=NULL) currentFunc->setIsWeightUsed();
       if(parallelConstruct.size()>0) {
         forallStmt *parentForAll = (forallStmt *)parallelConstruct[0];

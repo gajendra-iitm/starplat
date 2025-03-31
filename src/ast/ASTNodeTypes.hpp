@@ -142,7 +142,7 @@ public:
   static Identifier *createIdNode(const char *id)
   {
 
-    Identifier *idNode = new Identifier(); 
+    Identifier *idNode = new Identifier();
     idNode->identifier = new char[strlen(id) + 1];
     strcpy(idNode->identifier, id);
     idNode->accessType = 0;
