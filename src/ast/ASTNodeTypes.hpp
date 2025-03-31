@@ -142,8 +142,7 @@ public:
   static Identifier *createIdNode(const char *id)
   {
 
-    Identifier *idNode = new Identifier();
-    
+    Identifier *idNode = new Identifier(); 
     idNode->identifier = new char[strlen(id) + 1];
     strcpy(idNode->identifier, id);
     idNode->accessType = 0;
@@ -158,8 +157,6 @@ public:
     idNode->forall_filter_association = false;
     idNode->used_inside_forall_filter_and_changed_inside_forall_body = false;
     // std::cout<<"IDENTIFIER = "<<idNode->getIdentifier()<<" "<<strlen(idNode->getIdentifier());
-    // Type* t = new Type();
-    // idNode->idInfo = new TableEntry(idNode,NULL);
     return idNode;
   }
 
@@ -286,7 +283,6 @@ public:
 
   void setUpdateAssociation(Identifier *updateId_sent)
   {
-    std::cout<<"$$$$$$$$$$$$$$$$$$$$$$$$$I am supposed to be called!\n";
     updates_association = updateId_sent;
   }
 
@@ -526,6 +522,7 @@ public:
     incrementalFunc->setFuncType(INCREMENTAL_FUNC);
     incrementalFunc->functionId = Identifier::createIdNode("incremental");
     // incrementalFunc->retType = retType;
+
     return incrementalFunc;
   }
 
@@ -2007,7 +2004,6 @@ private:
 public:
   onAddBlock()
   {
-
     itertorId = NULL;
     updateId = NULL;
     updateFunc = NULL;

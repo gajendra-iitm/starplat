@@ -14,7 +14,6 @@ public:
 
   MetaDataUsed()
   {
-    std::cout<<"HELLO1\n";
     isMetaUsed = false;
     isRevMetaUsed = false;
     isDataUsed = false;
