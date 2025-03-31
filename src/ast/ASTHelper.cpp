@@ -289,8 +289,7 @@ public:
     {
         statement *procCallStmt;
         procCallStmt = proc_callStmt::nodeForCallStmt((Expression *)procCall);
-        bool value = procCallStmt->getTypeofNode() == NODE_PROCCALLSTMT;//???
-        std::cout<<"SHOULD NOT BE HERE\n";
+        bool value = procCallStmt->getTypeofNode() == NODE_PROCCALLSTMT;
         return procCallStmt;
     }
 
@@ -308,20 +307,19 @@ public:
     static ASTNode *createNodeForProcCall(ASTNode *proc_callId, list<argument *> argList, ASTNode *indexExprSent)
     {
         proc_callExpr *proc_callExprNode;
-        std::cout<<"SHOULD BE PROCESS CALLING\n";
+
         if (proc_callId->getTypeofNode() == NODE_ID)
         {
 
             if (indexExprSent != NULL)
             {
-                std::cout<<"PROCESS CALLING\n";
+
                 cout << "ENTERED HERE FOR INDEXEXPR PROC CALL****" << "\n";
                 Expression *indexExpr = (Expression *)indexExprSent;
                 proc_callExprNode = proc_callExpr::nodeForProc_Call(NULL, NULL, (Identifier *)proc_callId, argList, indexExpr);
             }
             else
             {
-                std::cout<<"PROCESS CALLING\n";
                 proc_callExprNode = proc_callExpr::nodeForProc_Call(NULL, NULL, (Identifier *)proc_callId, argList, NULL);
             }
         }
@@ -331,6 +329,7 @@ public:
 
             if (indexExprSent != NULL)
             {
+
                 Expression *indexExpr = (Expression *)indexExprSent;
                 proc_callExprNode = proc_callExpr::nodeForProc_Call(propAccessId->getIdentifier1(), NULL, propAccessId->getIdentifier2(), argList, indexExpr);
             }
@@ -452,8 +451,6 @@ public:
     static ASTNode *createOnAddBlock(ASTNode *updateIterator, ASTNode *updateSource, ASTNode *updateFunc, ASTNode *blockStmts)
     {
         statement *onAddBlockNode;
-        // ((Identifier *)updateIterator)->getSymbolInfo()->getType()->setTypeId(TYPE_UPDATE);
-        std::cout<<"DO I EVEN EXIST\n";
         onAddBlockNode = onAddBlock::createNodeForOnAddBlock((Identifier *)updateIterator, (Identifier *)updateSource, (proc_callExpr *)updateFunc, (statement *)blockStmts);
 
         return onAddBlockNode;
