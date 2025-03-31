@@ -57,7 +57,7 @@ void dsl_cpp_generator::generateInitkernel1(
 
   Identifier* inId = assign->getId();
   Expression* exprAssigned = assign->getExpr();
-std::cout<<"40 convertToCppType\n";
+
   const char* inVarType =
       convertToCppType(inId->getSymbolInfo()->getType()->getInnerTargetType());
   const char* inVarName = inId->getIdentifier();
@@ -66,7 +66,7 @@ std::cout<<"40 convertToCppType\n";
           inVarType, inVarName, inVarType);
   main.pushString(strBuffer);
 
-  std::cout << "49 varName:" << inVarName << '\n';
+  std::cout << "varName:" << inVarName << '\n';
   generateExpr(exprAssigned, isMainFile);  // asssuming int/float const literal // OUTPUTS INIT VALUE
 
   main.pushstr_newL(");");
@@ -356,7 +356,6 @@ void dsl_cpp_generator::addCudaBFSIterKernel(iterateBFS* bfsAbstraction) {
   //~ }
   //~ }
   //~ }
-  // const char* loopVar = "v";
   char *loopVar = bfsAbstraction->getIteratorNode()->getIdentifier();
   //~ const char* nbbrVar = "w";
   char strBuffer[1024];
@@ -604,7 +603,6 @@ void dsl_cpp_generator::generateBFSAbstraction(iterateBFS* bfsAbstraction,
   //~ main.pushstr_newL("phase = phase - 1 ;");
   //~ main.pushstr_newL("}");
  }
-  
 }
 
 void dsl_cpp_generator::generateStatement(statement* stmt, bool isMainFile) {
@@ -613,12 +611,10 @@ void dsl_cpp_generator::generateStatement(statement* stmt, bool isMainFile) {
     generateBlock((blockStatement*)stmt, false, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_DECL) {
-    
     generateVariableDecl((declaration*)stmt, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_ASSIGN) {
     // generateAssignmentStmt((assignment*)stmt);
-    
     assignment* asst = (assignment*)stmt;
     if (asst->isDeviceAssignment())
       generateDeviceAssignmentStmt(asst, isMainFile);
@@ -654,7 +650,6 @@ void dsl_cpp_generator::generateStatement(statement* stmt, bool isMainFile) {
     generateBFSAbstraction((iterateBFS*)stmt, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_PROCCALLSTMT) {
-     std::cout<<"INSIDE NODE_PROCCALSTMT\n";
     generateProcCall((proc_callStmt*)stmt, isMainFile);
   }
   if (stmt->getTypeofNode() == NODE_UNARYSTMT) {
@@ -877,8 +872,6 @@ void dsl_cpp_generator::generateReductionOpStmt(reductionCallStmt* stmt,
   } else {
      const char* operatorString = getOperatorString(stmt->reduction_op());
      if(strcmp("+=",operatorString)==0){
-        // sprintf(strBuffer, "atomicAdd(& %s, %s);",stmt->getPropAccess() ,stmt->getRightSide());
-        // targetFile.pushstr_newL(strBuffer);
         targetFile.pushString("atomicAdd(& ");
         generate_exprPropId(stmt->getPropAccess(), isMainFile);
         targetFile.pushString(" , ");
@@ -894,13 +887,10 @@ void dsl_cpp_generator::generateReductionOpStmt(reductionCallStmt* stmt,
             generate_exprPropId(stmt->getPropAccess(), isMainFile);
     targetFile.pushString(" = ");
     generate_exprPropId(stmt->getPropAccess(), isMainFile);
-   
-    // std::cout<<" Operator:"<<operatorString<<"\n";
     targetFile.pushstr_space(operatorString);
     generateExpr(stmt->getRightSide(), isMainFile);
     targetFile.pushstr_newL(";");
      }
-
   }
 }
 
@@ -1659,7 +1649,7 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
   if(currentFunc==NULL) std::cout<<"NULL CURRENT FUNC\n";
   usedVariables usedVars = getVarsForAll(forAll);
   list<Identifier*> vars = usedVars.getVariables();
-  
+
   header.pushString("__global__ void ");
   header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
   header.pushString("_kernel_"+to_string(kernel_counter));
@@ -1697,7 +1687,6 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
       std::cout<<"vars not property:"<<iden->getIdentifier()<<"\n";
     }
     }
-
   }
 
   header.pushstr_newL("){ // BEGIN KER FUN via ADDKERNEL");
@@ -1783,14 +1772,13 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
       
 
       for (Identifier* iden : vars) {
-        std::cout<< "1767 varName:" << iden->getIdentifier() << '\n';
+        std::cout<< "varName:" << iden->getIdentifier() << '\n';
         if(iden->getSymbolInfo()!=NULL){
                     Type* type = iden->getSymbolInfo()->getType();
 
         if (type->isPrimitiveType())
           generateCudaMemCpySymbol(iden->getIdentifier(), convertToCppType(type), true);
         }
-
         /*else if(type->isPropType())
           {
             Type* innerType = type->getInnerTargetType();
@@ -1826,7 +1814,6 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
       usedVariables usedVars = getVarsForAll(forAll);
       list<Identifier*> vars = usedVars.getVariables();
       for (Identifier* iden : vars) {
-        std::cout<<1811<<"NULL CHECK\n";
         if(iden->getSymbolInfo()!=NULL){
                   Type* type = iden->getSymbolInfo()->getType();
         if (type->isPropType()) {
@@ -1834,7 +1821,6 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
           main.pushString("d_");
           main.pushString(/*createParamName(*/ iden->getIdentifier());
           if(iden->getSymbolInfo()->getId()->get_fp_association()) { // If id has a fp association then _next must also be added as a parameter
-          std::cout<<"1625 convertToCppType\n";
           sprintf(strBuffer, ",d_%s_next",iden->getIdentifier());
           main.pushString(/*createParamName(*/ strBuffer);
           }
@@ -2659,7 +2645,7 @@ void dsl_cpp_generator::generate_exprProcCall(Expression* expr,
       std::cout<<"PROCESS CALLING ENTERED HERE \n";
        sprintf(strBuffer,"%s",proc->getMethodId()->getIdentifier());
     }
-  std::cout<<"PROCESS CALLING EXITINg HERE\n";
+
     cout << "isnide here 3"<<endl;
     generateArgList(argList, true, isMainFile); 
     
@@ -2669,14 +2655,12 @@ void dsl_cpp_generator::generate_exprProcCall(Expression* expr,
 void dsl_cpp_generator::generate_exprPropId(
     PropAccess* propId, bool isMainFile)  // This needs to be made more generic.
 {
-  std::cout<<"INSIDE EXPRPROPID\n";
   dslCodePad& targetFile = isMainFile ? main : header;
 
   char strBuffer[1024];
   Identifier* id1 = propId->getIdentifier1();
   Identifier* id2 = propId->getIdentifier2();
   ASTNode* propParent = propId->getParent();
-  std::cout<<"INSIDE EXPRPROPID 2667\n";
   bool relatedToReduction =
       propParent != NULL ? propParent->getTypeofNode() == NODE_REDUCTIONCALLSTMT
                          : false;
@@ -3060,7 +3044,6 @@ void dsl_cpp_generator::generateCudaMallocParams(list<formalParam*> paramList) {
     if (type->isPropType()) {
       if (type->getInnerTargetType()->isPrimitiveType()) {
         Type* innerType = type->getInnerTargetType();
-        std::cout<<"2944 convertToCppType\n";
         main.pushString(convertToCppType(
             innerType));  // convertToCppType need to be modified.
         main.pushString("*");
@@ -3208,14 +3191,14 @@ void dsl_cpp_generator::generateFunc(ASTNode* proc) {
   Function* func = (Function*)proc;
   generateFuncHeader(func, false);  //.h or header file | adds prototype of main function and std headers files
   generateFuncHeader(func, true);   // .cu or main file
-std::cout<<"STARTING GENERATEFUNC\n";
+
   // to genearte the function body of the algorithm
   // Note that this we can change later point of time if required
 
   //~ char outVarName[] = "BC";  //inner type
   //~ char outVarType[] = "double";
   main.pushstr_newL("{");
-  std::cout<<"BEFORE FUNCBODY\n";
+
   generateFuncBody(func, false);  // GEnerates CSR ..bool is meaningless
 
   main.NewLine();
@@ -3240,12 +3223,12 @@ std::cout<<"STARTING GENERATEFUNC\n";
   //~ }
 
   main.pushstr_newL("//BEGIN DSL PARSING ");
-  std::cout<<"BEFORE BLOCK\n";
+
   generateBlock(func->getBlockStatement(), false);
 
   // Assuming one function!
   main.pushstr_newL("//TIMER STOP");
-  std::cout<<"BEFORE STOP TIMER\n";
+
   generateStopTimer();
   main.NewLine();
   // generateCudaMemCpyParams(func->getParamList());
@@ -3254,9 +3237,9 @@ std::cout<<"STARTING GENERATEFUNC\n";
   //~ main.pushstr_newL(strBuffer);
 
   main.pushstr_newL("} //end FUN");
-  std::cout<<"BEFORRE INCFUNC\n";
+
   incFuncCount(func->getFuncType());
-  std::cout<<"EXITING GENERATEFUNC\n";
+
   return;
 }
 
@@ -3340,15 +3323,11 @@ const char* dsl_cpp_generator::convertToCppType(Type* type) {
         if(isDynamic){
           char* newS = new char[1024];  
 		      string vecString = "std::vector<update>";   
-          cout<<"I am here1!\n";
-		      // char* valType = (char*)convertToCppType(type->getInnerTargetType());
-		      // string innerString = valType;
           cout<<"I am here!  Vecstring:"<<vecString<<"\n";
 		      copy(vecString.begin(), vecString.end(), newS);
 		      newS[vecString.size()] = '\0';
 		      return newS; 
         }
-        // assert(false);
         
       }
       default:
@@ -3687,7 +3666,7 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
     //"cpu_srcList","int", "(E)",false, "cudaMemcpyHostToDevice");
 
     main.NewLine();
-    
+
     if(currentFunc->getIsMetaUsed()) { // checking if meta is used
       sprintf(strBuffer, "int* d_meta;");
       main.pushstr_newL(strBuffer);
@@ -3790,8 +3769,8 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
     strcat(str, (*itr)->getIdentifier()->getIdentifier());
     //~ strcat (str, '\0');
     // added here
-    // cout << "param :" << parName << endl;
-    // cout << "paramD:" << str << endl;
+    cout << "param :" << parName << endl;
+    cout << "paramD:" << str << endl;
 
     if (!isMainFile) {
       //~ vars *vv = new vars;
@@ -3816,7 +3795,6 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
     //~ varList.push_back({convertToCppType(type),parName, false});
     //~ }
 
-    // targetFile.pushString(/*createParamName(*/ parName);
     targetFile.pushString(/*createParamName(*/ str);
     if (argumentTotal > 0) targetFile.pushString(",");
 
@@ -3853,7 +3831,7 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
 
   targetFile.NewLine();
   targetFile.NewLine();
-  std::cout<<"EXITING FUNCTION HEADER\n";
+
   return;
 }
 
@@ -3893,7 +3871,6 @@ void dsl_cpp_generator::closeOutputFile() {
 }
 
 void dsl_cpp_generator::setCurrentFunc(Function* func) {
-  std::cout<<"Inside set current func\n";
   currentFunc = func;
 }
 
