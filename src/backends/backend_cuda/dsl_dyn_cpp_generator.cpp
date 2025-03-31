@@ -1024,6 +1024,9 @@ void dsl_dyn_cpp_generator::generate_exprProcCall(Expression* expr, bool isMainF
     
 // } 
 
+
+
+
 void dsl_dyn_cpp_generator::generateInDecHeader(Function* inDecFunc, bool isMainFile)
 {
   dslCodePad& targetFile = isMainFile ? main : header;
@@ -1117,8 +1120,6 @@ void dsl_dyn_cpp_generator::generateInDecHeader(Function* inDecFunc, bool isMain
     return; 
 
 }
-
-
 
 void dsl_dyn_cpp_generator::generateDynamicHeader(Function* dynFunc, bool isMainFile)
 {
