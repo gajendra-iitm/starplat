@@ -27,10 +27,6 @@ class TableEntry
  
 public:
  TableEntry(Identifier* idSent,Type* typeSent);
-//  {
-//     id = idSent;
-//     type = typeSent;
-//  }
  Identifier* getId()
  {
      return id;
