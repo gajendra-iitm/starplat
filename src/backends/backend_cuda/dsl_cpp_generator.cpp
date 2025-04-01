@@ -1903,7 +1903,8 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
           generateBlock((blockStatement*)forAll->getBody(), false, false);
           targetFile.pushstr_newL("} // end IF  ");
           targetFile.pushstr_newL("} // end FOR");
-          targetFile.pushstr_newL("grid.sync(); // Device-level syncs across all grids. Ref:https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#grid-synchronization-cg ");
+          //targetFile.pushstr_newL("grid.sync(); // Device-level syncs across all grids. Ref:https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#grid-synchronization-cg ");
+          //above line commented out bcz, grid.sync() was creating kernel launch runtime error issues 
 
           //~ targetFile.pushstr_newL("FOR begin | nbr iterate");
           //~ if(forAll->isForall() && forAll->hasFilterExpr()){

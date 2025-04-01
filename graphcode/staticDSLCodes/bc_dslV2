@@ -15,6 +15,8 @@ function Compute_BC(Graph g, propNode < float > BC, SetN < g > sourceSet) {
       for (w in g.neighbors(v)) {
         v.delta = v.delta + (v.sigma / w.sigma) * (1 + w.delta);
       }
+    }
+    forall(v in g.nodes()){
       v.BC = v.BC + v.delta;
     }
   }
