@@ -47,7 +47,7 @@ int main(int argc, char*argv[]) {
      std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
      std::cout << "Number of edges: " << g.num_edges() << std::endl;
     double starttime = omp_get_wtime();
-    DynAPFB(g, g.num_nodes()/2, parseUpdates, batchSize);
+    APFB(g, g.num_nodes()/2);//, parseUpdates, batchSize);
     double endtime = omp_get_wtime();
 
     std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;

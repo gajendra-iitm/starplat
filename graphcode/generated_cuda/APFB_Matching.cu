@@ -122,7 +122,7 @@ void APFB(graph& g,int nc)
     // FIXED POINT variables
     //BEGIN FIXED POINT
     initKernel<bool> <<<numBlocks,threadsPerBlock>>>(V, d_modified_next, false);
-    int k=0; // #fixpt-Iterations
+    k=0; // #fixpt-Iterations
     while(!noNewVertices) {
 
       noNewVertices = true;
