@@ -1550,6 +1550,8 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
 
   header.pushString("__global__ void ");
   header.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
+  header.pushString(to_string(getKCount()));
+
   header.pushString("_kernel");
 
   header.pushString("(int V, int E");
@@ -1613,6 +1615,7 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
   }
 
   header.pushstr_newL("} // end KER FUNC");
+  IncrementKCount();
 }
 
 void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
@@ -1681,6 +1684,8 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
     /*memcpy to symbol*/
 
     main.pushString(getCurrentFunc()->getIdentifier()->getIdentifier());
+    main.pushString(to_string(getKCount()));
+
     main.pushString("_kernel");
     main.pushString("<<<");
     main.pushString("numBlocks, threadsPerBlock");
