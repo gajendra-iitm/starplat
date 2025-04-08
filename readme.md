@@ -8,7 +8,7 @@ StarPlat provides key features and data types for static graph algorithms, inclu
 
 For handling updates efficiently, StarPlat includes batch processing constructs such as `Batch`, `OnDelete` (for removing edges), and `OnAdd` (for adding edges). The `Batch` construct defines preprocessing steps before executing these handlers. In incremental processing, only changes from added edges are handled, while decremental processing deals with edge deletions.
 
-![Screenshot 2025-03-17 at 6.48.09 PM.png](StarPlat%20Documentation%201b94e3527b918022ac3be3f0cc3ccd84/Screenshot_2025-03-17_at_6.48.09_PM.png)
+![Screenshot 2025-03-17 at 6.48.09 PM.png](Screenshot_2025-03-17_at_6.48.09_PM.png)
 
 # How to write and run code?
 
