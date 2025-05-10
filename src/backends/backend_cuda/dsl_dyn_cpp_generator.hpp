@@ -7,7 +7,7 @@
 namespace spdyncuda{
 class dsl_dyn_cpp_generator:public spcuda::dsl_cpp_generator
 {   
- private:
+ protected:
  Identifier* batchEnvSizeId;
  Identifier* updatesId;
 

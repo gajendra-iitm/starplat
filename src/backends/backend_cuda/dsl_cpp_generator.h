@@ -10,7 +10,7 @@
 
 namespace spcuda {
 class dsl_cpp_generator {
- private:
+ protected:
   dslCodePad header;
   dslCodePad main;
   FILE* headerFile;
@@ -30,7 +30,14 @@ class dsl_cpp_generator {
   Function* currentFunc;
 
   bool isHeader;
+  bool insidePreprocessEnv;
+  bool insideBatchBlock ;
+  vector<ASTNode*> parallelConstruct;
   bool isOptimized;
+  vector<pair<Identifier*, proc_callExpr*>> forallStack;
+  void checkAndGenerateFixedPtFilter(forallStmt* forAll);
+
+
 
  public:
   dsl_cpp_generator() {
@@ -109,6 +116,24 @@ class dsl_cpp_generator {
   void generatePropertyDefination(Type* type, char* Id, bool isMainFile);
   void findTargetGraph(vector<Identifier*> graphTypes, Type* type);
   void getDefaultValueforTypes(int type);
+
+  /**
+   * Newly added
+   */
+  void getEdgeTranslation(Expression* expr); 
+  void generateArgList(list<argument*> argList, bool addBraces);    
+  void generate_exprIndex(Expression* expr, bool islocal);
+  string  getProcName(proc_callExpr* proc);
+  usedVariables getVarsForAll(forallStmt* forAll);
+  void generateForMergeContainer(Type* type, int& level);
+  void generateInserts(Type* type,  Identifier* id);
+  void generatePriorDeclarations(Function* proc);
+
+
+
+
+
+
 
   void generateInitialization();
   void generateFuncSSSPBody();

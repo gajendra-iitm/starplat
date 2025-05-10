@@ -718,6 +718,13 @@ int main(int argc,char **argv)
 		   std::cout<<"file name set"<<std::endl;
 	       cpp_dyn_gen.generate();	
 		}
+		if(strcmp(backendTarget, "cuda") == 0){
+                   spdyncuda::dsl_dyn_cpp_generator cpp_dyn_gen;
+                   std::cout<<"created dyn cuda"<<std::endl;
+                   cpp_dyn_gen.setFileName(fileName);
+                   std::cout<<"file name set"<<std::endl;
+               cpp_dyn_gen.generate();
+                }
 	 }
 	
    }

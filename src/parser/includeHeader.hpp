@@ -22,6 +22,7 @@
 
 /* UNCOMMENT IT TO GENERATE FOR CUDA BACKEND */
 #include "../backends/backend_cuda/dsl_cpp_generator.h"
+̆#include "../backends/backend_cuda/dsl_dyn_cpp_generator.hpp"
 
 /* UNCOMMENT IT TO GENERATE FOR  OPENACC BACKEND */
 #include "../backends/backend_openACC/dsl_cpp_generator.h"

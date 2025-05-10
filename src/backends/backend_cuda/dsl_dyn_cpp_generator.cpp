@@ -196,7 +196,7 @@ void dsl_dyn_cpp_generator::generateStatement(statement* stmt, bool isMainFile )
   }
 
   if (stmt->getTypeofNode() == NODE_WHILESTMT) {
-    generateWhileStmt((whileStmt*) stmt, isMainFile);
+    generateWhileStmt((whileStmt*) stmt);
   }
 
   if (stmt->getTypeofNode() == NODE_IFSTMT) {
@@ -363,9 +363,9 @@ void dsl_dyn_cpp_generator::generate_exprProcCall(Expression* expr, bool isMainF
             Identifier* mapExprId = mapExpr->getId();
 
             if(parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
-                 generate_exprIndex(indexExpr, true, isMainFile);
+                 generate_exprIndex(indexExpr, true);
             else
-                 generate_exprIndex(indexExpr, false, isMainFile);
+                 generate_exprIndex(indexExpr, false);
 
             sprintf(strBuffer,".%s", getProcName(proc).data());
           } 
@@ -384,9 +384,9 @@ void dsl_dyn_cpp_generator::generate_exprProcCall(Expression* expr, bool isMainF
          Identifier* mapExprId = mapExpr->getId();
 
         if(parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
-            generate_exprIndex(indexExpr, true, true);
+            generate_exprIndex(indexExpr, true);
         else
-            generate_exprIndex(indexExpr, false, true);
+            generate_exprIndex(indexExpr, false);
          }
          else if(objectId != NULL){
           Identifier* id2 = proc->getId2();
@@ -1007,7 +1007,7 @@ void dsl_dyn_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile )
       if(forAll->isForall() && (forAll->hasFilterExpr() || forAll->hasFilterExprAssoc()))
      { 
          
-       checkAndGenerateFixedPtFilter(forAll, isMainFile);
+       checkAndGenerateFixedPtFilter(forAll);
       
      }
     
@@ -1024,11 +1024,11 @@ void dsl_dyn_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile )
     auto it = containerId.begin();
     Identifier* id = *it;
     int start = 0;
-    generateForMergeContainer(id->getSymbolInfo()->getType(), start,isMainFile);
+    generateForMergeContainer(id->getSymbolInfo()->getType(), start);
     char val = 'k' + start + 1;
     sprintf(strBuffer, "for(int %c = 0 ; %c < omp_get_max_threads() ; %c++)", val, val, val);
     main.pushstr_newL(strBuffer);
-    generateInserts(id->getSymbolInfo()->getType(), id, isMainFile);
+    generateInserts(id->getSymbolInfo()->getType(), id);
 
  }   
 
@@ -1160,7 +1160,7 @@ void dsl_dyn_cpp_generator::generateIncremental(Function* incFunc, bool isMainFi
          main.NewLine();
 
        }
-   generatePriorDeclarations(incFunc, isMainFile);
+   generatePriorDeclarations(incFunc);
    generateBlock(incFunc->getBlockStatement(),false);
    main.NewLine();
    main.pushstr_newL("}");
@@ -1230,7 +1230,7 @@ void dsl_dyn_cpp_generator::generateDynamicFunc(Function* dynFunc, bool isMainFi
          main.NewLine();
 
        }
-   generatePriorDeclarations(dynFunc, isMainFile);
+   generatePriorDeclarations(dynFunc);
    generateBlock(dynFunc->getBlockStatement(),false);
    main.NewLine();
    main.pushstr_newL("}");
