@@ -1,0 +1,92 @@
+/**
+ * @file JV_GNN
+ * @brief DSL code for GNN training and testing, compatible with all GNN algorithms
+ * @author Malladi Tejasvi (CS23M036), M.Tech CSE, IIT Madras.
+ * @date April 9, 2025
+ * 
+ * This function implements a training loop for Graph Neural Networks (GNNs).
+ * It handles:
+ * - Epoch-based training for a specified number of epochs
+ * - Mini-batch processing with configurable batch size
+ * - Forward and backward propagation for each vertex in the training set
+ * - Gradient accumulation and optimization steps
+ * - Model testing after training completion
+ * 
+ * @param gnn Reference to the GNN model to be trained
+ * @param total_epochs Total number of training epochs
+ * @param batch_size Number of vertices to process before performing an optimizer step
+ * 
+ * @note The function assumes the GNN implementation provides methods for:
+ *       - getTrainVertexId(): Retrieving training vertex IDs
+ *       - forward(): Forward pass computation
+ *       - backprop(): Backward pass computation
+ *       - optimiser_step(): Parameter updates
+ *       - resetGrads(): Resetting gradients
+ *       - getTrainSetSize(): Getting training set size
+ *       - displayEpochStats(): Displaying statistics
+ *       - testModel(): Evaluating on test data
+ */
+
+function GNN_Train(GNN & gnn, int total_epochs, int batch_size)
+{
+    int epoch  = 0;
+    bool training = true;
+
+    while(training)
+    {
+
+        // std::chrono::high_resolution_clock::time_point start,end;
+        // start = chrono::high_resolution_clock::now();
+
+        // cout<<"Epoch "<<fixed<<setprecision(3)<<epoch+1<<flush;
+
+        int processed_vertex_count  = 0;
+
+        bool continue_epoch = true;
+        
+        while(continue_epoch) //looping over the train vertices
+        {
+        
+            
+            container<float> y_pred_probs;
+            int cur_vertex = gnn.getTrainVertexId(processed_vertex_count);
+
+            y_pred_probs = gnn.forward(cur_vertex,epoch); //forward pass works on one sample at time
+            gnn.backprop(cur_vertex,y_pred_probs);
+            
+            processed_vertex_count++;
+
+            bool done = (processed_vertex_count == gnn.getTrainSetSize());
+
+            if(processed_vertex_count%batch_size == 0 || done)
+            {
+                gnn.optimiser_step();
+                
+                if(done)
+                {
+                    // end = chrono::high_resolution_clock::now();
+                    gnn.displayEpochStats();
+                    
+                }
+                
+                gnn.resetGrads();
+            }
+
+            continue_epoch = !done;
+        }
+
+        // chrono::duration<float> time = end-start;
+        // cout<<" Time : "<<fixed<<setprecision(2)<<time.count()<<"s"<<endl;
+
+        epoch = epoch + 1;
+        
+        if(epoch == total_epochs)
+        {
+            training = false;
+        }
+    }
+ 
+    //Evalute the model over test data.
+    //cout<<endl;
+    gnn.testModel();
+}
