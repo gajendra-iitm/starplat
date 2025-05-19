@@ -898,6 +898,7 @@ public:
     return check_isGraphType(typeId);
   }
   
+
   bool isGNNType()
   {
     return check_isGNNType(typeId);
