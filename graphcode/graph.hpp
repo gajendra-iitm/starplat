@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <string.h>
 #include <climits>
+#include<cmath>
+#include <random>
+#include <unordered_set>
 #include "graph_ompv2.hpp"
 
 // using namespace std;
@@ -969,7 +972,63 @@ public:
 
     return in_edges;
   }
+
+//Function to sample specified number of neighbors of a node in O(Sample Size) time.
+std::vector<int> RandomSampleNeighbors(int node, int sample_size, int seed)
+  {
+      const int start = indexofNodes[node];
+      const int nodeDeg = indexofNodes[node + 1] - start;
+      
+      // Handle edge cases and adjust sample size
+      if (sample_size <= 0 || nodeDeg <= 0) return {};
+      const int actual_sample_size = std::min(sample_size, nodeDeg);
+      
+      std::vector<int> sampled_neighbours;
+      sampled_neighbours.reserve(actual_sample_size);
+      
+      // Case 1: Return all neighbors
+      if(nodeDeg <= sample_size) {
+          for (int i = 0; i < nodeDeg; ++i) {
+              sampled_neighbours.push_back(edgeList[start + i]);
+          }
+          return sampled_neighbours;
+      }
+      
+      std::mt19937 gen(seed);
+      
+      // Case 2: Small sample relative to degree - use direct sampling
+      if (sample_size <= nodeDeg / 10) {
+          std::unordered_set<int> selected_indices;
+          selected_indices.reserve(actual_sample_size * 2); // Avoid rehashing
+          
+          while (sampled_neighbours.size() < actual_sample_size) {
+              int idx = gen() % nodeDeg;
+              if (selected_indices.insert(idx).second) { // If insertion was successful (new element)
+                  sampled_neighbours.push_back(edgeList[start + idx]);
+              }
+          }
+      }
+      // Case 3: Large sample - use reservoir sampling
+      else {
+          // Fill with first k elements
+          for (int i = 0; i < actual_sample_size; ++i) {
+              sampled_neighbours.push_back(edgeList[start + i]);
+          }
+          
+          // Apply reservoir sampling for remaining elements
+          for (int i = actual_sample_size; i < nodeDeg; ++i) {
+              int j = gen() % (i + 1);
+              if (j < actual_sample_size) {
+                  sampled_neighbours[j] = edgeList[start + i];
+              }
+          }
+      }
+      
+      return sampled_neighbours;
+  }
+  
 };
+
 
 struct Point
 {
