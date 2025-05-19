@@ -13,6 +13,8 @@
  * - Training hyperparameter configuration
  * - Model training and saving
  * 
+
+ Make sure that this file is compiled and run from the same directory level as graph.hpp
  */
 
 #ifndef GENCPP_TEST_H
