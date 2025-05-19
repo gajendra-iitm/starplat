@@ -38,7 +38,7 @@ void dsl_cpp_generator::generation_begin() {
   header.pushString("#include");
   addIncludeToFile("atomic", header, true);
   header.pushString("#include");
-  addIncludeToFile("../JV_GNN_omp.cpp", header, false);
+  addIncludeToFile("../GNN_Suite/JV_GNN_omp.cpp", header, false);
   header.pushString("#include");
   addIncludeToFile("BTree.h", header, false);
   //header.pushString("#include");

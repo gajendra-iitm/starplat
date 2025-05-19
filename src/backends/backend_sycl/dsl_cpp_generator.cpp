@@ -228,7 +228,7 @@ namespace spsycl
             main.pushString(" ");
 
             if((*itr)->isByReference())
-                targetFile.pushString("&");
+                main.pushString("&");
 
 
             char str[80];
