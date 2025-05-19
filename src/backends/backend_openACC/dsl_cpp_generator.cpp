@@ -2829,6 +2829,10 @@ void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodeP
           targetFile.pushString(" ");
          // targetFile.space();
       //}   
+      
+      if((*itr)->isByReference())
+          targetFile.pushString("&");
+
       targetFile.pushString((*itr)->getIdentifier()->getIdentifier());    /*createParamName(*/
       
       if(argumentTotal>0)    //Are there remaining arguments to be added to function header, then add comma

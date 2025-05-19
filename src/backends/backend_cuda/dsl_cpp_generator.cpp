@@ -3644,6 +3644,10 @@ void dsl_cpp_generator::generateFuncHeader(Function* proc, bool isMainFile) {
     char* parName = (*itr)->getIdentifier()->getIdentifier();
 
     targetFile.pushString(" ");
+
+    if((*itr)->isByReference())
+          targetFile.pushString("&");
+        
     char str[80];
     strcpy(str, "d_");
     strcat(str, (*itr)->getIdentifier()->getIdentifier());

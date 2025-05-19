@@ -10,6 +10,7 @@ enum TYPE
   TYPE_FLOAT,
   TYPE_DOUBLE,
   TYPE_GRAPH,
+  TYPE_GNN,
   TYPE_DIRGRAPH,
   TYPE_LIST,
   TYPE_SETN,
@@ -49,6 +50,10 @@ inline bool check_isCollectionType(int typeId)
 inline bool check_isGraphType(int typeId)
 {
   return ((typeId == TYPE_GRAPH) || (typeId == TYPE_DIRGRAPH));
+}
+inline bool check_isGNNType(int typeId)
+{
+  return ((typeId==TYPE_GNN));
 }
 inline bool check_isHeapType(int typeId)
 {

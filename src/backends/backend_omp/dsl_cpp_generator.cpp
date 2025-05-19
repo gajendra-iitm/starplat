@@ -38,6 +38,8 @@ void dsl_cpp_generator::generation_begin() {
   header.pushString("#include");
   addIncludeToFile("atomic", header, true);
   header.pushString("#include");
+  addIncludeToFile("../JV_GNN_omp.cpp", header, false);
+  header.pushString("#include");
   addIncludeToFile("BTree.h", header, false);
   //header.pushString("#include");
   //addIncludeToFile("ParallelHeapOpenMPClass.cpp", header, false);
@@ -2291,7 +2293,16 @@ void dsl_cpp_generator::generate_exprProcCall(Expression* expr)
                }
              else
               {
+                if (objectId->getSymbolInfo()->getType()->isGNNType())
+                {
+                  cout << "objectID   " << objectId->getIdentifier() << endl;
+                  //sprintf(strBuffer, "%s_omp", getProcName(proc).c_str());
+                  sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), getProcName(proc).c_str());
+                }
+                else
+                {
                  sprintf(strBuffer,"%s.%s",objectId->getIdentifier(), getProcName(proc).c_str());  
+                }
            
               }  
           }
@@ -2739,6 +2750,10 @@ const char* dsl_cpp_generator:: convertToCppType(Type* type)
   {
     return "graph&";
   }
+  else if (type->isGNNType())
+  {
+    return "GNN ";
+  }
   else if(type->isCollectionType())
   { 
 
@@ -2811,6 +2826,10 @@ void dsl_cpp_generator::generateParamList(list<formalParam*> paramList, dslCodeP
           targetFile.pushString(" ");
          // targetFile.space();
       //}   
+
+      if((*itr)->isByReference())
+          targetFile.pushString("&");
+        
       targetFile.pushString(/*createParamName(*/(*itr)->getIdentifier()->getIdentifier());
       if(argumentTotal>0)
          targetFile.pushString(" , ");

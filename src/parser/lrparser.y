@@ -1,4 +1,4 @@
-%define parse.trace
+// %define parse.trace
 %{
 	#include <stdio.h>
 	#include <string.h>
@@ -55,7 +55,7 @@
 %token T_ADD_ASSIGN T_SUB_ASSIGN T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_AND_ASSIGN T_XOR_ASSIGN
 %token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP
 %token T_AND T_OR T_SUM T_AVG T_COUNT T_PRODUCT T_MAX T_MIN
-%token T_GRAPH T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_POINT T_UNDIREDGE T_TRIANGLE T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET T_BTREE
+%token T_GRAPH T_GNN T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_POINT T_UNDIREDGE T_TRIANGLE T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET T_BTREE
 %token T_NP  T_EP
 %token T_LIST T_SET_NODES T_SET_EDGES  T_FROM
 %token T_BFS T_REVERSE
@@ -74,7 +74,7 @@
 %type <pList> paramList
 %type <node> statement blockstatements assignment declaration proc_call control_flow reduction return_stmt batch_blockstmt on_add_blockstmt on_delete_blockstmt
 %type <node> type type1 type2 type3
-%type <node> primitive graph collections structs property container nodemap vector hashmap hashset btree
+%type <node> primitive graph gnn collections structs property container nodemap vector hashmap hashset btree
 %type <node> id leftSide rhs expression oid val boolean_expr unary_expr indexExpr tid  
 %type <node> bfs_abstraction filterExpr reverse_abstraction
 %type <nodeList> leftList rightList
@@ -82,7 +82,7 @@
 %type <node> reductionCall 
 %type <aList> arg_list
 %type <ival> reduction_calls reduce_op
-
+%type <bval> by_reference
 
 
 
@@ -152,28 +152,39 @@ type: type1 {$$ = $1;}
     | type2 {$$ = $1;}
 	| type3 {$$ = $1;}
 
-param : type1 id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+param : type1 by_reference id {  //Identifier* id=(Identifier*)Util::createIdentifierNode($3);
                         Type* type=(Type*)$1;
-	                     Identifier* id=(Identifier*)$2;
+	                     Identifier* id=(Identifier*)$3;
 						 
 						 if(type->isGraphType())
 						    {
 							 tempIds.push_back(id);
 						   
 							}
+						if(type->isGNNType())
+							{
+							tempIds.push_back(id);
+						
+							}
+
 					printf("\n");
-                    $$=Util::createParamNode($1,$2); } ;
-               | type2 id { // Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+                    $$=Util::createParamNode($1,$2,$3); } ;
+               | type2 by_reference id { // Identifier* id=(Identifier*)Util::createIdentifierNode($3);
 			  
 					
-                             $$=Util::createParamNode($1,$2);};
-			   | type2 id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($4);
-			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+                             $$=Util::createParamNode($1,$2,$3);};
+			   | type2 by_reference id '(' id ')' { // Identifier* id1=(Identifier*)Util::createIdentifierNode($5);
+			                            //Identifier* id=(Identifier*)Util::createIdentifierNode($3);
 				                        Type* tempType=(Type*)$1;
 			                            if(tempType->isNodeEdgeType())
-										  tempType->addSourceGraph($4);
-				                         $$=Util::createParamNode(tempType,$2);
+										  tempType->addSourceGraph($5);
+				                         $$=Util::createParamNode(tempType,$2,$3);
 									 };
+
+
+by_reference : /* epsilon */ {$$ = false;};
+		| '&' {$$ = true;};
+
 
 
 function_body : blockstatements {$$=$1;};
@@ -236,6 +247,7 @@ type1: primitive {$$=$1; };
 	| graph {$$=$1;};
 	| collections { $$=$1;};
 	| structs {$$=$1;};
+	| gnn {$$=$1;};
 
 
 primitive: T_INT { $$=Util::createPrimitiveTypeNode(TYPE_INT);};
@@ -248,6 +260,8 @@ type3: T_AUTOREF { $$=Util::createPrimitiveTypeNode(TYPE_AUTOREF);};
 
 graph : T_GRAPH { $$=Util::createGraphTypeNode(TYPE_GRAPH,NULL);};
 	|T_DIR_GRAPH {$$=Util::createGraphTypeNode(TYPE_DIRGRAPH,NULL);};
+
+gnn : T_GNN { $$=Util::createGNNTypeNode(TYPE_GNN,NULL);};
 
 collections : T_LIST { $$=Util::createCollectionTypeNode(TYPE_LIST,NULL);};
 		| T_SET_NODES '<' id '>' {//Identifier* id=(Identifier*)Util::createIdentifierNode($3);

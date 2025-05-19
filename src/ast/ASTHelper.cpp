@@ -190,11 +190,11 @@ public:
         return nodeList;
     }
 
-    static ASTNode *createParamNode(ASTNode *type, ASTNode *id)
+    static ASTNode *createParamNode(ASTNode *type, bool byReference, ASTNode *id)
     {
         //~ Identifier* paramId=(Identifier*)id;
         // cout<<"PARAMID NODE VALUE "<<paramId->getIdentifier()<<"\n";
-        formalParam *formalParamNode = formalParam::createFormalParam((Type *)type, (Identifier *)id);
+        formalParam *formalParamNode = formalParam::createFormalParam((Type *)type, byReference, (Identifier *)id);
         return formalParamNode;
     }
 
@@ -237,6 +237,12 @@ public:
     {
         Type *typeNode = Type::createForGraphType(typeId, 2, targetGraph);
         return typeNode;
+    }
+    static ASTNode* createGNNTypeNode(int typeId, Identifier* targetGraph)
+    {
+        Type* typeNode=Type::createForGNNType(typeId,2,targetGraph);
+        return typeNode;
+
     }
     static ASTNode *createHeapTypeNode(int typeId)
     {

@@ -156,6 +156,9 @@ namespace spmpi
 
             targetFile.pushString(" ");
 
+            if((*itr)->isByReference())
+                targetFile.pushString("&");
+
             targetFile.pushString((*itr)->getIdentifier()->getIdentifier());
 
             if (argumentTotal > 0)

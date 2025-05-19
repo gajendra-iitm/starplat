@@ -2311,6 +2311,9 @@ void dsl_cpp_generator::generateParamList(list<formalParam *> paramList, dslCode
     //~ }
     targetFile.pushString(" ");
 
+    if((*itr)->isByReference())
+          targetFile.pushString("&");
+
     if (type->isPropType())
     {
       targetFile.pushString("d_");
