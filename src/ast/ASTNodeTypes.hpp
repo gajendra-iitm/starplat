@@ -897,6 +897,12 @@ public:
   {
     return check_isGraphType(typeId);
   }
+  
+  bool isGNNType()
+  {
+    return check_isGNNType(typeId);
+  }
+
   bool isPrimitiveType()
   {
     return check_isPrimitiveType(typeId);
@@ -1024,7 +1030,7 @@ public:
     byReference = false;
   }
 
-  static formalParam *createFormalParam(Type *typeSent, Identifier *identifierSent)
+  static formalParam *createFormalParam(Type *typeSent, bool byRef, Identifier *identifierSent)
   {
     formalParam *formalPNode = new formalParam();
     formalPNode->type = typeSent;
