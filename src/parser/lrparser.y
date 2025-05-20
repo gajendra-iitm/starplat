@@ -1,4 +1,4 @@
-// %define parse.trace
+%define parse.trace
 %{
 	#include <stdio.h>
 	#include <string.h>
