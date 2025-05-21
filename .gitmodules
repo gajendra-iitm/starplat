@@ -1,0 +1,3 @@
+[submodule "graphcode/GNN_Suite"]
+	path = graphcode/GNN_Suite
+	url = https://github.com/TMajestical/JV_GNN_Suite
