@@ -11,6 +11,7 @@ public:
   bool isDataUsed;    // if d_data is used in the ASTNode
   bool isSrcUsed;     // if d_src is used in the ASTNode
   bool isWeightUsed;  // if d_weight is used in the ASTNode
+  bool isMSTUsed;     // if d_mst is used in the ASTNode
 
   MetaDataUsed()
   {

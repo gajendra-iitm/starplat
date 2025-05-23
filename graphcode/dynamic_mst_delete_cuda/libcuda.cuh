@@ -70,6 +70,76 @@ __device__ void shuffleNeighbors(int *d_data, int *d_meta, int V)
   }
 }
 
+__host__ void getCUDAMST(int* h_meta, int *h_data, int *h_weight, int *h_mst_meta, int *h_mst_data, int* h_mst_weight, int V){
+  std::vector<std::vector<std::pair<int, int>>> adj(V);
+  for (int i = 0; i < V; i++) {
+    int start = h_meta[i];
+    int end = h_meta[i + 1] - 1;
+    for (int j = start; j <= end; j++) {
+      adj[i].push_back({h_data[j], h_weight[j]});
+    }
+  }
+  // Prim's Algorithm for Minimum Spanning Tree (MST)
+  std::vector<bool> inMST(V, false);
+  std::vector<int> key(V, INT_MAX);
+  std::vector<int> parent(V, -1);
+
+  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
+  key[0] = 0;
+  pq.push({0, 0}); // {key, vertex}
+
+  while (!pq.empty()) {
+    int u = pq.top().second;
+    pq.pop();
+
+    if (inMST[u]) continue;
+    inMST[u] = true;
+
+    for (auto &[v, weight] : adj[u]) {
+      if (!inMST[v] && weight < key[v]) {
+        key[v] = weight;
+        parent[v] = u;
+        pq.push({key[v], v});
+      }
+    }
+  }
+  // Store the MST in h_mst_meta, h_mst_data, and h_mst_weight
+  std::vector<std::vector<std::pair<int, int>>> mst_adj(V); // {neighbor, weight}
+  for (int i = 1; i < V; i++) {
+    if (parent[i] != -1) {
+      mst_adj[parent[i]].push_back({i, key[i]});
+      mst_adj[i].push_back({parent[i], key[i]});
+    }
+  }
+
+  int edge_count = 0;
+  h_mst_meta[0] = 0;
+  for (int i = 0; i < V; i++) {
+    edge_count += mst_adj[i].size();
+    h_mst_meta[i + 1] = edge_count;
+  }
+
+  int weight_index = 0;
+  for (int i = 0; i < V; i++) {
+    for (auto &[neighbor, weight] : mst_adj[i]) {
+      h_mst_data[h_mst_meta[i]++] = neighbor;
+      h_mst_weight[weight_index++] = weight;
+    }
+  }
+
+  // Reset h_mst_meta to correct offsets
+  for (int i = V; i > 0; i--) {
+    h_mst_meta[i] = h_mst_meta[i - 1];
+  }
+  h_mst_meta[0] = 0;
+  // Print the MST using h_mst_meta, h_mst_data, and h_mst_weight
+  for (int i = 0; i < V; i++) {
+    int start = h_mst_meta[i];
+    int end = h_mst_meta[i + 1];
+    for (int j = start; j < end; j++) {
+    }
+  }
+}
 
 //GPU specific check for neighbours for TC algorithm
 __device__ bool findNeighborSorted(int s, int d, int *d_meta, int *d_data)  //we can move this to graph.hpp file

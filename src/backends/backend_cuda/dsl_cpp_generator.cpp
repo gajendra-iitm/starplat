@@ -121,8 +121,8 @@ void dsl_cpp_generator::generation_begin() {
   addIncludeToFile("stdio.h", header, true);
   header.pushString("#include ");
   addIncludeToFile("stdlib.h", header, true);
-  header.pushString("#include ");
-  addIncludeToFile("BTree.h", header, false);
+  // header.pushString("#include ");
+  // addIncludeToFile("BTree.h", header, false);
   //header.pushString("#include ");
   //addIncludeToFile("ParallelHeapCudaClass.cu", header, false);
   //header.pushString("#include ");
@@ -1671,6 +1671,11 @@ void dsl_cpp_generator ::addCudaKernel(forallStmt* forAll) {
     header.pushString(", int* d_weight");
   if(forAll->getIsRevMetaUsed())
     header.pushString(", int *d_rev_meta");
+  if(forAll->getIsMSTUsed()){
+    header.pushString(", int *d_mst_data");
+    header.pushString(", int *d_mst_weight");
+    header.pushString(", int *d_mst_meta");
+  }
   // header.pushString(",bool *d_modified_next");
 
   /*if(currentFunc->getParamList().size()!=0)
@@ -1742,6 +1747,11 @@ void dsl_cpp_generator::addCudaLoopKernel(loopStmt* loop, int startIndex, int en
     header.pushString(", int* d_weight");
   if(loop->getIsRevMetaUsed())
     header.pushString(", int *d_rev_meta");
+  if(loop->getIsMSTUsed()){
+    header.pushString(", int *d_mst_data");
+    header.pushString(", int *d_mst_weight");
+    header.pushString(", int *d_mst_meta");  
+  }
 
   header.pushstr_newL("){ // BEGIN KER FUN via ADDKERNEL");
 
@@ -1851,6 +1861,11 @@ void dsl_cpp_generator::generateForAll(forallStmt* forAll, bool isMainFile) {
       main.pushString(",d_weight");
     if(forAll->getIsRevMetaUsed())                                   // if d_rev_meta is used, i.e. nodes_to is called
       main.pushString(",d_rev_meta");
+    if(forAll->getIsMSTUsed()){
+      main.pushString(",d_mst_data");
+      main.pushString(",d_mst_weight");
+      main.pushString(",d_mst_meta");
+    }                                     // if d_mst is used, i.e. nodes_to is called
     // main.pushString(",d_modified_next");
     //  if(currentFunc->getParamList().size()!=0)
     // main.pushString(",");
@@ -2126,6 +2141,11 @@ void dsl_cpp_generator::generateLoop(loopStmt* loop, bool isMainFile){
       main.pushString(",d_weight");
     if(loop->getIsRevMetaUsed())                                   // if d_rev_meta is used, i.e. nodes_to is called
       main.pushString(",d_rev_meta");
+    if(loop->getIsMSTUsed()){
+      main.pushString(",d_mst_data");
+      main.pushString(",d_mst_weight");
+      main.pushString(",d_mst_meta");
+    }
     main.pushString(")");
     main.push(';');
     main.NewLine();
@@ -2318,6 +2338,13 @@ void dsl_cpp_generator::generateVariableDecl(declaration* declStmt,
      main.pushstr_space(convertToCppType(type));
      main.pushString(declStmt->getdeclId()->getIdentifier());
      main.pushstr_newL(";");
+   }
+   else if(type->isGraphType()){
+      // TODO: handling multiple graphs is not support by starplat
+      // Currently implementing a workaround for MST generation
+      if(declStmt->isInitialized()){
+        generateExpr(declStmt->getExpressionAssigned(), isMainFile);
+      }
    }
   //needs to handle carefully for PR code generation
   else if (type->isPrimitiveType()) {
@@ -2734,9 +2761,25 @@ void dsl_cpp_generator::generate_exprProcCall(Expression* expr,
     targetFile.pushString(strBuffer);
   } else if(methodId == "randomShuffle"){
     char strBuffer[1024];
-    sprintf(strBuffer, "%s(%s, %s, %s);", "shuffleNeighbors","d_meta", "d_data", "V");
+    Identifier* srcId = proc->getId1();
+    if(srcId->getSymbolInfo()->getId()->getIsMST()){
+      sprintf(strBuffer, "%s(%s, %s, %s);", "shuffleNeighbors","d_mst_meta", "d_mst_data", "V");    
+    }else{
+      sprintf(strBuffer, "%s(%s, %s, %s);", "shuffleNeighbors","d_meta", "d_data", "V");    
+    }
     targetFile.pushstr_newL(strBuffer);
-
+  } else if(methodId == "getMST"){
+    if(isMainFile){
+      char strBuffer[1024];
+      sprintf(strBuffer, "%s(%s, %s, %s, %s, %s, %s, %s);", "getCUDAMST","h_meta", "h_data","h_weight", "h_mst_meta", "h_mst_data","h_mst_weight", "V");
+      targetFile.pushstr_newL(strBuffer);
+      sprintf(strBuffer, "cudaMemcpy(d_mst_data, h_mst_data, sizeof(int)*E, cudaMemcpyHostToDevice);");
+      targetFile.pushstr_newL(strBuffer);
+      sprintf(strBuffer, "cudaMemcpy(d_mst_weight, h_mst_weight, sizeof(int)*E, cudaMemcpyHostToDevice);");
+      targetFile.pushstr_newL(strBuffer);
+      sprintf(strBuffer, "cudaMemcpy(d_mst_meta, h_mst_meta, sizeof(int)*(V+1), cudaMemcpyHostToDevice);");
+      targetFile.pushstr_newL(strBuffer);
+    }
   }else {
     char strBuffer[1024];
     list<argument*> argList = proc->getArgList();
@@ -3552,6 +3595,11 @@ void dsl_cpp_generator::generateCSRArrays(const char* gId, Function* func) {
     main.pushstr_newL("int *h_weight;");
   if(func->getIsRevMetaUsed())
     main.pushstr_newL("int *h_rev_meta;");  //done only to handle PR since other don't use it
+  if(func->getIsMSTUsed()){
+    main.pushstr_newL("int *h_mst_data;");
+    main.pushstr_newL("int *h_mst_meta;");
+    main.pushstr_newL("int *h_mst_weight;");
+  }
   main.NewLine();
 
   if(func->getIsMetaUsed())
@@ -3564,6 +3612,11 @@ void dsl_cpp_generator::generateCSRArrays(const char* gId, Function* func) {
     main.pushstr_newL("h_weight = (int *)malloc( (E)*sizeof(int));");
   if(func->getIsRevMetaUsed())
     main.pushstr_newL("h_rev_meta = (int *)malloc( (V+1)*sizeof(int));");
+  if(func->getIsMSTUsed()){
+    main.pushstr_newL("h_mst_meta = (int*)malloc( (V+1)*sizeof(int));");
+    main.pushstr_newL("h_mst_data = (int *)malloc( (E)*sizeof(int));");
+    main.pushstr_newL("h_mst_weight = (int *)malloc( (E)*sizeof(int));");
+  }
   main.NewLine();
 
   if(isGeomCompleteGraph){
@@ -3635,14 +3688,15 @@ void dsl_cpp_generator::generateCSRArrays(const char* gId, Function* func) {
         main.pushstr_newL(strBuffer);
         main.pushstr_newL("h_data[edgeCount++] = temp;");
       }
-      // if(func->getIsSrcUsed()) {
+      if(func->getIsWeightUsed()) {
+        main.pushstr_newL("edgeCount--;");
+        sprintf(strBuffer,"h_weight[edgeCount++] = %s.calculateDistance(i,temp);", gId);
+        main.pushstr_newL(strBuffer);
+      }
+       // if(func->getIsSrcUsed()) {
       //   sprintf(strBuffer, "temp = %s.srcList[i];", gId);
       //   main.pushstr_newL(strBuffer);
       //   main.pushstr_newL("h_src[i] = temp;");
-      // }
-      // if(func->getIsWeightUsed()) {
-      //   main.pushstr_newL("temp = edgeLen[i];");
-      //   main.pushstr_newL("h_weight[i] = temp;");
       // }
       main.pushstr_newL("}");
       main.pushstr_newL("}");
@@ -3827,6 +3881,14 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
       sprintf(strBuffer, "int* d_rev_meta;");
       main.pushstr_newL(strBuffer);
     }
+    if(currentFunc->getIsMSTUsed()){
+      sprintf(strBuffer, "int* d_mst_data;");
+      main.pushstr_newL(strBuffer);
+      sprintf(strBuffer, "int* d_mst_meta;");
+      main.pushstr_newL(strBuffer);
+      sprintf(strBuffer, "int* d_mst_weight;");
+      main.pushstr_newL(strBuffer);
+    }
     main.NewLine();
 
     if(currentFunc->getIsMetaUsed())  // checking if meta is used
@@ -3839,6 +3901,12 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
       generateCudaMallocStr("d_weight", "int", "(E)");
     if(currentFunc->getIsRevMetaUsed()) // checking if rev_meta is used
       generateCudaMallocStr("d_rev_meta", "int", "(V+1)");
+    if(currentFunc->getIsMSTUsed()){
+      generateCudaMallocStr("d_mst_data", "int", "(E)");
+      generateCudaMallocStr("d_mst_weight", "int", "(E)");
+      generateCudaMallocStr("d_mst_meta", "int", "(V+1)");
+    }  // checking if mst is used
+
 
     main.NewLine();
 
@@ -3854,6 +3922,11 @@ void dsl_cpp_generator::generateFuncBody(Function* proc, bool isMainFile) {
       generateCudaMemCpyStr("d_weight", "h_weight", "int", "E");
     if(currentFunc->getIsRevMetaUsed())  // checking if rev_meta is used
       generateCudaMemCpyStr("d_rev_meta", "h_rev_meta", "int", "(V+1)");
+    if(currentFunc->getIsMSTUsed()){
+      generateCudaMemCpyStr("d_mst_meta", "h_mst_meta", "int", "(V+1)");  // checking if mst is used   
+      generateCudaMemCpyStr("d_mst_data", "h_mst_data", "int", "E");  // checking if mst is used   
+      generateCudaMemCpyStr("d_mst_weight", "h_mst_weight", "int", "E");  // checking if mst is used   
+    }
     main.NewLine();
 
     main.pushstr_newL("// CSR END");

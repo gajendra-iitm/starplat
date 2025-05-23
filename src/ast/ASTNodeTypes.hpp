@@ -138,6 +138,8 @@ private:
   bool forall_filter_association;
   bool used_inside_forall_filter_and_changed_inside_forall_body;
 
+  bool isMST;
+
 public:
   static Identifier *createIdNode(const char *id)
   {
@@ -156,6 +158,7 @@ public:
     idNode->localMap = false;
     idNode->forall_filter_association = false;
     idNode->used_inside_forall_filter_and_changed_inside_forall_body = false;
+    idNode->isMST = false;
     // std::cout<<"IDENTIFIER = "<<idNode->getIdentifier()<<" "<<strlen(idNode->getIdentifier());
     return idNode;
   }
@@ -289,6 +292,14 @@ public:
   Identifier *getUpdateAssociation()
   {
     return updates_association;
+  }
+
+  void setMST()
+  {
+    isMST = true;
+  }
+  bool getIsMST(){
+    return isMST;
   }
 };
 
@@ -638,6 +649,16 @@ public:
   void setIsRevMetaUsed()
   {
     metadata.isRevMetaUsed = true;
+  }
+
+  bool getIsMSTUsed()
+  {
+    return metadata.isMSTUsed;
+  }
+
+  void setIsMSTUsed()
+  {
+    metadata.isMSTUsed = true;
   }
 
   MetaDataUsed getMetaDataUsed()
@@ -2316,6 +2337,16 @@ public:
     metadata.isRevMetaUsed = true;
   }
 
+  bool getIsMSTUsed()
+  {
+    return metadata.isMSTUsed;
+  }
+
+  void setIsMSTUsed()
+  {
+    metadata.isMSTUsed = true;
+  }
+
   MetaDataUsed getMetaDataUsed()
   {
     return metadata;
@@ -2707,6 +2738,16 @@ public:
     metadata.isRevMetaUsed = true;
   }
 
+  bool getIsMSTUsed()
+  {
+    return metadata.isMSTUsed;
+  }
+
+  void setIsMSTUsed()
+  {
+    metadata.isMSTUsed = true;
+  }
+
   void addDoubleBufferVar(Identifier *var)
   {
     doubleBufferVars.push_back(var);
@@ -2866,6 +2907,16 @@ public:
   set<int> getReduceKeys()
   {
     return reduceKeys;
+  }
+
+  bool getIsMSTUsed()
+  {
+    return metadata.isMSTUsed;
+  }
+
+  void setIsMSTUsed()
+  {
+    metadata.isMSTUsed = true;
   }
 
   void pushReduction(int key, Identifier *val)

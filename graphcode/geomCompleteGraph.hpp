@@ -19,6 +19,11 @@ private:
     char *filePath;
     bool isVRP;
 
+
+public:
+    std::vector<std::vector<int>> coordinates;
+    std::vector<int> demand;
+
     int calculateDistance(int i, int j)
     {
         int dist = 0;
@@ -30,9 +35,6 @@ private:
         return dist;
     }
 
-public:
-    std::vector<std::vector<int>> coordinates;
-    std::vector<int> demand;
 
     geomCompleteGraph(char *file)
     {

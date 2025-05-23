@@ -5,12 +5,14 @@
 #include <set>
 #include <map>
 #include <algorithm>
+#include <queue>
 #include <string>
 #include <climits>
 #include<cmath>
 #include <random>
 #include <unordered_set>
 #include "graph_ompv2.hpp"
+#include <stdlib.h>
 #include "OMP_GNN.hpp"
 #include "abstractGraph.hpp"
 
@@ -653,14 +655,8 @@ public:
     //  printf("hello after this %d %d\n",nodesTotal,edgesTotal);
   }
 
-  void parseGraph()
-  {
-
-    parseEdges();
-
-    printf("Here half\n");
-// printf("HELLO AFTER THIS %d \n",nodesTotal);
-#pragma omp parallel for
+  void parseEdgesContent(){
+    #pragma omp parallel for
     for (int i = 0; i <= nodesTotal; i++) // change to 1-nodesTotal.
     {
       std::vector<edge> &edgeOfVertex = edges[i];
@@ -797,8 +793,13 @@ public:
     }
     free(vertexInter);
     free(edgeMapInter);
-    // change to nodesTotal+1.
-    //  printf("hello after this %d %d\n",nodesTotal,edgesTotal);
+
+  }
+
+  void parseGraph()
+  {
+    parseEdges();
+    parseEdgesContent();
   }
 
   /******************************|| Dynamic Graph Libraries ||********************************/
@@ -929,7 +930,7 @@ public:
         edge e;
         e.source = node;
         e.destination = nbr;
-        e.weight = edgeLen[i];
+        e.weight = this->edgeLen[i];
         e.id = i;
         e.dir = 1;
         //  printf(" weight %d\n", e.weight);
@@ -997,6 +998,86 @@ public:
 
     return in_edges;
   }
+
+  void parseAdjacencyList(std::map<int, std::vector<edge>>& graph){
+    std::map<std::pair<int, int>, int> mpp;
+    for (auto &kv : graph) {
+      int node = kv.first;
+      std::vector<edge> edges = kv.second;
+      for (auto &e : edges) {
+        mpp[{node, e.destination}] += e.weight;
+      }
+    }
+
+    for (auto it = mpp.begin(); it != mpp.end(); ++it)
+    {
+      std::pair<int, int> key = it->first;
+      int value = it->second;
+      edge e;
+      e.source = key.first;
+      e.destination = key.second;
+      e.weight = value;
+
+      edgesTotal++;
+      edges[e.source].push_back(e);
+      graph_edge.push_back(e);
+    }
+    parseEdgesContent();  
+  }
+
+  graph getMST() {
+    int V = nodesTotal + 1;
+    std::vector<bool> inMST(V, false);
+    std::vector<int> key(V, INT_MAX);
+    std::vector<int> parent(V, -1);
+
+    typedef std::pair<int, int> P;
+    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;
+
+    key[0] = 0;
+    pq.push({0, 0});
+
+    graph mstGraph((char*)"");
+    mstGraph.nodesTotal = 0;
+    mstGraph.edgesTotal = 0;
+
+    std::map<int, std::vector<edge>> tempMST;
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+        if (inMST[u])
+            continue;
+        inMST[u] = true;
+        if (parent[u] != -1) {
+            edge edgeTemp;
+            edgeTemp.source = u;
+            edgeTemp.destination = parent[u];
+            edgeTemp.weight = key[u];
+            tempMST[u].push_back(edgeTemp);
+
+            edge edgeTemp2;
+            edgeTemp2.destination = u;
+            edgeTemp2.source = parent[u];
+            edgeTemp2.weight = key[u];
+            tempMST[parent[u]].push_back(edgeTemp2);
+        }
+        std::vector<edge> neighbors = this->getNeighbors(u);
+        for (auto &e : neighbors) {
+            int v = e.destination;
+            int w = e.weight;
+            if (!inMST[v] && w < key[v]) {
+                key[v] = w;
+                parent[v] = u;
+                pq.push({key[v], v});
+            }
+        }
+    }
+
+    mstGraph.nodesTotal = tempMST.size();
+    mstGraph.parseAdjacencyList(tempMST);
+
+    return mstGraph;
+}
 
 
 //Function to sample specified number of neighbors of a node in O(Sample Size) time.

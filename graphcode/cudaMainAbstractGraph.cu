@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
-#include "./generated_cuda/parMDS.h"
+#include "./generated_cuda/parMDS.cu"
 
 int main(int argc, char *argv[])
 {

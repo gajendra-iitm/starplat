@@ -193,6 +193,14 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     {
       Expression *exprAssigned = declStmt->getExpressionAssigned();
       checkForExpressions(exprAssigned);
+      if(exprAssigned->getExpressionFamily() == EXPR_PROCCALL){
+        proc_callExpr *pExpr = (proc_callExpr *)exprAssigned;
+        Identifier *methodId = pExpr->getMethodId();
+        string s(methodId->getIdentifier());
+        if(s.compare(getMSTCall) == 0){
+          declStmt->getdeclId()->getSymbolInfo()->getId()->setMST();
+        }
+      }
       if (type->isPropType())
       {
         if (exprAssigned->isIndexExpr())
@@ -456,6 +464,15 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
           parent->setIsSrcUsed();
           currentFunc->setIsSrcUsed();
         }
+        else if (methodString == getMSTCall){
+          parent->setIsMSTUsed();
+          currentFunc->setIsMSTUsed();
+          parent->setIsRevMetaUsed();
+          currentFunc->setIsRevMetaUsed();
+          parent->setIsSrcUsed();
+          currentFunc->setIsSrcUsed();
+
+        }
       }
     }
     else
@@ -540,7 +557,28 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
         parallelConstruct.push_back(loop);
       }
     }
+
+    currentFunc->setIsMetaUsed();   // d_meta is used in loop
+    loop->setIsMetaUsed();          // d_meta is used in loop
+
+    currentFunc->setIsDataUsed();   // d_data is used in loop
+    loop->setIsDataUsed();          // d_data is used in loop
+
+    currentFunc->setIsWeightUsed(); // d_weight is used in loop
+    loop->setIsWeightUsed();        // d_weight is used in loop 
+
+    currentFunc->setIsSrcUsed();   // d_src is used in loop
+    loop->setIsSrcUsed();          // d_src is used in loop
+
+    currentFunc->setIsRevMetaUsed();   // d_rev_meta is used in loop
+    loop->setIsRevMetaUsed();          // d_rev_meta is used in loop
+
+    currentFunc->setIsMSTUsed();
+    loop->setIsMSTUsed();
+
     buildForStatements(loop->getBody());
+
+
     if ( (backend.compare("cuda") == 0) || (backend.compare("omp") == 0) )
     {
       if (loop->isLoop())
@@ -930,7 +968,6 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
     Expression *indexExpr = pExpr->getIndexExpr();
     int curFuncType = currentFunc->getFuncType();
     char *procId = methodId->getIdentifier();
-
     string s(methodId->getIdentifier());
     if (id != NULL)
       ifFine = findSymbolId(id);
@@ -985,6 +1022,13 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
         parentForAll->setIsMetaUsed();
         currentFunc->setIsMetaUsed();
       }
+    }
+    if(s.compare(getMSTCall) == 0){
+          currentFunc->setIsWeightUsed();
+          currentFunc->setIsMSTUsed();
+          currentFunc->setIsWeightUsed();
+          currentFunc->setIsRevMetaUsed();
+          currentFunc->setIsSrcUsed();
     }
 
     /*check if procedure call inside a dynamic func */

@@ -251,5 +251,6 @@ static const char *countOutNbrCall = "count_outNbrs";
 static const char *isAnEdgeCall = "is_an_edge";
 static const char *nodesToCall = "nodes_to";
 static const char *nodesCall = "nodes";
+static const char *getMSTCall = "getMST";
 
 #endif
