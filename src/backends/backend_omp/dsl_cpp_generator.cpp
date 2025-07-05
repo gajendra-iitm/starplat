@@ -54,6 +54,7 @@ namespace spomp
     addIncludeToFile("../graph.hpp", header, false);
     header.pushString("#include");
     addIncludeToFile("../atomicUtil.h", header, false);
+  header.pushString("#include");
   addIncludeToFile("../geomCompleteGraph.hpp", header, false);
     header.NewLine();
     main.pushString("#include");
@@ -1566,24 +1567,77 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
 
         /* write logic here */
 
-        set<Identifier *> containerId = forAll->getMapLocal();
-        auto it = containerId.begin();
-        Identifier *id = *it;
-        int start = 0;
-        generateForMergeContainer(id->getSymbolInfo()->getType(), start);
-        char val = 'k' + start + 1;
-        sprintf(strBuffer, "for(int %c = 0 ; %c < omp_get_max_threads() ; %c++)", val, val, val);
-        main.pushstr_newL(strBuffer);
-        generateInserts(id->getSymbolInfo()->getType(), id);
+    set<Identifier*>  containerId = forAll->getMapLocal();
+    auto it = containerId.begin();
+    Identifier* id = *it;
+    int start = 0;
+    generateForMergeContainer(id->getSymbolInfo()->getType(), start);
+    char val = 'k' + start + 1;
+    sprintf(strBuffer, "for(int %c = 0 ; %c < omp_get_max_threads() ; %c++)", val, val, val);
+    main.pushstr_newL(strBuffer);
+    generateInserts(id->getSymbolInfo()->getType(), id);
+
+ }   
+
+}  
+  
+} 
+
+void dsl_cpp_generator::generateLoop_header(loopStmt* loop){
+    main.pushString("#pragma omp parallel for"); 
+    if(loop->getReduceKeys().size()>0)
+    { 
+      set<int> reduce_Keys=loop->getReduceKeys();
+      assert(reduce_Keys.size()==1);
+      char strBuffer[1024];
+      set<int>::iterator it;
+      it=reduce_Keys.begin();
+      list<Identifier*> op_List=loop->getReduceIds(*it);
+      list<Identifier*>::iterator list_itr;
+      main.space();
+      sprintf(strBuffer,"reduction(%s : ",getOperatorString(*it));
+      main.pushString(strBuffer);
+      for(list_itr=op_List.begin();list_itr!=op_List.end();list_itr++)
+      {
+        Identifier* id=*list_itr;
+        main.pushString(id->getIdentifier());
+        if(std::next(list_itr)!=op_List.end())
+         main.pushString(",");
       }
+      main.pushString(")");
     }
+    main.NewLine();
+
+}
+
+void dsl_cpp_generator::generateLoopStmt(loopStmt* loop){
+  if(loop->isLoop()){
+    generateLoop_header(loop);
   }
+  main.pushString("for(auto ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString(" = ");
+  generateExpr(loop->getStartValue());
+  main.pushString("; ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString("< ");
+  generateExpr(loop->getEndValue());
+  main.pushString("; ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString("= ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString(" + ");
+  generateExpr(loop->getStepValue());
+  main.pushString(")");
+  generateStatement(loop->getBody());
+}
 
-  void dsl_cpp_generator::generatefixedpt_filter(Expression *filterExpr)
-  {
 
-    Expression *lhs = filterExpr->getLeft();
-    char strBuffer[1024];
+void dsl_cpp_generator::generatefixedpt_filter(Expression* filterExpr)
+{  
+ 
+  Expression* lhs=filterExpr->getLeft();
+  char strBuffer[1024];
 
     vector<Identifier *> graphIds = graphId[curFuncType][curFuncCount()];
     /*printf("curFuncType %d curFuncCount() %d \n",curFuncType,curFuncCount());
@@ -1802,47 +1856,75 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
         main.pushString(" = ");
         getDefaultValueforTypes(type->gettypeId());
         main.pushstr_newL(";");
-      }
-    }
-    else if (type->isNodeEdgeType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      if (declStmt->isInitialized())
-      {
-        main.pushString(" = ");
-        generateExpr(declStmt->getExpressionAssigned());
-        main.pushstr_newL(";");
-      }
-    }
-    else if (type->isCollectionType())
-    {
-      if (type->gettypeId() == TYPE_UPDATES)
-      {
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
-        if (declStmt->isInitialized())
+     }
+     
+
+
+   }
+   else if(type->isNodeEdgeType())
         {
-          main.pushString(" = ");
-          generateExpr(declStmt->getExpressionAssigned());
+          main.pushstr_space(convertToCppType(type));
+          main.pushString(declStmt->getdeclId()->getIdentifier());
+          if(declStmt->isInitialized())
+           {
+              main.pushString(" = ");
+              generateExpr(declStmt->getExpressionAssigned());
+              main.pushstr_newL(";");
+           }
+         
+
         }
-        main.pushstr_newL(";");
+    else if(type->isCollectionType())
+         {
+           if(type->gettypeId() == TYPE_UPDATES)
+             {
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(declStmt->isInitialized())
+                   {
+                      main.pushString(" = ");
+                      generateExpr(declStmt->getExpressionAssigned());
+                     
+                   } 
+                  main.pushstr_newL(";");
+   
 
-        if (insideBatchBlock)
-          freeIdStore.back().push_back(declStmt->getdeclId());
-      }
-      if (type->gettypeId() == TYPE_NODEMAP)
-      {
-
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
-        main.pushstr_newL(";");
-      }
-      if (type->gettypeId() == TYPE_CONTAINER)
-      {
-
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(insideBatchBlock)
+                   freeIdStore.back().push_back(declStmt->getdeclId());   
+             }
+            if(type->gettypeId() == TYPE_NODEMAP){
+               
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                main.pushstr_newL(";");
+           }
+           if(type->gettypeId() == TYPE_SET){
+             
+              main.pushstr_space(convertToCppType(type));
+              main.pushString(declStmt->getdeclId()->getIdentifier());
+              main.pushstr_newL(";");
+           }
+            if(type->gettypeId() == TYPE_VECTOR){
+              
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(declStmt->isParam()){
+                  main.pushString("(");
+                  generateExpr(declStmt->getExpressionAssigned());
+                  main.pushString(")");
+                }
+                else if(declStmt->isInitialized())
+                {
+                  main.pushString(" = ");
+                  generateExpr(declStmt->getExpressionAssigned());
+                  
+                } 
+                main.pushstr_newL(";");
+            }
+           if(type->gettypeId() == TYPE_CONTAINER){
+             
+              main.pushstr_space(convertToCppType(type));
+              main.pushString(declStmt->getdeclId()->getIdentifier());
 
         if (type->getArgList().size() != 0)
         {
@@ -2084,49 +2166,47 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
     else if (expr->isArithmetic() || expr->isLogical())
     {
 
-      generate_exprArL(expr);
-    }
-    else if (expr->isRelational())
-    {
+         generate_exprArL(expr);
+       }
+       else if(expr->isRelational())
+       {
+          
+          generate_exprRelational(expr);
+       }
+       else if(expr->isProcCallExpr())
+       {
+         generate_exprProcCall(expr);
+       }
+       else if(expr->isUnary())
+       {
+         generate_exprUnary(expr);
+       }
+       else if(expr->isIndexExpr())
+       {
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString("!");
 
-      generate_exprRelational(expr);
-    }
-    else if (expr->isProcCallExpr())
-    {
-      generate_exprProcCall(expr);
-    }
-    else if (expr->isUnary())
-    {
-      generate_exprUnary(expr);
-    }
-    else if (expr->isIndexExpr())
-    {
+          } }
+        generate_exprIndex(expr, false);
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString(".empty()");
 
-      if (expr->getTypeofExpr() == TYPE_BOOL)
-      {
-        if (expr->getMapExpr()->getId()->getSymbolInfo() != NULL)
-        {
-          if (expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
-            main.pushString("!");
-        }
-      }
+          } }
 
-      generate_exprIndex(expr, false);
 
-      if (expr->getTypeofExpr() == TYPE_BOOL)
-      {
-        if (expr->getMapExpr()->getId()->getSymbolInfo() != NULL)
-        {
-          if (expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
-            main.pushString(".empty()");
-        }
-      }
-    }
-    else
-    {
-      assert(false);
-    }
-  }
+       }
+       else 
+       {
+         assert(false);
+       }
+
+ 
+
+}
 
   void dsl_cpp_generator::generate_exprIndex(Expression *expr, bool isLocal)
   {
@@ -2135,18 +2215,16 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
     Expression *mapExpr = expr->getMapExpr();
     Expression *indexExpr = expr->getIndexExpr();
 
-    Identifier *mapExprId = mapExpr->getId();
+Identifier* mapExprId = mapExpr->getId();
+if(indexExpr->isIdentifierExpr()){
+cout<<"entered here for indentifier gen for indexexpr"<<"\n";
+Identifier* indexExprId = indexExpr->getId();  
 
-    if (indexExpr->isIdentifierExpr())
-    {
-
-      cout << "entered here for indentifier gen for indexexpr" << "\n";
-      Identifier *indexExprId = indexExpr->getId();
-
-      if (isLocal)
-        sprintf(strBuffer, "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier(), indexExprId->getIdentifier());
-      else
-        sprintf(strBuffer, "%s[%s]", mapExprId->getIdentifier(), indexExprId->getIdentifier());
+if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+}else{
+    sprintf(strBuffer , "%s[%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+}
 
       cout << "string gen " << strBuffer << "\n";
       main.pushString(strBuffer);
@@ -2154,23 +2232,46 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
     else if (indexExpr->isPropIdExpr())
     {
 
-      cout << "entered here for index " << "\n";
-      if (isLocal)
-      {
-        sprintf(strBuffer, "%s_local[omp_get_thread_num()][", mapExprId->getIdentifier());
-        main.pushString(strBuffer);
-        generate_exprPropId(indexExpr->getPropId());
-        main.pushString("]");
-      }
-      else
-      {
-        sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
-        main.pushString(strBuffer);
-        generate_exprPropId(indexExpr->getPropId());
-        main.pushString("]");
-      }
-    }
+cout<<"entered here for index "<<"\n";
+if(isLocal){
+   sprintf(strBuffer, "%s_local[omp_get_thread_num()][", mapExprId->getIdentifier());
+   main.pushString(strBuffer);
+   generate_exprPropId(indexExpr->getPropId());
+   main.pushString("]");
+}
+else {
+   sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
+   main.pushString(strBuffer);
+   generate_exprPropId(indexExpr->getPropId());
+   main.pushString("]");
+}
+
+}else if(indexExpr->isArithmetic()){
+// TODO: fix isLocal
+
+  Identifier* indexExprId = indexExpr->getId(); 
+  if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+  }else{
+      sprintf(strBuffer , "%s[", mapExprId->getIdentifier());
+      main.pushString(strBuffer);
+      generate_exprArL(indexExpr);
+      main.pushString("]");
   }
+}else if(indexExpr->isLiteral()){
+  // TODO: fix isLocal
+  Identifier* indexExprId = indexExpr->getId();
+  if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+  }else{
+      sprintf(strBuffer , "%s[", mapExprId->getIdentifier());
+      main.pushString(strBuffer);
+      generate_exprLiteral(indexExpr);
+      main.pushString("]");
+  }
+}
+
+}
 
   void dsl_cpp_generator::generate_exprArL(Expression *expr)
   {
@@ -2381,42 +2482,50 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
       return methodId;
   }
 
-  void dsl_cpp_generator::generate_exprProcCall(Expression *expr)
-  {
-    proc_callExpr *proc = (proc_callExpr *)expr;
-    string methodId(proc->getMethodId()->getIdentifier());
-    if (methodId == "get_edge")
-    {
 
-      // if(curFuncType == INCREMENTAL_FUNC || curFuncType == DECREMENTAL_FUNC)
-      getEdgeTranslation(expr);
-      /*else
-       main.pushString("edge");*/
-      // To be changed..need to check for a neighbour iteration
-      //  and then replace by the iterator.
-    }
-    else if (methodId == "count_outNbrs")
-    {
-      char strBuffer[1024];
-      list<argument *> argList = proc->getArgList();
-      assert(argList.size() == 1);
-      Identifier *nodeId = argList.front()->getExpr()->getId();
-      Identifier *objectId = proc->getId1();
-      sprintf(strBuffer, "(%s.%s[%s+1]-%s.%s[%s])", objectId->getIdentifier(), "indexofNodes", nodeId->getIdentifier(), objectId->getIdentifier(), "indexofNodes", nodeId->getIdentifier());
-      main.pushString(strBuffer);
-    }
-    else if (methodId == "is_an_edge")
-    {
-      char strBuffer[1024];
-      list<argument *> argList = proc->getArgList();
-      assert(argList.size() == 2);
-      Identifier *srcId = argList.front()->getExpr()->getId();
-      Identifier *destId = argList.back()->getExpr()->getId();
-      Identifier *objectId = proc->getId1();
-      sprintf(strBuffer, "%s.%s(%s, %s)", objectId->getIdentifier(), "check_if_nbr", srcId->getIdentifier(), destId->getIdentifier());
-      main.pushString(strBuffer);
-    }
-    else
+void dsl_cpp_generator::generate_exprProcCall(Expression* expr)
+{
+  proc_callExpr* proc=(proc_callExpr*)expr;
+  string methodId(proc->getMethodId()->getIdentifier());
+  if(methodId=="get_edge")
+  {
+    
+   // if(curFuncType == INCREMENTAL_FUNC || curFuncType == DECREMENTAL_FUNC)
+        getEdgeTranslation(expr);
+    /*else    
+     main.pushString("edge");*/ //To be changed..need to check for a neighbour iteration 
+                             // and then replace by the iterator.
+  }
+  else if(methodId=="count_outNbrs")
+       {
+         char strBuffer[1024];
+         list<argument*> argList=proc->getArgList();
+         assert(argList.size()==1);
+         Identifier* nodeId=argList.front()->getExpr()->getId();
+         Identifier* objectId=proc->getId1();
+         sprintf(strBuffer,"(%s.%s[%s+1]-%s.%s[%s])",objectId->getIdentifier(),"indexofNodes",nodeId->getIdentifier(),objectId->getIdentifier(),"indexofNodes",nodeId->getIdentifier());
+         main.pushString(strBuffer);
+       }
+  else if(methodId=="is_an_edge")
+     {
+        char strBuffer[1024];
+         list<argument*> argList=proc->getArgList();
+         assert(argList.size()==2);
+         Identifier* srcId=argList.front()->getExpr()->getId();
+         Identifier* destId=argList.back()->getExpr()->getId();
+         Identifier* objectId=proc->getId1();
+         sprintf(strBuffer,"%s.%s(%s, %s)",objectId->getIdentifier(),"check_if_nbr",srcId->getIdentifier(),destId->getIdentifier());
+         main.pushString(strBuffer);
+  }
+  else if(methodId == "reverse"){
+    char strBuffer[1024];
+    list<argument*> argList=proc->getArgList();
+    assert(argList.size()==2);
+    sprintf(strBuffer,"std::reverse(");
+    main.pushString(strBuffer);
+    generateArgList(argList, false);
+    main.pushString(")");
+  }else
     {
 
       char strBuffer[1024];
@@ -2460,40 +2569,42 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
 
       main.pushString(strBuffer);
 
-      if (methodId == "insert")
-      {
+      if(methodId == "insert"){
 
-        main.pushString("(");
+        if(argList.size() == 1 && argList.front()->getExpr()->isIdentifierExpr() && 
+           argList.front()->getExpr()->getId()->getSymbolInfo()->getType()->isIntegerType())
+          {
+            main.pushString("(");
+            generateExpr(argList.front()->getExpr());
+            main.pushString(")");
+          }else{
+            main.pushString("(");
+            if(indexExpr != NULL){
+              Expression* mapExpr = indexExpr->getMapExpr();
+              Identifier* mapExprId = mapExpr->getId();
 
-        if (indexExpr != NULL)
-        {
-          Expression *mapExpr = indexExpr->getMapExpr();
-          Identifier *mapExprId = mapExpr->getId();
-
-          if (parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
-            generate_exprIndex(indexExpr, true);
-          else
-            generate_exprIndex(indexExpr, false);
-        }
-        else if (objectId != NULL)
-        {
-          Identifier *id2 = proc->getId2();
-          if (id2 != NULL)
-            sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), id2->getIdentifier());
-          else
-            sprintf(strBuffer, "%s", objectId->getIdentifier());
-
-          main.pushString(strBuffer);
-        }
-
-        main.pushString(".end()");
-        main.pushString(",");
-        generateArgList(argList, false);
-        main.pushString(".begin(),");
-        generateArgList(argList, false);
-        main.pushString(".end())");
-      }
-      else
+              if(parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
+                  generate_exprIndex(indexExpr, true);
+              else
+                  generate_exprIndex(indexExpr, false);
+            }
+            else if(objectId != NULL){
+              Identifier* id2 = proc->getId2();
+              if(id2 != NULL)
+                sprintf(strBuffer,"%s.%s",objectId->getIdentifier(), id2->getIdentifier());               
+              else
+                sprintf(strBuffer,"%s",objectId->getIdentifier()); 
+              main.pushString(strBuffer);      
+            }
+            main.pushString(".end()");
+            main.pushString(",");
+            generateArgList(argList,false);
+            main.pushString(".begin(),");
+            generateArgList(argList, false);
+            main.pushString(".end())");
+          }
+      }  
+      else  
       {
         cout << "isnide here 4" << endl;
         generateArgList(argList, true);
@@ -2919,12 +3030,43 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
         vecString = vecString + innerString;
         vecString = vecString + ">";
 
-        copy(vecString.begin(), vecString.end(), newS);
-        newS[vecString.size()] = '\0';
-        return newS;
-      }
-      default:
-        assert(false);
+           copy(vecString.begin(), vecString.end(), newS);
+           newS[vecString.size()] = '\0';
+           return newS; 
+
+        } 
+        case TYPE_SET:
+        {
+            char* newS = new char[1024];
+            string setString = "std::set<";   
+  
+            char* valType = (char*)convertToCppType(type->getInnerTargetType());
+            string innerString = valType;
+            setString = setString + innerString;
+            setString = setString + ">";
+  
+            copy(setString.begin(), setString.end(), newS);
+            newS[setString.size()] = '\0';
+
+            printf("SET STRING %s\n",setString.c_str());
+            return newS; 
+        }
+        case TYPE_VECTOR:
+        {
+          char* newS = new char[1024];
+          string vecString = "std::vector<";   
+
+          char* valType = (char*)convertToCppType(type->getInnerTargetType());
+          string innerString = valType;
+          vecString = vecString + innerString;
+          vecString = vecString + ">";
+
+          copy(vecString.begin(), vecString.end(), newS);
+          newS[vecString.size()] = '\0';
+          return newS; 
+        }
+        default:
+         assert(false);          
       }
     }
 
@@ -2944,6 +3086,9 @@ void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
 
       Type *type = (*itr)->getType();
       targetFile.pushString(convertToCppType(type));
+      if(type->getRefType()){
+        targetFile.pushString("&");
+      }
       /*if(type->isPropType())
       {
           targetFile.pushString("* ");

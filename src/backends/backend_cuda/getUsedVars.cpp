@@ -245,6 +245,16 @@ usedVariables getVarsForAll(forallStmt *stmt)
   return currVars;
 }
 
+usedVariables getVarsLoop(loopStmt *stmt)
+{
+  usedVariables currVars = getVarsStatement(stmt->getBody());
+  currVars.removeVariable(stmt->getIterator(), READ_WRITE);
+
+  return currVars;
+}
+
+
+
 usedVariables getVarsBlock(blockStatement *blockStmt)
 {
   list<statement *> stmtList = blockStmt->returnStatements();
@@ -337,6 +347,9 @@ usedVariables getVarsStatement(statement *stmt)
 
   case NODE_FIXEDPTSTMT:
       return getVarsFixedPoint((fixedPointStmt *)stmt);
+
+  case NODE_LOOPSTMT:
+      return getVarsLoop((loopStmt *)stmt);
   default:
     ; // added to fix warning!
   }

@@ -13,6 +13,7 @@ enum TYPE
   TYPE_GNN,
   TYPE_DIRGRAPH,
   TYPE_GEOMCOMPLETEGRAPH,
+  TYPE_GRAPH_LIST,
   TYPE_LIST,
   TYPE_SETN,
   TYPE_SETE,
@@ -28,6 +29,7 @@ enum TYPE
   TYPE_TRIANGLE,
   TYPE_NODEMAP,
   TYPE_VECTOR,
+  TYPE_SET,
   TYPE_HASHMAP,
   TYPE_HASHSET,
   TYPE_AUTOREF,
@@ -44,13 +46,17 @@ inline bool check_isPropType(int typeId)
 {
   return ((typeId == TYPE_PROPNODE) || (typeId == TYPE_PROPEDGE));
 }
+inline bool check_isIntegerType(int typeId)
+{
+  return ((typeId == TYPE_LONG) || (typeId == TYPE_INT));
+}
 inline bool check_isCollectionType(int typeId)
 {
-  return ((typeId == TYPE_LIST) || (typeId == TYPE_SETE) || (typeId == TYPE_SETN) || (typeId == TYPE_UPDATES) || (typeId == TYPE_NODEMAP) || (typeId == TYPE_CONTAINER) || (typeId == TYPE_VECTOR) || (typeId == TYPE_HASHMAP) || (typeId == TYPE_HASHSET) || (typeId == TYPE_BTREE));
+  return ((typeId == TYPE_LIST) || (typeId == TYPE_SETE) || (typeId == TYPE_SETN) || (typeId == TYPE_UPDATES) || (typeId == TYPE_NODEMAP) || (typeId == TYPE_CONTAINER) || (typeId == TYPE_VECTOR) || (typeId == TYPE_HASHMAP) || (typeId == TYPE_HASHSET) || (typeId == TYPE_BTREE)) || (typeId == TYPE_SET);
 }
 inline bool check_isGraphType(int typeId)
 {
-  return ((typeId == TYPE_GRAPH) || (typeId == TYPE_DIRGRAPH)) || (typeId == TYPE_GEOMCOMPLETEGRAPH);
+  return ((typeId == TYPE_GRAPH) || (typeId == TYPE_DIRGRAPH)) || (typeId == TYPE_GEOMCOMPLETEGRAPH) || (typeId == TYPE_GRAPH_LIST);
 }
 inline bool check_isGeomCompleteGraphType(int typeId)
 {
@@ -67,6 +73,14 @@ inline bool check_isHeapType(int typeId)
 inline bool check_isMapType(int typeId)
 {
   return typeId == TYPE_MAP;
+}
+inline bool check_isVectorType(int typeId)
+{
+  return typeId == TYPE_VECTOR;
+}
+inline bool check_isSetType(int typeId)
+{
+  return typeId == TYPE_SET;
 }
 inline bool check_isBTreeType(int typeId)
 {
@@ -221,6 +235,9 @@ enum NODETYPE
   NODE_ONDELETEBLOCK,
   NODE_TRANSFERSTMT,
   NODE_LOOPSTMT,
+  NODE_ALLOCATE,
+  NODE_BREAKSTMT,
+  NODE_CONTINUESTMT,
 };
 
 enum EXPR
@@ -240,6 +257,7 @@ enum EXPR
   EXPR_PROCCALL,
   EXPR_DEPENDENT,
   EXPR_MAPGET,
+  EXPR_ALLOCATE,
 };
 
 static const char *currentBatch = "currentBatch";
@@ -252,5 +270,9 @@ static const char *isAnEdgeCall = "is_an_edge";
 static const char *nodesToCall = "nodes_to";
 static const char *nodesCall = "nodes";
 static const char *getMSTCall = "getMST";
+static const char *copyGraphCall = "copyGraph";
+static const char *calculateDistanceCall = "calculateDistance";
+static const char *makeGraphCopyCall = "makeGraphCopy";
+static const char *getGraphAtIndexCall = "getGraphAtIndex";
 
 #endif

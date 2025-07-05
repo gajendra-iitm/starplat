@@ -209,6 +209,13 @@ public:
         declaration *declNode = declaration::assign_Declaration((Type *)type, (Identifier *)id, (Expression *)exprAssigned);
         return declNode;
     }
+
+    static ASTNode *createParamDeclNode(ASTNode *type, ASTNode *id, ASTNode *exprAssigned)
+    {
+        declaration *declNode = declaration::param_Declaration((Type *)type, (Identifier *)id, (Expression *)exprAssigned);
+        return declNode;
+    }
+
     static ASTNode *createPrimitiveTypeNode(int typeId)
     { // cout<<"Inside Func";
         Type *typeNode = Type::createForPrimitive(typeId, 1);
@@ -327,6 +334,22 @@ public:
         return unaryStmt;
     }
 
+    static ASTNode* createNodeForBreakStatement(){
+        statement *breakStmtNode = breakStmt::createBreakStmt();
+        return breakStmtNode;
+    }
+
+    static ASTNode* createNodeForContinueStatement(){
+        statement *continueStmtNode = continueStmt::createContinueStmt();
+        return continueStmtNode;
+    }
+
+    static ASTNode* createNodeForAllocaExpr(ASTNode* type, list<argument*>argList){
+        Expression *allocaExprNode = allocaExpr::createAllocaExpr((Type *)type, argList);
+        return allocaExprNode;
+    }
+
+
     static ASTNode *createNodeForProcCall(ASTNode *proc_callId, list<argument *> argList, ASTNode *indexExprSent)
     {
         proc_callExpr *proc_callExprNode;
@@ -369,6 +392,15 @@ public:
     {
 
         Type *containerNode = Type::createForContainerType(typeId, (Type *)innerType, argList, (Type *)innerTypeSize);
+
+        return containerNode;
+    }
+
+    static ASTNode *createContainerTypeRefNode(int typeId, ASTNode *innerType, list<argument *> argList, ASTNode *innerTypeSize)
+    {
+
+        Type *containerNode = Type::createForContainerType(typeId, (Type *)innerType, argList, (Type *)innerTypeSize);
+        containerNode->setRefType();
 
         return containerNode;
     }

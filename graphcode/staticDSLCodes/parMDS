@@ -1,6 +1,0 @@
-function parMDS(geomCompleteGraph g) {
-    Graph mst = g.getMST();
-    loop(i in 1 to 10000 by 1){
-        mst.randomShuffle();
-    }
-}

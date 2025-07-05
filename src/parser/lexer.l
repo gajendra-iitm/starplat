@@ -58,7 +58,10 @@ NEGATE [-]
 "Batch"         {printf("batch"); return T_BATCH ;} 
 "OnDelete"      {printf("Ondelete") ; return T_ONDELETE;}
 "OnAdd"      {printf("Onadd") ; return T_ONADD;}
+"allocate"      {printf("allocate") ; return T_ALLOCATE;}
  
+ "break"         {printf("break") ; return T_BREAK;}
+"continue"      {printf("continue") ; return T_CONTINUE;}
 
 
 "+="					{ printf ("ADD_ASSIGN "); return T_ADD_ASSIGN;}
@@ -78,6 +81,7 @@ NEGATE [-]
 ">="					{ printf ( "GE_OP");  return T_GE_OP;}
 "=="					{ printf ( "EQ_OP");  return T_EQ_OP;}
 "!="					{ printf ( "NE_OP");  return T_NE_OP;}
+"\*"                    { printf ( "ASTERISK_SYMBOL");  return T_ASTERISK;}
 
 ";"					{ printf ( "';'"); return ';' ;}
 ("{"|"<%")				{ printf ( "'{'") ;  return '{' ;}
@@ -119,6 +123,7 @@ NEGATE [-]
 
  /* Graph Types */
 "Graph" 	{printf("Graph Type"); return T_GRAPH;}
+"GraphList" {printf("Graph List Type"); return T_GRAPH_LIST;}
 "GNN"       {printf("GNN Type\n"); return T_GNN;}
 "dirGraph" 	{printf("Directed Graph Type");  return T_DIR_GRAPH;}
 "geomCompleteGraph" {printf("Geometric Complete Graph Type");  return T_GEOMCOMPLETEGRAPH;}
@@ -134,6 +139,7 @@ NEGATE [-]
 "updates" {printf("updates type"); return T_UPDATES;}
 "container" {printf("container type"); return T_CONTAINER;}
 "std::vector" {printf ("vector type"); return T_VECTOR;}
+"std::set" {printf ("set type"); return T_SET;}
 "nodeMap"  {printf("nodeMap type"); return T_NODEMAP;}
 "hashMap"  {printf("hashMap type"); return T_HASHMAP;}
 "hashSet"  {printf("hashSet type"); return T_HASHSET;}

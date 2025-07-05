@@ -4,7 +4,7 @@ ANALYSER = bin/dataRaceAnalyser.o
 PROGRAMS = bin/MainContext.o bin/ASTHelper.o bin/SymbolTableBuilder.o bin/SymbolTableNew.o bin/y.tab.o bin/lex.yy.o bin/cu_dsl_cpp_generator.o  bin/ac_dsl_cpp_generator.o bin/om_dsl_cpp_generator.o bin/hi_dsl_cpp_generator.o bin/hi_get_used_data.o bin/hi_auxillary_functions.o bin/hip_gen_functions.o bin/mpi_dsl_cpp_generator.o bin/om_dyn_dsl_cpp_generator.o bin/mpi_dsl_cpp_generator_helper.o bin/mpi_dsl_cpp_expression_generator.o bin/mpi_dsl_cpp_statement_generator.o bin/mpi_dsl_dyn_cpp_generator.o bin/sycl_dsl_cpp_generator.o bin/multigpu_dsl_cpp_generator.o  bin/amd_dsl_cpp_generator.o bin/bAnalyzer.o
 #bin/ac_dsl_cpp_generator.o 
 #bin/om_dsl_cpp_generator.o
-A_PROGRAM = bin/attachPropAnalyser.o bin/dataRaceAnalyser.o bin/deviceVarsAnalyser.o bin/blockVarsAnalyser.o bin/analyserUtil.o bin/pushpullAnalyser.o
+A_PROGRAM = bin/attachPropAnalyser.o bin/dataRaceAnalyser.o bin/deviceVarsAnalyser.o bin/blockVarsAnalyser.o bin/analyserUtil.o bin/pushpullAnalyser.o bin/callGraphAnalyser.o bin/cudaGlobalVariablesAnalyser.o
 
 CFLAGS  = -g 
 CC = g++ -std=c++11 #-Wall # -Wno-unused-variable #-fsanitize=address
@@ -133,6 +133,11 @@ bin/dataRaceAnalyser.o: analyser/dataRace/dataRaceAnalyser.cpp analyser/dataRace
 bin/pushpullAnalyser.o: analyser/pushpull/pushpullAnalyser.cpp analyser/pushpull/pushpullAnalyser.h
 	$(CC) $(CFLAGS) -c analyser/pushpull/pushpullAnalyser.cpp -o bin/pushpullAnalyser.o                  
 
+bin/callGraphAnalyser.o: analyser/callGraph/callGraphAnalyser.cpp analyser/callGraph/callGraphAnalyser.h
+	$(CC) $(CFLAGS) -c analyser/callGraph/callGraphAnalyser.cpp -o bin/callGraphAnalyser.o                  
+
+bin/cudaGlobalVariablesAnalyser.o: analyser/cudaGlobalVariables/cudaGlobalVariablesAnalyser.cpp analyser/cudaGlobalVariables/cudaGlobalVariablesAnalyser.h
+	$(CC) $(CFLAGS) -c analyser/cudaGlobalVariables/cudaGlobalVariablesAnalyser.cpp -o bin/cudaGlobalVariablesAnalyser.o
 
 bin/deviceVarsAnalyser.o: bin/dv1.o bin/dv2.o bin/dv3.o bin/dv4.o bin/dv5.o
 	ld -r bin/dv1.o bin/dv2.o bin/dv3.o bin/dv4.o bin/dv5.o -o bin/deviceVarsAnalyser.o 

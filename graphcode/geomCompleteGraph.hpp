@@ -10,6 +10,7 @@
 #include <climits>
 #include <cmath>
 #include "./abstractGraph.hpp"
+#include "./graph.hpp"
 
 class geomCompleteGraph : public AbstractGraph
 {
@@ -19,10 +20,31 @@ private:
     char *filePath;
     bool isVRP;
 
+    int capacity;
+
 
 public:
     std::vector<std::vector<int>> coordinates;
     std::vector<int> demand;
+
+    int calculateDepotDistance(int i, int j){
+        int dist = 0;
+        for (int k = 0; k < coordinates[i].size(); k++)
+        {
+            dist += (coordinates[i][k]) * (coordinates[i][k]);
+        }
+        dist = std::sqrt(dist);
+        
+        int dist2 = 0;
+        for (int k = 0; k < coordinates[j].size(); k++)
+        {
+            dist2 += (coordinates[j][k]) * (coordinates[j][k]);
+        }
+        dist2 = std::sqrt(dist2);
+        dist += dist2;
+
+        return dist;
+    }
 
     int calculateDistance(int i, int j)
     {
@@ -235,6 +257,7 @@ public:
             auto type = line.find(":");
             getline(in, line);
             auto capacity = stof(line.substr(line.find(":") + 2));
+            this->capacity = capacity;
             getline(in, line);
 
             for (size_t i = 0; i < size; ++i) {
@@ -283,6 +306,14 @@ public:
             nodesTotal = coordinates.size();
             edgesTotal = nodesTotal * (nodesTotal - 1) ;
         }       
+    }
+
+    inline int* getDemands(){
+        return this->demand.data();
+    }
+
+    int getCapacity(){
+        return this->capacity;
     }
 
     void parseEdgesResidual()
@@ -351,4 +382,57 @@ public:
         // TODO: Implement this
         return;
     }
+
+    graph getMST() {
+    int V = nodesTotal + 1;
+    std::vector<bool> inMST(V, false);
+    std::vector<int> key(V, INT_MAX);
+    std::vector<int> parent(V, -1);
+
+    typedef std::pair<int, int> P;
+    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;
+
+    key[0] = 0;
+    pq.push({0, 0});
+
+    graph mstGraph((char*)"");
+
+    std::map<int, std::vector<edge>> tempMST;
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+        if (inMST[u])
+            continue;
+        inMST[u] = true;
+        if (parent[u] != -1) {
+            edge edgeTemp;
+            edgeTemp.source = u;
+            edgeTemp.destination = parent[u];
+            edgeTemp.weight = key[u];
+            tempMST[u].push_back(edgeTemp);
+
+            edge edgeTemp2;
+            edgeTemp2.destination = u;
+            edgeTemp2.source = parent[u];
+            edgeTemp2.weight = key[u];
+            tempMST[parent[u]].push_back(edgeTemp2);
+        }
+        std::vector<edge> neighbors = this->getNeighbors(u);
+        for (auto &e : neighbors) {
+            int v = e.destination;
+            int w = e.weight;
+            if (!inMST[v] && w < key[v]) {
+                key[v] = w;
+                parent[v] = u;
+                pq.push({key[v], v});
+            }
+        }
+    }
+    mstGraph.setNodes(tempMST.size());
+    mstGraph.parseAdjacencyList(tempMST);
+
+    // mstGraph.printGraph();    
+
+    return mstGraph;
+}
 };

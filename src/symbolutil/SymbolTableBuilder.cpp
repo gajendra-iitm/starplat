@@ -467,11 +467,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
         else if (methodString == getMSTCall){
           parent->setIsMSTUsed();
           currentFunc->setIsMSTUsed();
-          parent->setIsRevMetaUsed();
-          currentFunc->setIsRevMetaUsed();
-          parent->setIsSrcUsed();
-          currentFunc->setIsSrcUsed();
-
         }
       }
     }
@@ -564,17 +559,6 @@ void SymbolTableBuilder::buildForStatements(statement *stmt)
     currentFunc->setIsDataUsed();   // d_data is used in loop
     loop->setIsDataUsed();          // d_data is used in loop
 
-    currentFunc->setIsWeightUsed(); // d_weight is used in loop
-    loop->setIsWeightUsed();        // d_weight is used in loop 
-
-    currentFunc->setIsSrcUsed();   // d_src is used in loop
-    loop->setIsSrcUsed();          // d_src is used in loop
-
-    currentFunc->setIsRevMetaUsed();   // d_rev_meta is used in loop
-    loop->setIsRevMetaUsed();          // d_rev_meta is used in loop
-
-    currentFunc->setIsMSTUsed();
-    loop->setIsMSTUsed();
 
     buildForStatements(loop->getBody());
 
@@ -1029,6 +1013,9 @@ void SymbolTableBuilder::checkForExpressions(Expression *expr)
           currentFunc->setIsWeightUsed();
           currentFunc->setIsRevMetaUsed();
           currentFunc->setIsSrcUsed();
+    }
+    if(s.compare(makeGraphCopyCall) == 0){
+        currentFunc->setIsGraphListUsed();
     }
 
     /*check if procedure call inside a dynamic func */

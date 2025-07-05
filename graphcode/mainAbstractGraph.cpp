@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
-#include "./generated_cuda/parMDS.h"
+#include "./generated_omp/parMDSv2.cc"
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     geomCompleteGraph g(filePath);
     g.parseGraph();
 
-    parMDS(g);
-
+    auto cost = parMDS(g, g.getCapacity(), g.getDemands());
+    std::cout << "Minimum cost of the route: " << cost << std::endl;
     return 0;
 }

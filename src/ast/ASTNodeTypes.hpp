@@ -9,6 +9,7 @@
 #include <stack>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <queue>
 #include "../maincontext/enum_def.hpp"
 #include "MetaDataUsed.hpp"
@@ -38,6 +39,10 @@ private:
   bool expressionflag;
   bool assign;
 
+  bool isGraphArg;
+  bool isMSTArg;
+  bool isGraphListArg;
+
 public:
   argument()
   {
@@ -45,6 +50,8 @@ public:
     assignExpr = NULL;
     expressionflag = false;
     assign = false;
+    isMSTArg = false;
+    isGraphArg = false;
   }
 
   void setAssign(assignment *assign)
@@ -82,6 +89,38 @@ public:
   {
     return expressionflag;
   }
+
+  void setGraphArg()
+  {
+    isGraphArg = true;
+  }
+  bool getIsGraphArg()
+  {
+    return isGraphArg;
+  }
+
+  void falseMSTArg()
+  {
+    isMSTArg = false;
+  }
+
+  void setMSTArg()
+  {
+    isMSTArg = true;
+  }
+  bool getIsMSTArg()
+  {
+    return isMSTArg;
+  }
+
+  void setGraphListArg()
+  {
+    isGraphListArg = true;
+  }
+  bool getIsGraphListArg()
+  {
+    return isGraphListArg;
+  }
 };
 class tempNode
 {
@@ -111,6 +150,7 @@ public:
 class Identifier : public ASTNode
 {
 private:
+  bool usedInKernel;
   int accessType;
   char *identifier;
   Expression *assignedExpr; /*added to store node/edge property initialized values.
@@ -139,6 +179,8 @@ private:
   bool used_inside_forall_filter_and_changed_inside_forall_body;
 
   bool isMST;
+  bool isGraph;
+  bool isCopyGraph;
 
 public:
   static Identifier *createIdNode(const char *id)
@@ -159,6 +201,7 @@ public:
     idNode->forall_filter_association = false;
     idNode->used_inside_forall_filter_and_changed_inside_forall_body = false;
     idNode->isMST = false;
+    idNode->usedInKernel = false;
     // std::cout<<"IDENTIFIER = "<<idNode->getIdentifier()<<" "<<strlen(idNode->getIdentifier());
     return idNode;
   }
@@ -172,6 +215,30 @@ public:
   {
     return identifier;
   }
+
+  char* getIdentifier(bool isMainFile){
+    if((this->idInfo != NULL && this->idInfo->getId() != NULL && this->idInfo->getId()->getUsedInKernel()) || (this->getUsedInKernel())){
+      if(isMainFile){
+        const char* orig = this->idInfo->getId()->getIdentifier();
+        size_t len = strlen(orig);
+        char* temp = (char*)malloc(len + 3); // "d_" + orig + '\0'
+        temp[0] = 'h';
+        temp[1] = '_';
+        memcpy(temp + 2, orig, len + 1); // include null terminator
+        return temp;
+      } else {
+        const char* orig = this->idInfo->getId()->getIdentifier();
+        size_t len = strlen(orig);
+        char* temp = (char*)malloc(len + 3); // "h_" + orig + '\0'
+        temp[0] = 'd';
+        temp[1] = '_';
+        memcpy(temp + 2, orig, len + 1); // include null terminator
+        return temp;
+      }
+    }
+    return identifier;
+  }
+
 
   void setSymbolInfo(TableEntry *te)
   {
@@ -298,9 +365,42 @@ public:
   {
     isMST = true;
   }
-  bool getIsMST(){
+
+  bool getIsMST()
+  {
     return isMST;
   }
+
+  void setUsedInKernel()
+  {
+    this->usedInKernel = true;
+  }
+
+  bool getUsedInKernel()
+  {
+    return usedInKernel;
+  }
+
+  void setGraph()
+  {
+    isGraph = true;
+  }
+
+  bool getIsGraph()
+  {
+    return isGraph;
+  }
+
+  void setIsCopyGraph()
+  {
+    isCopyGraph = true;
+  }
+  
+  bool getIsCopyGraph()
+  {
+    return isCopyGraph;
+  }
+  
 };
 
 class PropAccess : public ASTNode
@@ -473,6 +573,11 @@ private:
                            set this to initialize the omp_locks in 1st part of func body*/
   bool hasReturn;
   int funcType;
+
+  bool isCalled;
+  bool isInParallelLoop; 
+  bool hasParallelLoop;
+
 
   MetaDataUsed metadata;
 
@@ -661,9 +766,59 @@ public:
     metadata.isMSTUsed = true;
   }
 
+  void setIsUsingWeight()
+  {
+    metadata.isUsingWeight = true;
+  }
+
+  bool getIsUsingWeight()
+  {
+    return metadata.isUsingWeight;
+  }
+
+  bool getIsGraphListUsed()
+  {
+    return metadata.isGraphListUsed;
+  }
+
+  void setIsGraphListUsed()
+  {
+    metadata.isGraphListUsed = true;
+  }
+
   MetaDataUsed getMetaDataUsed()
   {
     return metadata;
+  }
+
+  void setIsCalled(bool val)
+  {
+    isCalled = val;
+  }
+
+  bool getIsCalled()
+  {
+    return isCalled;
+  }
+
+  void setIsInParallelLoop(bool val)
+  {
+    isInParallelLoop = val;
+  }
+
+  bool getIsInParallelLoop()
+  {
+    return isInParallelLoop;
+  }
+
+  void setHasParallelLoop()
+  {
+    hasParallelLoop = true;
+  }
+
+  bool getHasParallelLoop()
+  {
+    return hasParallelLoop;
   }
 };
 
@@ -672,6 +827,7 @@ class Type : public ASTNode
 private:
   int typeId;
   int rootType;
+  int PointerStarCount;
   Identifier *TargetGraph;
   Type *innerTargetType;
   Identifier *sourceGraph;
@@ -681,6 +837,7 @@ private:
   Type *outerTargetType;
   Identifier *id;
   int num;
+  bool isRefType;
 
 public:
   Type()
@@ -692,6 +849,8 @@ public:
     outerTargetType = NULL;
     id = NULL;
     num = -1;
+    isRefType = false;
+    PointerStarCount = 0; // default value for pointer star count
   }
 
   static Type *createForPrimitive(int typeIdSent, int rootTypeSent)
@@ -884,6 +1043,11 @@ public:
     return check_isNodeEdgeType(typeId);
   }
 
+  bool isIntegerType()
+  {
+    return check_isIntegerType(typeId);
+  }
+
   bool isPropType()
   {
     return check_isPropType(typeId);
@@ -944,6 +1108,16 @@ public:
     return check_isMapType(typeId);
   }
 
+  bool isVectorType()
+  {
+    return check_isVectorType(typeId);
+  }
+
+  bool isSetType()
+  {
+    return check_isSetType(typeId);
+  }
+
   bool isBtreeType()
   {
     return check_isBTreeType(typeId);
@@ -976,6 +1150,16 @@ public:
   bool isEdgeType()
   {
     return check_isEdgeType(typeId);
+  }
+
+  void incrementPointerStarCount()
+  {
+    PointerStarCount++;
+  }
+
+  int getPointerStarCount()
+  {
+    return PointerStarCount;
   }
 
   bool isInitializeType()
@@ -1026,6 +1210,8 @@ public:
     return sizeExprList;
   }
 
+
+
   Identifier *getId()
   {
     return id;
@@ -1039,6 +1225,16 @@ public:
   Type *getOuterTargetType()
   {
     return outerTargetType;
+  }
+
+  void setRefType()
+  {
+    isRefType = true;
+  }
+
+  bool getRefType()
+  {
+    return isRefType;
   }
 };
 class formalParam : public ASTNode
@@ -1262,6 +1458,11 @@ public:
     return (typeofExpr == EXPR_UNARY);
   }
 
+  bool isMapGet()
+  {
+    return (typeofExpr == EXPR_MAPGET);
+  }
+
   bool isIdentifierExpr()
   {
     return (typeofExpr == EXPR_ID);
@@ -1286,6 +1487,10 @@ public:
   bool isIndexExpr()
   {
     return (typeofExpr == EXPR_MAPGET);
+  }
+  bool isAllocateExpr()
+  {
+    return (typeofExpr == EXPR_ALLOCATE);
   }
 
   Expression *getIndexExpr()
@@ -1381,6 +1586,59 @@ public:
   }
 };
 
+class allocaExpr : public Expression
+{
+private:
+  Type *type;
+  list<argument *> sizeExprList; // for dynamic allocation, size of the array
+public:
+  allocaExpr()
+  {
+    type = NULL;
+    this->typeofNode = NODE_ALLOCATE;
+    this->setExpressionFamily(EXPR_ALLOCATE);
+  }
+
+  static allocaExpr *createAllocaExpr(Type *typeSent, list<argument *> sizeExprListSent)
+  {
+    allocaExpr *allocaExprNode = new allocaExpr();
+    allocaExprNode->type = typeSent;
+    allocaExprNode->sizeExprList = sizeExprListSent;
+
+    return allocaExprNode;
+  }
+
+  Type *getType()
+  {
+    return type;
+  }
+
+  list<argument *> getSizeExprList()
+  {
+    return sizeExprList;
+  }
+
+    argument* getFirstArg()
+  {
+    if (sizeExprList.size() > 0)
+    {
+      return sizeExprList.front();
+    }
+    return NULL;
+  }
+
+  argument* getSecondArg()
+  {
+    if (sizeExprList.size() > 1)
+    {
+      auto it = sizeExprList.begin();
+      ++it; // Move to the second element
+      return *it;
+    }
+    return NULL;
+  }
+};
+
 class returnStmt : public statement
 {
 private:
@@ -1466,6 +1724,7 @@ private:
   bool inGPU;
   bool propCopy;
   bool mapPropCopy;
+  bool isParams;
 
 public:
   declaration()
@@ -1475,6 +1734,7 @@ public:
     exprAssigned = NULL;
     statementType = "declaration";
     inGPU = false;
+    isParams = false;
     propCopy = false;
     mapPropCopy = false;
   }
@@ -1504,6 +1764,22 @@ public:
     expression->setParent(decl);
     return decl;
   }
+
+  static declaration *param_Declaration(Type *typeSent, Identifier *identifierSent, Expression *expression)
+  {
+    declaration *decl = new declaration();
+    decl->type = typeSent;
+    decl->identifier = identifierSent;
+    decl->setTypeofNode(NODE_DECL);
+    decl->isParams = true; 
+    expression->setTypeofExpr(typeSent->gettypeId());
+    decl->exprAssigned = expression;
+    typeSent->setParent(decl);
+    identifierSent->setParent(decl);
+    expression->setParent(decl);
+    return decl;
+  }
+
   Type *getType()
   {
     return type;
@@ -1553,6 +1829,11 @@ public:
   {
 
     return propCopy;
+  }
+
+  bool isParam()
+  {
+    return isParams;
   }
 };
 class assignment : public statement
@@ -2043,6 +2324,12 @@ private:
   Identifier *methodId;
   list<argument *> argList;
   Expression *indexExpr;
+  std::unordered_map<std::string,std::string> modifiedVars;
+
+  bool isLoopCall = false;
+  bool isUsingWeight = false;
+  bool hasAParallelLoop = false;
+
 
 public:
   proc_callExpr()
@@ -2096,6 +2383,43 @@ public:
 
     return indexExpr;
   }
+
+  void setModifiedVarsSizeMap(std::unordered_map<std::string, std::string> modifiedVars)
+  {
+    this->modifiedVars = modifiedVars;
+  }
+  std::unordered_map<std::string,std::string> getModifiedVarsSizeMap()
+  {
+    return modifiedVars;
+  }
+
+  void setIsLoopCall(){
+    isLoopCall = true;
+  }
+
+  bool getIsLoopCall(){
+    return isLoopCall;
+  }
+
+  void setIsUsingWeight()
+  {
+    isUsingWeight = true;
+  }
+
+  bool getIsUsingWeight()
+  {
+    return isUsingWeight;
+  }
+
+  void setHasAParallelLoop()
+  {
+    hasAParallelLoop = true;
+  }
+
+  bool getHasAParallelLoop(){
+    return hasAParallelLoop;
+  }
+
 };
 
 class onDeleteBlock : public statement
@@ -2797,6 +3121,8 @@ private:
   MetaDataUsed metadata;
   set<int> reduceKeys;
   map<int, list<Identifier *>> reductionMap;
+  map<std::string, std::string> loopVarMap; // map to store the loop variables and their size
+  set<std::string> loopVariables;
   bool containsreductionStatement;
   statement *reductionStatement;
 
@@ -2919,6 +3245,16 @@ public:
     metadata.isMSTUsed = true;
   }
 
+  bool getIsGraphListUsed()
+  {
+    return metadata.isGraphListUsed;
+  }
+
+  void setIsGraphListUsed()
+  {
+    metadata.isGraphListUsed = true;
+  }
+
   void pushReduction(int key, Identifier *val)
   {
     reductionMap[key].push_back(val);
@@ -2944,6 +3280,28 @@ public:
   {
     return metadata;
   }
+
+  void addLoopVariable(std::string varName)
+  {
+    loopVariables.insert(varName);
+  }
+
+  void addLoopVariableSize(std::string varName, std::string size)
+  {
+    loopVarMap[varName] = size;
+  }
+
+  std::string getLoopVariableSize(std::string varName)
+  {
+    if(loopVarMap[varName] == "")
+      return "sizeof(int)";
+    return loopVarMap[varName];
+  }
+
+  set<std::string> getLoopVariables()
+  {
+    return loopVariables;
+  } 
 };
 
 class reductionCall : public ASTNode
@@ -2974,6 +3332,38 @@ public:
   list<argument *> getargList()
   {
     return argList;
+  }
+};
+
+class breakStmt: public statement
+{
+public:
+  breakStmt()
+  {
+    statementType = "BreakStatement";
+    typeofNode = NODE_BREAKSTMT;
+  }
+
+  static breakStmt *createBreakStmt()
+  {
+    breakStmt *new_breakStmt = new breakStmt();
+    return new_breakStmt;
+  }
+};
+
+class continueStmt: public statement
+{
+public:
+  continueStmt()
+  {
+    statementType = "ContinueStatement";
+    typeofNode = NODE_CONTINUESTMT;
+  }
+
+  static continueStmt *createContinueStmt()
+  {
+    continueStmt *new_continueStmt = new continueStmt();
+    return new_continueStmt;
   }
 };
 

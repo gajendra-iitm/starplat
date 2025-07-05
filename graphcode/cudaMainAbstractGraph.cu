@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
-#include "./generated_cuda/parMDS.cu"
+#include "./generated_cuda/parMDS_cuda.cu"
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     geomCompleteGraph g(filePath);
     g.parseGraph();
 
-    parMDS(g);
+    parMDS(g, g.getDemands());
 
     return 0;
 }
