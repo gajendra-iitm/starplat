@@ -27,12 +27,14 @@ public:
 class AbstractGraph
 {
 public:
+    virtual graph copyGraph() = 0;
     virtual std::map<int, std::vector<edge>> getEdges() = 0;
     virtual int *getEdgeLen() = 0;
     virtual int num_nodes() = 0;
     virtual int num_edges() = 0;
     virtual std::vector<edge> getInOutNbrs(int v) = 0;
     virtual edge getEdge(int s, int d) = 0;
+    virtual void randomShuffle() = 0;
     virtual bool inRouteFromSource(int candidate, int dest, int *parent) = 0;
     virtual bool check_if_nbr(int s, int d) = 0;
     virtual int common_nbrscount(int node1, int node2) = 0;
@@ -52,6 +54,8 @@ public:
     virtual void updateCSRAdd(std::vector<update> &batchUpdate, int k, int size) = 0;
     virtual std::vector<edge> getNeighbors(int node) = 0;
     virtual std::vector<edge> getInNeighbors(int node) = 0;
+    virtual graph getMST() = 0;
+    virtual void printGraph() = 0;
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include <cstring>
 #include <climits>
 // #include "./generated_omp/v_cover.cc"
-#include "./generated_omp/parMDS.cc"
+#include "./generated_omp/dynamicBatchTCV2_dyn.cc"
 int main(int argc, char*argv[]) {
     char* filePath;
 
@@ -29,7 +29,15 @@ int main(int argc, char*argv[]) {
 
     float* vc = new float[g.num_nodes()];
     g.parseGraph();
-
-    parMDS(g);
+     std::cout << "Number of nodes: " << g.num_nodes() << std::endl;
+     std::cout << "Number of edges: " << g.num_edges() << std::endl;
+    double starttime = omp_get_wtime();
+    long numberOfTriangles=staticTC(g);
+    double endtime = omp_get_wtime();
+    // for (int i = 0; i < g.num_nodes(); i++) {
+    //     std::cout<< vc[i] << std::endl;
+    // }
+    std::cout << "Number of triangles present: " << numberOfTriangles << std::endl;
+    std::cout<<"\nTime taken : "<<endtime-starttime<<std::endl;
     return 0;
-}
+    }

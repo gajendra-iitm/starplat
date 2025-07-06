@@ -1263,6 +1263,17 @@ public:
     return formalPNode;
   }
 
+  static formalParam *createFormalParam(Type *typeSent, Identifier *identifierSent)
+  {
+    formalParam *formalPNode = new formalParam();
+    formalPNode->type = typeSent;
+    formalPNode->identifier = identifierSent;
+    formalPNode->byReference = false; /* default to false if not specified */
+    formalPNode->setTypeofNode(NODE_FORMALPARAM);
+
+    return formalPNode;
+  }
+
   Type *getType()
   {
     return type;

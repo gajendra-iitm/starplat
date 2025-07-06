@@ -94,6 +94,7 @@ void cudaGlobalVariablesAnalyser::analyseStatement(statement *stmt)
             // Handle assignment statements
             assignment *assignStmt = (assignment *)stmt;
 
+            // Check if the assignment is to a variable that is used in a parallel loop
             if(assignStmt->lhs_isIdentifier())
             {
                 // If the assignment is to an identifier
@@ -119,6 +120,7 @@ void cudaGlobalVariablesAnalyser::analyseStatement(statement *stmt)
                 analyseExpression(assignStmt->getExpr());
             }
 
+            // If we are in a parallel loop, we need to check if the variable is used in the loop
             if(this->inParallelLoop){
                 if(assignStmt->lhs_isIdentifier())
                 {
@@ -268,7 +270,6 @@ void cudaGlobalVariablesAnalyser::analyseStatement(statement *stmt)
         {
             // Handle loop statements
             // You can add specific handling for loop statements if needed
-            
             loopStmt* prevLoop = this->currLoop;
             bool isParallel = false;
             auto loopStatement = (loopStmt *)stmt;
@@ -380,6 +381,7 @@ void cudaGlobalVariablesAnalyser::analyse(std::list<Function*> funcList)
 
     printf("Starting analysis of CUDA global variables...\n");
 
+    // Store function headers and initialize modified parameters
     for(auto &func: funcList){
         std::string funcName(func->getIdentifier()->getIdentifier());
         this->funcHeaders.insert(funcName);
@@ -411,16 +413,16 @@ void cudaGlobalVariablesAnalyser::analyse(std::list<Function*> funcList)
         this->isUsedInLoop = std::unordered_map<std::string, bool>();
     }
 
-    for(auto &x: this->funcModifiedParamList){
-        std::string funcName(x.first);
-        for(auto &args: x.second){
-            std::string paramName(args.first);
-            bool isModified = args.second;
-            if(isModified){
-                auto index = this->funcModifiedParamsIndex[funcName][paramName];
-            }
-        }
-    }
+    // for(auto &x: this->funcModifiedParamList){
+    //     std::string funcName(x.first);
+    //     for(auto &args: x.second){
+    //         std::string paramName(args.first);
+    //         bool isModified = args.second;
+    //         if(isModified){
+    //             auto index = this->funcModifiedParamsIndex[funcName][paramName];
+    //         }
+    //     }
+    // }
 
     for(auto &x: this->funcProcInvocations){
         std::string funcName(x.first);
@@ -468,7 +470,6 @@ void cudaGlobalVariablesAnalyser::analyse(std::list<Function*> funcList)
     // After analysis, print the results
     printf("CUDA global variables analysis completed.\n");
     printf("Global variables used in parallel loops:\n");
-
 
 
     for (const auto &entry : this->isUsedInLoop)

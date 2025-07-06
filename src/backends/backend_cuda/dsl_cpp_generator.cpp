@@ -887,18 +887,18 @@ void dsl_cpp_generator::generateReductionStmt(reductionCallStmt* stmt,
   }
 }
 
-  void dsl_cpp_generator::generateWhileStmt(whileStmt *whilestmt, bool isMainFile)
-  {
-    Expression *conditionExpr = whilestmt->getCondition();
-    dslCodePad &targetFile = isMainFile ? main : header;
-    targetFile.pushString("while(");
-    Expression *expr = conditionExpr;
-    generate_exprIdentifier(expr->getId(), isMainFile);
-    // printf("Inside the while loop\n");
-    targetFile.pushString("){\n");
-    generateStatement(whilestmt->getBody(), isMainFile);
-    targetFile.pushString("\n}");
-  }
+  // void dsl_cpp_generator::generateWhileStmt(whileStmt *whilestmt, bool isMainFile)
+  // {
+  //   Expression *conditionExpr = whilestmt->getCondition();
+  //   dslCodePad &targetFile = isMainFile ? main : header;
+  //   targetFile.pushString("while(");
+  //   Expression *expr = conditionExpr;
+  //   generate_exprIdentifier(expr->getId(), isMainFile);
+  //   // printf("Inside the while loop\n");
+  //   targetFile.pushString("){\n");
+  //   generateStatement(whilestmt->getBody(), isMainFile);
+  //   targetFile.pushString("\n}");
+  // }
 
 void dsl_cpp_generator::generateSimpleForStmt(simpleForStmt *simpleFor, bool isMainFile) {
   Type *primitiveType = simpleFor->getPrimitiveType();

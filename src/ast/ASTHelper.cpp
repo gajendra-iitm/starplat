@@ -198,6 +198,14 @@ public:
         return formalParamNode;
     }
 
+    static ASTNode *createParamNode(ASTNode *type, ASTNode *id)
+    {
+        //~ Identifier* paramId=(Identifier*)id;
+        // cout<<"PARAMID NODE VALUE "<<paramId->getIdentifier()<<"\n";
+        formalParam *formalParamNode = formalParam::createFormalParam((Type *)type, (Identifier *)id);
+        return formalParamNode;
+    }
+
     static ASTNode *createNormalDeclNode(ASTNode *type, ASTNode *id)
     {
         declaration *declNode = declaration::normal_Declaration((Type *)type, (Identifier *)id);

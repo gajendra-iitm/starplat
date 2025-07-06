@@ -27,6 +27,24 @@ public:
     std::vector<std::vector<int>> coordinates;
     std::vector<int> demand;
 
+    graph copyGraph()
+    {
+        // TODO implemente this method
+        geomCompleteGraph g_copy(filePath);
+        return g_copy;
+    }
+
+    void randomShuffle(){
+        // TODO Implement this method
+        return;
+    }
+
+    void printGraph(){
+        // TODO: Implement this method
+    }
+
+
+    // proprietary function to calculate distance from depot
     int calculateDepotDistance(int i, int j){
         int dist = 0;
         for (int k = 0; k < coordinates[i].size(); k++)
@@ -46,6 +64,7 @@ public:
         return dist;
     }
 
+    // Proprietary function to calculate distance between two nodes
     int calculateDistance(int i, int j)
     {
         int dist = 0;
@@ -130,6 +149,7 @@ public:
         // }
     }
 
+    // Propretary method to parse adjacency list from a map
     int getNeighbourFromEdge(int src, int edge){
         if(edge >= src){
             return edge + 1;

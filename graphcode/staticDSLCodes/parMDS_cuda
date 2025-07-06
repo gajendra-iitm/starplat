@@ -1,3 +1,8 @@
+// ParMDS algorithm for StarPlat for the CUDA backend
+// Refer PPT for more details
+// Link: https://docs.google.com/presentation/d/1gDuslC7s7OWUUeaGPU5PxPdvR2u2sKiOk6Amql2A5Us/edit?usp=sharing 
+
+
 function pathGen(Graph g, int *path, bool *visited, int v, int &count, int* stack)
 {
     int top = 0;

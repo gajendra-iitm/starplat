@@ -1763,41 +1763,6 @@ void dsl_cpp_generator::generatefixedpt_filter(Expression* filterExpr)
         /*placeholder for adding code for declarations that are initialized as well*/
       }
 
-<<<<<<< HEAD
-      if (insideBatchBlock) /* the properties are malloced, so they need
-                                   to be freed to manage memory.*/
-        freeIdStore.back().push_back(declStmt->getdeclId());
-    }
-    else if (type->isHeapType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isMapType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isBtreeType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isPrimitiveType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      if (declStmt->isInitialized())
-      {
-        main.pushString(" = ");
-        /* the following if conditions is for cases where the
-           predefined functions are used as initializers
-           but the variable's type doesnot match*/
-        if (declStmt->getExpressionAssigned()->getExpressionFamily() == EXPR_PROCCALL)
-=======
       if(insideBatchBlock)   /* the properties are malloced, so they need 
                                     to be freed to manage memory.*/
              freeIdStore.back().push_back(declStmt->getdeclId());
@@ -1842,7 +1807,6 @@ void dsl_cpp_generator::generatefixedpt_filter(Expression* filterExpr)
           predefined functions are used as initializers
           but the variable's type doesnot match*/
        if(declStmt->getExpressionAssigned()->getExpressionFamily()==EXPR_PROCCALL)
->>>>>>> c8407ce (ft/prims algo (#4))
         {
           proc_callExpr *pExpr = (proc_callExpr *)declStmt->getExpressionAssigned();
           Identifier *methodId = pExpr->getMethodId();
