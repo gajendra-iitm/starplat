@@ -2156,6 +2156,12 @@ void dsl_cpp_generator::generateLoop(loopStmt* loop, bool isMainFile){
   char strBuffer[1024];
 
   if(loop->isLoop()){
+    if(loop->getStartValue()->getExpressionFamily() != EXPR_INTCONSTANT ||
+       loop->getEndValue()->getExpressionFamily() != EXPR_INTCONSTANT ||
+       loop->getStepValue()->getExpressionFamily() != EXPR_INTCONSTANT){
+      std::cout << "Loop start, end or step value is not constant. Cannot generate CUDA kernel for this loop." << '\n';
+      exit(1);
+    }
     auto startIndex = loop->getStartValue()->getIntegerConstant();
     auto endIndex = loop->getEndValue()->getIntegerConstant();
     auto stepValue = loop->getStepValue()->getIntegerConstant();
