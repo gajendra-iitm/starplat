@@ -9,8 +9,9 @@
 	#include "../analyser/dataRace/dataRaceAnalyser.h"
 	#include "../analyser/deviceVars/deviceVarsAnalyser.h"
 	#include "../analyser/pushpull/pushpullAnalyser.h"
-
+	#include "../analyser/callGraph/callGraphAnalyser.h"
 	#include "../analyser/blockVars/blockVarsAnalyser.h"
+	#include "../analyser/cudaGlobalVariables/cudaGlobalVariablesAnalyser.h"
 	#include<getopt.h>
 	//#include "../symbolutil/SymbolTableBuilder.cpp"
      
@@ -50,14 +51,14 @@
     tempNode* temporary;
      }
 %token T_INT T_FLOAT T_BOOL T_DOUBLE  T_LONG  T_AUTOREF
-%token T_FORALL T_FOR  T_P_INF  T_INF T_N_INF
-%token T_FUNC T_IF T_ELSE T_WHILE T_RETURN T_DO T_IN T_FIXEDPOINT T_UNTIL T_FILTER
+%token T_FORALL T_FOR  T_P_INF  T_INF T_N_INF T_LOOP
+%token T_FUNC T_IF T_ELSE T_WHILE T_RETURN T_DO T_IN T_FIXEDPOINT T_UNTIL T_FILTER T_TO T_BY
 %token T_ADD_ASSIGN T_SUB_ASSIGN T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_AND_ASSIGN T_XOR_ASSIGN
-%token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP
+%token T_OR_ASSIGN T_INC_OP T_DEC_OP T_PTR_OP T_AND_OP T_OR_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP T_ASTERISK
 %token T_AND T_OR T_SUM T_AVG T_COUNT T_PRODUCT T_MAX T_MIN
-%token T_GRAPH T_GNN T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_POINT T_UNDIREDGE T_TRIANGLE T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET T_BTREE
+%token T_GRAPH T_GNN T_DIR_GRAPH  T_NODE T_EDGE T_UPDATES T_CONTAINER T_POINT T_UNDIREDGE T_TRIANGLE T_NODEMAP T_VECTOR T_HASHMAP T_HASHSET T_BTREE T_GEOMCOMPLETEGRAPH T_GRAPH_LIST T_SET
 %token T_NP  T_EP
-%token T_LIST T_SET_NODES T_SET_EDGES  T_FROM
+%token T_LIST T_SET_NODES T_SET_EDGES  T_FROM T_RANDOMSHUFFLE T_ALLOCATE T_BREAK T_CONTINUE
 %token T_BFS T_REVERSE
 %token T_INCREMENTAL T_DECREMENTAL T_STATIC T_DYNAMIC
 %token T_BATCH T_ONADD T_ONDELETE
@@ -74,12 +75,12 @@
 %type <pList> paramList
 %type <node> statement blockstatements assignment declaration proc_call control_flow reduction return_stmt batch_blockstmt on_add_blockstmt on_delete_blockstmt
 %type <node> type type1 type2 type3
-%type <node> primitive graph gnn collections structs property container nodemap vector hashmap hashset btree
-%type <node> id leftSide rhs expression oid val boolean_expr unary_expr indexExpr tid  
+%type <node> primitive graph gnn collections structs property container nodemap vector hashmap hashset btree set
+%type <node> id leftSide rhs expression oid val boolean_expr unary_expr indexExpr tid alloca_expr  
 %type <node> bfs_abstraction filterExpr reverse_abstraction
 %type <nodeList> leftList rightList
 %type <node> iteration_cf selection_cf
-%type <node> reductionCall 
+%type <node> reductionCall break_stmt continue_stmt
 %type <aList> arg_list
 %type <ival> reduction_calls reduce_op
 %type <bval> by_reference
@@ -180,10 +181,23 @@ param : type1 by_reference id {  //Identifier* id=(Identifier*)Util::createIdent
 										  tempType->addSourceGraph($5);
 				                         $$=Util::createParamNode(tempType,$2,$3);
 									 };
+				| type1 '&' id {
+					Type* type = (Type*)$1;
+					type->setRefType();
+					Identifier* id=(Identifier*)$3;
+					if(type->isGraphType())
+					{
+						tempIds.push_back(id);
+					}
+					printf("\n");
+                    $$=Util::createParamNode($1,$3);
+				}
 
 
 by_reference : /* epsilon */ {$$ = false;};
 		| '&' {$$ = true;};
+
+
 
 
 
@@ -205,7 +219,11 @@ statement: declaration ';'{$$=$1;};
 	| batch_blockstmt  {printf ("found batch\n") ;$$ = $1;};
 	| on_add_blockstmt {printf ("found on add block\n") ;$$ = $1;};
 	| on_delete_blockstmt {printf ("found delete block\n") ;$$ = $1;};
+	| break_stmt ';' {printf ("found break\n") ;$$ = Util::createNodeForBreakStatement();};
+	| continue_stmt ';' {printf ("found continue\n") ;$$ = Util::createNodeForContinueStatement();};
 
+break_stmt : T_BREAK {printf ("found break\n") ;};
+continue_stmt : T_CONTINUE {printf ("found continue\n") ;};
 
 blockstatements : block_begin statements block_end { $$=Util::finishBlock();};
 
@@ -220,6 +238,7 @@ block_begin:'{' { Util::createNewBlock(); }
 block_end:'}'
 
 return_stmt : T_RETURN expression {$$ = Util::createReturnStatementNode($2);}
+	| T_RETURN ';' {$$ = Util::createReturnStatementNode(NULL);};
                
 
 declaration : type1 id   {
@@ -243,11 +262,29 @@ declaration : type1 id   {
 	                   
 	                    $$=Util::createAssignedDeclNode($1,$2,$4);};
 
+	| type3 id '(' rhs ')' {//Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+	                   
+	                    $$=Util::createParamDeclNode($1,$2,$4);};
+
+	| type2 id '(' rhs ')' {//Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+	                   
+	                    $$=Util::createParamDeclNode($1,$2,$4);};
+
+	| type1 id '(' rhs ')' {//Identifier* id=(Identifier*)Util::createIdentifierNode($2);
+	                   
+	                    $$=Util::createParamDeclNode($1,$2,$4);};
+
+
 type1: primitive {$$=$1; };
 	| graph {$$=$1;};
 	| collections { $$=$1;};
 	| structs {$$=$1;};
-	| gnn {$$=$1;};
+	| type1 T_ASTERISK {
+						Type* type=(Type*)$1;
+						type->incrementPointerStarCount();
+						$$=$1;
+						};
+	| gnn {$$=$1;}; 
 
 
 primitive: T_INT { $$=Util::createPrimitiveTypeNode(TYPE_INT);};
@@ -260,6 +297,9 @@ type3: T_AUTOREF { $$=Util::createPrimitiveTypeNode(TYPE_AUTOREF);};
 
 graph : T_GRAPH { $$=Util::createGraphTypeNode(TYPE_GRAPH,NULL);};
 	|T_DIR_GRAPH {$$=Util::createGraphTypeNode(TYPE_DIRGRAPH,NULL);};
+	| T_GEOMCOMPLETEGRAPH { $$=Util::createGraphTypeNode(TYPE_GEOMCOMPLETEGRAPH,NULL);};
+	| T_GRAPH_LIST { $$=Util::createGraphTypeNode(TYPE_GRAPH_LIST,NULL);};
+
 
 gnn : T_GNN { $$=Util::createGNNTypeNode(TYPE_GNN,NULL);};
 
@@ -270,7 +310,8 @@ collections : T_LIST { $$=Util::createCollectionTypeNode(TYPE_LIST,NULL);};
 					                    $$=Util::createCollectionTypeNode(TYPE_SETE,$3);};
 		| T_UPDATES '<' id '>'   { $$=Util::createCollectionTypeNode(TYPE_UPDATES,$3);}
 	    | container {$$ = $1;}
-      | vector {$$ = $1;}
+      	| vector {$$ = $1;}
+		| set    {$$ = $1;}
 		| nodemap   {$$ = $1;}
 		| hashmap {$$ = $1;}
 	    | hashset {$$ = $1;}
@@ -288,7 +329,17 @@ container : T_CONTAINER '<' type '>' '(' arg_list ',' type ')' {$$ = Util::creat
 vector: T_VECTOR'<' type '>' '(' arg_list ',' type ')' {$$ = Util::createContainerTypeNode(TYPE_VECTOR, $3, $6->AList, $8);}
           | T_VECTOR'<' type '>' '(' arg_list ')' { $$ =  Util::createContainerTypeNode(TYPE_VECTOR, $3, $6->AList, NULL);}
           | T_VECTOR'<' type '>' { list<argument*> argList;
-			                          $$ = Util::createContainerTypeNode(TYPE_VECTOR, $3, argList, NULL);}		
+			                          $$ = Util::createContainerTypeNode(TYPE_VECTOR, $3, argList, NULL);}	
+		  | T_VECTOR'<' type '>' '&' { list<argument*> argList;
+			                          $$ = Util::createContainerTypeRefNode(TYPE_VECTOR, $3, argList, NULL);}	
+
+set: T_SET'<' type '>' '(' arg_list ',' type ')' {$$ = Util::createContainerTypeNode(TYPE_SET, $3, $6->AList, $8);}
+          | T_SET'<' type '>' '(' arg_list ')' { $$ =  Util::createContainerTypeNode(TYPE_SET, $3, $6->AList, NULL);}
+          | T_SET'<' type '>' { list<argument*> argList;
+			                          $$ = Util::createContainerTypeNode(TYPE_SET, $3, argList, NULL);}	
+		   | T_SET'<' type '>' '&' { list<argument*> argList;
+			                          $$ = Util::createContainerTypeRefNode(TYPE_SET, $3, argList, NULL);}		
+
 nodemap : T_NODEMAP '(' type ')' {$$ = Util::createNodeMapTypeNode(TYPE_NODEMAP, $3);}
 
 hashmap : T_HASHMAP '<' type ',' type '>' { list<argument*> argList;
@@ -323,6 +374,7 @@ expression : proc_call { $$=$1;};
              | expression '+' expression { $$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_ADD);};
 	         | expression '-' expression { $$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_SUB);};
 	         | expression '*' expression {$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MUL);};
+			 | expression T_ASTERISK expression {$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MUL);};
 	         | expression'/' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_DIV);};
 			 | expression '%' expression{$$=Util::createNodeForArithmeticExpr($1,$3,OPERATOR_MOD);};
              | expression T_AND_OP expression {$$=Util::createNodeForLogicalExpr($1,$3,OPERATOR_AND);};
@@ -341,6 +393,11 @@ expression : proc_call { $$=$1;};
 			 | leftSide { $$=Util::createNodeForId($1);};
 			 | unary_expr {$$=$1;};
 			 | indexExpr {$$ = $1;};
+			 | alloca_expr {$$= $1;};
+
+alloca_expr : T_ALLOCATE '<' type '>' '(' arg_list ')' { 
+					$$ = Util::createNodeForAllocaExpr($3, $6->AList); 
+				};
 
 indexExpr : expression '[' expression ']' {printf("first done this \n");$$ = Util::createNodeForIndexExpr($1, $3, OPERATOR_INDEX);};
 
@@ -398,6 +455,7 @@ iteration_cf : T_FIXEDPOINT T_UNTIL '(' id ':' expression ')' blockstatements { 
 		| T_FOR '(' id T_IN id '.' proc_call  filterExpr')' blockstatements {$$=Util::createNodeForForAllStmt($3,$5,$7,$8,$10,false);};
 		| T_FOR '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, false);};
 		| T_FORALL '(' id T_IN indexExpr ')' blockstatements {$$ = Util::createNodeForForStmt($3, $5, $7, true);};
+		| T_LOOP '(' id T_IN expression T_TO expression T_BY expression ')' blockstatements {$$ = Util::createNodeForLoopStmt($3, $5, $7, $9, $11);};
 		| T_FOR '(' primitive id '=' rhs ';' boolean_expr ';' expression ')' blockstatements {$$ = Util::createNodeForSimpleForStmt($3, $4, $6, $8, $10, $12); };
 
 filterExpr  :         { $$=NULL;};
@@ -553,8 +611,9 @@ int main(int argc,char **argv)
   bool staticGen = false;
   bool dynamicGen = false;
   bool optimize = false;
+  bool multiFunction = false;
 
-  while ((opt = getopt(argc, argv, "sdf:b:o")) != -1) 
+  while ((opt = getopt(argc, argv, "smdf:b:o")) != -1) 
   {
      switch (opt) 
      {
@@ -573,6 +632,9 @@ int main(int argc,char **argv)
 	  case 'o':
 	  	optimize = true;
 		break;	
+	  case 'm':
+	  	multiFunction = true;
+		break;
       case '?':
         fprintf(stderr,"Unknown option: %c\n", optopt);
 		exit(-1);
@@ -665,18 +727,27 @@ int main(int argc,char **argv)
         spcuda::dsl_cpp_generator cpp_backend;
         cpp_backend.setFileName(fileName);
 	//~ cpp_backend.setOptimized();
-	
-	if (optimize) {
-	  attachPropAnalyser apAnalyser;
-	  apAnalyser.analyse(frontEndContext.getFuncList());
+		if (optimize) {
+		attachPropAnalyser apAnalyser;
+		apAnalyser.analyse(frontEndContext.getFuncList());
 
-	  dataRaceAnalyser drAnalyser;
-	  drAnalyser.analyse(frontEndContext.getFuncList());
+		dataRaceAnalyser drAnalyser;
+		drAnalyser.analyse(frontEndContext.getFuncList());
 
-	  deviceVarsAnalyser dvAnalyser;
-	  dvAnalyser.analyse(frontEndContext.getFuncList());
-	  cpp_backend.setOptimized();
-	}
+		deviceVarsAnalyser dvAnalyser;
+		dvAnalyser.analyse(frontEndContext.getFuncList());
+
+		cpp_backend.setOptimized();
+		}
+
+		if(multiFunction){
+			callGraphAnalyser cgAnalyser;	
+			cgAnalyser.analyse(frontEndContext.getFuncList());
+
+			cudaGlobalVariablesAnalyser cudaGlobalVarsAnalyser;
+			cudaGlobalVarsAnalyser.analyse(frontEndContext.getFuncList());
+			cpp_backend.setMultiFunction();
+		}
 		  
         cpp_backend.generate();
       }

@@ -1,0 +1,162 @@
+// ParMDS algorithm for StarPlat for the OpenMP backend
+// Refer PPT for more details
+// Link: https://docs.google.com/presentation/d/1gDuslC7s7OWUUeaGPU5PxPdvR2u2sKiOk6Amql2A5Us/edit?usp=sharing 
+
+
+function pathGen(Graph g, std::vector<int> &path ,  std::set<int>&visited, int u){
+    if(visited.find(u) == visited.end()){
+        visited.insert(u);
+        path.push_back(u);
+        for(v in g.neighbors(u)){
+            if(visited.find(v) == visited.end()){
+                pathGen(g, path, visited, v);
+            }
+        }
+    }
+}
+
+function costOfRoute(std::vector<int>& route, geomCompleteGraph g){
+    int m = route.size() - 1;
+    int cost = 0;   
+    cost = g.calculateDistance(0, route[0]);
+    int size = route.size() - 2;
+    loop(j in 0 to size+1 by 1){
+        cost += g.calculateDistance(route[j], route[j+1]);
+    }
+    cost = cost + g.calculateDistance(0, route[m]);
+    return cost;
+}
+
+
+function nearestNeighborHeuristic(std::vector<std::vector<int>>& routes, geomCompleteGraph g) {
+    std::vector<std::vector<int>> newRoutes(routes.size());
+    loop(i in 0 to routes.size() by 1) {
+        std::vector<int> route = routes[i];
+        std::vector<int> newRoute;
+        std::set<int> visited;
+        int currentNode = route[0];
+        newRoute.push_back(currentNode);
+        visited.insert(currentNode);
+        
+        while(newRoute.size() < route.size()) {
+            int nearestNode = -1;
+            double minDistance = INT_MAX;
+            loop(j in 0 to route.size() by 1) {
+                int candidateNode = route[j];
+                if(visited.find(candidateNode) == visited.end()) {
+                    double distance = g.calculateDistance(currentNode, candidateNode);
+                    if(distance < minDistance) {
+                        minDistance = distance;
+                        nearestNode = candidateNode;
+                    }
+                }
+            }
+            if(nearestNode != -1) {
+                newRoute.push_back(nearestNode);
+                visited.insert(nearestNode);
+                currentNode = nearestNode;
+            }
+        }
+        newRoutes[i]= newRoute;
+    }
+    return newRoutes;
+}
+
+function twoOptHeuristic(std::vector<std::vector<int>>& routes, geomCompleteGraph g) {
+    std::vector<std::vector<int>> optimizedRoutes(routes.size());
+    loop(i in 0 to routes.size() by 1) {
+        std::vector<int> route = routes[i];
+        bool improved = true;
+        while(improved) {
+            improved = false;
+            int n = route.size();
+            loop(j in 1 to n - 2 by 1) {
+                loop(k in j + 1 to n - 1 by 1) {
+                    if(k != j && k != j + 1) {
+                        std::vector<int> newRoute = route;
+                        reverse(newRoute.begin() + j, newRoute.begin() + k + 1);
+                        if(costOfRoute(newRoute, g) < costOfRoute(route, g)) {
+                            route = newRoute;
+                            improved = true;
+                        }
+                    }
+                }
+            }
+        }
+        optimizedRoutes[i]=route;
+    }
+    return optimizedRoutes;
+}
+
+
+
+function refineRoutes(std::vector<std::vector<int>>& routes, geomCompleteGraph g){
+    std::vector<std::vector<int>> routesOne = nearestNeighborHeuristic(routes,g);
+    std::vector<std::vector<int>> routesTwo = twoOptHeuristic(routes, g);
+    std::vector<std::vector<int>> routesThree = twoOptHeuristic(routesOne,g);
+
+    std::vector<std::vector<int>> modifiedVector(routesOne.size());
+
+    loop(i in 0 to routes.size() by 1){
+        std::vector<int> routeTwo = routesTwo[i];
+        int costTwo = costOfRoute(routeTwo, g);
+        std::vector<int> routeThree = routesThree[i];
+        int costThree = costOfRoute(routeThree, g);
+        if(costTwo < costThree){
+            modifiedVector[i]=routeTwo;
+        }else{
+            modifiedVector[i]= routeThree;
+        }
+    }
+    return modifiedVector;
+
+}
+
+
+function parMDS(geomCompleteGraph g, int capacity, propNode<int> demands) {
+    Graph mst = g.getMST();
+    int g_cost = INT_MAX;
+    std::vector<std::vector<int>> g_routes;
+    loop(i in 1 to 100000 by 1){
+        Graph newMst = mst.copyGraph();
+        newMst.randomShuffle();
+        std::vector<int> path;
+        std::set<int> visited;
+        pathGen(newMst, path, visited, 0);
+        std::vector<std::vector<int>> routes;
+        std::vector<int>curr_path;
+        int cost = 0;
+        loop(j in 0 to path.size() by 1){
+            int currNode = path[j];
+            cost = cost + currNode.demands;
+            if(cost > capacity){
+                routes.push_back(curr_path);
+                curr_path.clear();
+                curr_path.push_back(currNode);
+                cost = currNode.demands;
+            }else{
+                curr_path.push_back(currNode);
+            }
+        }
+        routes.push_back(curr_path);
+        int curr_cost = 0;
+        int n = routes.size();
+        loop(k in 0 to n by 1){
+            std::vector<int> route = routes[k];
+            curr_cost = curr_cost + costOfRoute(route, g);
+        }        
+        if(curr_cost < g_cost && routes.size() > 0){
+            g_cost = curr_cost;
+            g_routes = routes;
+        }
+    }
+
+    std::vector<std::vector<int>> res = refineRoutes(g_routes, g);
+    int curr_cost = 0;
+    int n = res.size();
+    loop(k in 0 to n by 1){
+        std::vector<int> route = res[k];
+        curr_cost += costOfRoute(route, g);
+    }        
+    return curr_cost;
+}

@@ -31,6 +31,9 @@ class dsl_cpp_generator {
 
   bool isHeader;
   bool isOptimized;
+  bool isMultiFunction;
+
+  std::map<std::string,int> kernelLoopHeaders;
 
  public:
   dsl_cpp_generator() {
@@ -50,6 +53,7 @@ class dsl_cpp_generator {
     staticFuncCount = 0;
     inFuncCount = 0;
     decFuncCount = 0;
+    this->kernelLoopHeaders = std::map<std::string,int>();
   }
 
   void generateNestedContainer(Type* type,bool isMainFile);
@@ -71,9 +75,10 @@ class dsl_cpp_generator {
   void generateStatement(statement* stmt, bool isMainFile);
   // void generateAssignmentStmt(assignment* assignStmt);
   void generateAssignmentStmt(assignment* assignStmt, bool isMainFile);
-  void generateWhileStmt(whileStmt* whilestmt, bool isMainfile);
+  // void generateWhileStmt(whileStmt* whilestmt, bool isMainfile);
   void generateSimpleForStmt(simpleForStmt* forstmt, bool isMainFile);
   void generateForAll(forallStmt* forAll, bool isMainFile);
+  void generateLoop(loopStmt* loop, bool isMainFile);
   void generateFixedPoint(fixedPointStmt* fixedPoint, bool isMainFile);
   void generateIfStmt(ifStmt* ifstmt, bool isMainFile);
   void generateDoWhileStmt(dowhileStmt* doWhile, bool isMainFile);
@@ -83,6 +88,9 @@ class dsl_cpp_generator {
   void generateBFSAbstraction(iterateBFS* bfsAbstraction, bool isMainFile);
   void generateRevBFSAbstraction(iterateBFS* bfsAbstraction,
                                  bool isMainFile);  // reverse
+  void generateBreakStmt(breakStmt* breakStmt, bool isMainFile); 
+  void generateContinueStmt(continueStmt* continueStmt, bool isMainFile);
+
 
   void incFuncCount(int funcType);
   int curFuncCount();
@@ -91,13 +99,17 @@ class dsl_cpp_generator {
   void generate_exprArL(Expression* expr, bool isMainFile, bool isAtomic = false);
 
   void generate_exprRelational(Expression* expr, bool isMainFile);
+  void generate_exprIndex(Expression* expr, bool isMainFile);
   void generate_exprInfinity(Expression* expr, bool isMainFile);
   void generate_exprLiteral(Expression* expr, bool isMainFile);
   void generate_exprIdentifier(Identifier* id, bool isMainFile);
   void generate_exprPropId(PropAccess* propId, bool isMainFile);
-  void generateArgList(list<argument*> argList, bool addBraces,bool isMainFile);
+  void generateArgList(list<argument*> argList, bool addBraces,bool isMainFile,  bool parallelLoop, bool isUsingWeight, bool hasAParallelLoop);
   string getProcName(proc_callExpr* proc);
   void generate_exprProcCall(Expression* expr, bool isMainFile);
+  void generate_exprAllocate(Expression* expr, bool isMainFile);
+  void generate_newListParams(list<argument*> exprList, bool isMainFile); 
+  void generateWhileStmt(whileStmt* stmt, bool isMainFile);
 
   void generateForAll_header();
   void generateForAllSignature(forallStmt* forAll, bool isKernel);
@@ -166,6 +178,7 @@ class dsl_cpp_generator {
   void generateCudaIndex(const char* idName);
   void generateCudaMemCpySymbol(char* var, const char* typeStr, bool direction);
   void generateCudaMalloc(Type* type, const char* identifier);
+  void generateCudaMemcpyParams(Type* type, const char* identifier);
   void generateCudaMallocStr(const char* dVar, const char* type,
                              const char* sizeOfType);
   void generateThreadId(const char* str);
@@ -182,6 +195,7 @@ class dsl_cpp_generator {
   void generateAtomicDeviceAssignmentStmt(assignment* asmt, bool isMainFile);
   void generateDeviceAssignmentStmt(assignment* asmt, bool isMainFile);
   void addCudaKernel(forallStmt* forAll);
+  void addCudaLoopKernel(loopStmt* loop, int startIndex, int endIndex, int stepValue);
   void generateCallList(list<formalParam*> paramList, dslCodePad& targetFile);
   void generateCudaMallocParams(list<formalParam*> paramList);
   void generateCudaMemCpyParams(list<formalParam*> paramList);
@@ -198,6 +212,10 @@ class dsl_cpp_generator {
   void IncrementKCount() { kernelCount++; }
   int getKCount() { return kernelCount; }
   void setOptimized() { isOptimized = true; }
+  void setMultiFunction() {
+    isMultiFunction = true;
+  }
+
 };
 
 static const char* INTALLOCATION = "new int";

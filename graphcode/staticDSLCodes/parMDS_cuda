@@ -1,0 +1,435 @@
+// ParMDS algorithm for StarPlat for the CUDA backend
+// Refer PPT for more details
+// Link: https://docs.google.com/presentation/d/1gDuslC7s7OWUUeaGPU5PxPdvR2u2sKiOk6Amql2A5Us/edit?usp=sharing 
+
+
+function pathGen(Graph g, int *path, bool *visited, int v, int &count, int* stack)
+{
+    int top = 0;
+    stack[top] = v; // Push the starting node onto the stack
+    top++;
+    while(top >=0){
+        if(top > 0){
+            v = stack[top - 1]; // Get the top node from the stack
+            top--;
+        }else{
+            break;
+        }
+         // Pop the top node from the stack
+        if (visited[v] == false)
+        {
+            visited[v] = true;
+            path[count] = v;
+            count++;
+        }
+        for (u in g.neighbors(v))
+        {
+            if (visited[u] == false)
+            {
+                stack[top] = u; // Push the unvisited neighbor onto the stack
+                top++;
+            }
+        }
+    }
+}
+
+function costOfRoute(int start_route, int end_route, int *route_nodes, geomCompleteGraph g, int &cost)
+{
+    cost = g.calculateDistance(0, route_nodes[start_route]);
+    while (start_route < end_route)
+    {
+        cost = cost + g.calculateDistance(route_nodes[start_route], route_nodes[start_route + 1]);
+        start_route = start_route + 1;
+    }
+    cost = cost + g.calculateDistance(0, route_nodes[end_route]);
+}
+
+function nearestNeighborHeuristic(int *routes_nodes, int *routes_size, geomCompleteGraph g, int route_count, int *new_routes_nodes, int *new_routes_size)
+{
+
+    int m = g.num_nodes();
+
+    int i = 0;
+
+    int j = 0;
+    while (j <= route_count){
+        new_routes_size[j] = routes_size[j]; // Copying route sizes
+        j++;
+    }
+
+    j = 0;
+    while (j < m){
+        new_routes_nodes[j] = routes_nodes[j]; // Copying route nodes
+        j++;
+    }
+
+    while (i < route_count)
+    {
+        bool *visited = allocate<bool>(m+1);
+        int j = 0;
+        while (j <= m)
+        {
+            visited[j] = false;
+            j++;
+        }
+        int end_route = routes_size[i];
+        end_route = end_route - 1; // Adjusting for zero-based index
+        int start_route;
+        if (i == 0)
+        {
+            start_route = 0;
+        }
+        else
+        {
+            start_route = routes_size[i - 1];
+        }
+        int old_route_size = end_route - start_route + 1;
+
+        int currIndex = start_route;
+        int currentNode = routes_nodes[start_route];
+
+        new_routes_nodes[currIndex] = currentNode;
+        visited[currentNode] = true;
+        currIndex++;
+
+        int newRouteSize = 1;
+
+        while (newRouteSize < old_route_size)
+        {
+            int nearestNode = -1;
+            double minDistance = INT_MAX;
+            int j = 0;
+            while (j < old_route_size)
+            {
+                int candidateNode = routes_nodes[start_route + j];
+                if (visited[candidateNode] == false)
+                {
+                    double distance = g.calculateDistance(currentNode, candidateNode);
+                    if (distance < minDistance)
+                    {
+                        minDistance = distance;
+                        nearestNode = candidateNode;
+                    }
+                }
+                j++;
+            }
+            if (nearestNode != -1)
+            {
+                new_routes_nodes[currIndex] = nearestNode;
+                visited[nearestNode] = true;
+                currIndex++;
+                newRouteSize++;
+                currentNode = nearestNode;
+            }
+        }
+        i++;
+    }
+}
+
+function twoOptHeuristic(int *routes_nodes, int *routes_size, geomCompleteGraph g, int route_count, int *new_routes_nodes, int *new_routes_size)
+{
+
+    int *temp_routes_nodes = allocate<int>(g.num_nodes());
+    int i = 0;
+    while (i < route_count)
+    {
+        int start_route;
+        if (i == 0)
+        {
+            start_route = 0;
+        }
+        else
+        {
+            start_route = routes_size[i - 1];
+        }
+        int end_route = routes_size[i];
+        int j = start_route;
+        while (j < end_route)
+        {
+            new_routes_nodes[j] = routes_nodes[j];
+            temp_routes_nodes[j] = routes_nodes[j]; 
+            j++;
+        }
+        i++;
+    }
+
+    i = 0;
+    while (i < route_count)
+    {
+        int start_route;
+        if (i == 0)
+        {
+            start_route = 0;
+        }
+        else
+        {
+            start_route = routes_size[i - 1];
+        }
+        int end_route = routes_size[i];
+        bool improved = true;
+        while (improved)
+        {
+            improved = false;
+            int n = end_route - start_route;
+            int j = 1;
+            while (j < n - 2)
+            {
+                int k = j + 1;
+                while (k < n - 1)
+                {
+                    if (k != j && k != j + 1)
+                    {
+                        int idx = start_route;
+                        while (idx < end_route)
+                        {
+                            temp_routes_nodes[idx] = new_routes_nodes[idx];
+                            idx++;
+                        }
+                        int left = start_route + j;
+                        int right = start_route + k;
+                        while (left < right)
+                        {
+                            int tmp = temp_routes_nodes[left];
+                            temp_routes_nodes[left] = temp_routes_nodes[right];
+                            temp_routes_nodes[right] = tmp;
+                            left++;
+                            right--;
+                        }
+                        int costOld = 0;
+                        costOfRoute(start_route, end_route, temp_routes_nodes, g, costOld);
+                        int costNew = 0;
+                        costOfRoute(start_route, end_route, new_routes_nodes, g, costNew);
+                        if (costOld < costNew)
+                        {
+                            idx = start_route;
+                            while (idx < end_route)
+                            {
+                                new_routes_nodes[idx] = temp_routes_nodes[idx];
+                                idx++;
+                            }
+                            improved = true;
+                        }
+                    }
+                    k++;
+                }
+                j++;
+            }
+        }
+        i++;
+    }
+}
+
+function refineRoutes(int *routes_nodes, int *routes_size, int route_count, geomCompleteGraph g)
+{
+
+    int num_nodes = g.num_nodes();
+
+    int *routes_nodes_one = allocate<int>(num_nodes);
+    int *routes_size_one = allocate<int>(num_nodes);
+
+    int *routes_nodes_two = allocate<int>(num_nodes);
+    int *routes_size_two = allocate<int>(num_nodes);
+
+    int *routes_nodes_three = allocate<int>(num_nodes);
+    int *routes_size_three = allocate<int>(num_nodes);
+
+    int *modified_routes_nodes = allocate<int>(num_nodes);
+    int *modified_routes_size = allocate<int>(num_nodes);
+
+    nearestNeighborHeuristic(routes_nodes, routes_size, g, route_count, routes_nodes_one, routes_size_one);
+    twoOptHeuristic(routes_nodes, routes_size, g, route_count, routes_nodes_two, routes_size_two);
+    twoOptHeuristic(routes_nodes_one, routes_size_one, g, route_count, routes_nodes_three, routes_size_three);
+
+    int curr_cost = 0;
+    int route_count_two = route_count;
+    int i = 0;
+    while (i < route_count)
+    {
+        if (i == 0)
+        {
+            int start_route_two = 0;
+            int end_route_two = routes_size[i];
+            int costTwo = 0;
+            costOfRoute(start_route_two, end_route_two, routes_nodes_two, g, costTwo);
+
+            int start_route_three = 0;
+            int end_route_three = routes_size[i];
+            int costThree = 0;
+            costOfRoute(start_route_three, end_route_three, routes_nodes_three, g, costThree);
+
+            if (costTwo < costThree)
+            {
+                int j = start_route_two;
+                while (j < end_route_two)
+                {
+                    modified_routes_nodes[j] = routes_nodes_two[j];
+                    j++;
+                }
+                modified_routes_size[i] = routes_size[i];
+                curr_cost = curr_cost+ costTwo;
+            }
+            else
+            {
+                int j = start_route_three;
+                while (j < end_route_three)
+                {
+                    modified_routes_nodes[j] = routes_nodes_three[j];
+                    j++;
+                }
+                modified_routes_size[i] = routes_size[i];
+                curr_cost =curr_cost+ costThree;
+            }
+        }
+        else
+        {
+            int start_route_two = routes_size[i - 1];
+            int end_route_two = routes_size[i];
+            int costTwo = 0;
+            costOfRoute(start_route_two, end_route_two, routes_nodes_two, g, costTwo);
+
+            int start_route_three = routes_size[i - 1];
+            int end_route_three = routes_size[i];
+            int costThree = 0;
+            costOfRoute(start_route_three, end_route_three, routes_nodes_three, g, costThree);
+
+            if (costTwo < costThree)
+            {
+                int j = start_route_two;
+                while (j < end_route_two)
+                {
+                    modified_routes_nodes[j] = routes_nodes_two[j];
+                    j++;
+                }
+                modified_routes_size[i] = routes_size[i];
+                curr_cost = curr_cost + costTwo;
+            }
+            else
+            {
+                int j = start_route_three;
+                while (j < end_route_three)
+                {
+                    modified_routes_nodes[j] = routes_nodes_three[j];
+                    j++;
+                }
+                modified_routes_size[i] = routes_size[i];
+                curr_cost = curr_cost + costThree;
+            }
+        }
+        i++;
+    }
+
+    // print out the cost variable here
+}
+
+function parMDS(geomCompleteGraph g, propNode<int> demands)
+{
+    Graph mst = g.getMST();
+    int g_cost = INT_MAX;
+
+    int num_nodes = g.num_nodes();
+
+    int capacity = g.getCapacity();
+
+    int *g_routes_nodes = allocate<int>(num_nodes);
+    int *g_routes_size = allocate<int>(num_nodes);
+    int g_route_count = 0;
+
+    int m = 10000 * g.num_nodes();
+    int n = m * g.num_nodes();
+
+    // Flattened 2D arrays to 1D
+    int *all_path = allocate<int>(m);
+    bool *all_visited = allocate<bool>(m);
+    int *all_routes_nodes = allocate<int>(m);
+    int *all_routes_size = allocate<int>(m);
+
+    int *g_routes_stack = allocate<int>(n);
+
+    GraphList mst_list = mst.makeGraphCopy(10000);
+
+    loop(i in 1 to 10000 by 1)
+    {
+        Graph newMst = mst_list.getGraphAtIndex(i - 1);
+        newMst.randomShuffle();
+        int *path = all_path + (i - 1) * g.num_nodes();
+        bool *visited = all_visited + (i - 1) * g.num_nodes();
+        int * stack = g_routes_stack + (i - 1) * g.num_nodes();
+        int count = 0;
+        pathGen(newMst, path, visited, 0, count, stack);
+
+        int *routes_nodes = all_routes_nodes + (i - 1) * g.num_nodes();
+        int *routes_size = all_routes_size + (i - 1) * g.num_nodes();
+        int route_count = 0;
+
+        int route_nodes_index = 0;
+        int route_size_index = 0;
+
+        int cost = 0;
+        loop(j in 0 to g.num_nodes() by 1)
+        {
+            int currNode = path[j];
+            cost = cost + currNode.demands;
+            if (cost > capacity)
+            {
+                routes_size[route_size_index] = route_nodes_index;
+                route_size_index++;
+
+                route_count = route_count + 1;
+
+                routes_nodes[route_nodes_index] = currNode;
+                route_nodes_index++;
+                cost = currNode.demands;
+            }
+            else
+            {
+                routes_nodes[route_nodes_index] = currNode;
+                route_nodes_index++;
+            }
+        }
+
+        routes_size[route_size_index] = route_nodes_index;
+        route_size_index++;
+        route_count = route_count + 1;
+        int total_curr_cost = 0;
+        int currcost = 0;
+        loop(k in 0 to route_count by 1)
+        {
+            if (k == 0)
+            {
+                int start_route = 0;
+                int end_route = routes_size[k];
+                costOfRoute(start_route, end_route, routes_nodes, g, currcost);
+            }
+            else
+            {
+                int start_route = routes_size[k - 1];
+                int end_route = routes_size[k];
+                costOfRoute(start_route, end_route, routes_nodes, g, currcost);
+            }
+            total_curr_cost = total_curr_cost + currcost;
+        }
+        if(total_curr_cost > 0){
+            int old_cost = atomicMin(g_cost, total_curr_cost);
+            if (total_curr_cost < old_cost && route_count > 0)
+            {
+                g_cost = total_curr_cost;
+                int k = 0;
+                while(k<g.num_nodes()){
+                    g_routes_nodes[k] = routes_nodes[k]; // Resetting the routes nodes
+                    k++;
+                }
+                k = 0;
+                while(k<g.num_nodes()){
+                    g_routes_size[k] = routes_size[k]; // Resetting the routes size
+                    k++;
+                }
+                g_route_count = route_count;
+            }
+        }
+        
+    }
+
+    // TODO: free memory
+
+    refineRoutes(g_routes_nodes, g_routes_size, g_route_count, g);
+}

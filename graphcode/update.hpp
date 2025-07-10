@@ -1,3 +1,6 @@
+#ifndef STARPLAT_UPDATE_HPP
+#define STARPLAT_UPDATE_HPP
+
 #include<vector>
 #include<set>
 #include<algorithm>
@@ -98,5 +101,4 @@ class update
 
      }
 
-
-
+#endif

@@ -1,3 +1,6 @@
+#ifndef STARPLAT_GRAPH_H
+#define STARPLAT_GRAPH_H
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -5,32 +8,24 @@
 #include <set>
 #include <map>
 #include <algorithm>
+#include <queue>
 #include <string>
 #include <climits>
 #include<cmath>
 #include <random>
 #include <unordered_set>
 #include "graph_ompv2.hpp"
+#include <stdlib.h>
 #include "OMP_GNN.hpp"
+#include "abstractGraph.hpp"
 
 #ifdef __CUDACC__
 #include "CUDA_GNN.cuh"
 #endif
 
 
-class edge
-{
-public:
-  int32_t source;
-  int32_t destination;
-  int32_t weight;
-  int32_t id; /* -unique Id for each edge.
-                 -useful in adding properties to edges. */
-  int dir;
-};
-
-// bool counter=true;
-class graph
+//bool counter=true;
+class graph : public AbstractGraph 
 {
 private:
   int32_t nodesTotal;
@@ -60,6 +55,12 @@ public:
   std::map<int, int> outDeg;
   std::map<int, int> inDeg;
 
+  ~graph(){
+    if (edgeLen) delete[] edgeLen;
+    if (edgeList) delete[] edgeList;
+    if (srcList) delete[] srcList;
+  }
+
   graph(char *file)
   {
     filePath = file;
@@ -70,6 +71,56 @@ public:
     diff_rev_indexofNodes = NULL;
     diff_rev_edgeList = NULL;
     rev_edgeLen = NULL;
+  }
+
+  graph copyGraph(){
+    graph g_copy((char*)"");
+    g_copy.nodesTotal = nodesTotal;
+    g_copy.edgesTotal = edgesTotal;
+
+    if (edgeLen) {
+      g_copy.edgeLen = new int32_t[edgesTotal];
+      std::copy(edgeLen, edgeLen + edgesTotal, g_copy.edgeLen);
+    } else {
+      g_copy.edgeLen = nullptr;
+    }
+
+    if (filePath) {
+      g_copy.filePath = strdup(filePath);
+    } else {
+      g_copy.filePath = nullptr;
+    }
+
+    g_copy.edges = edges;
+
+    if (indexofNodes) {
+      g_copy.indexofNodes = new int32_t[nodesTotal + 2];
+      std::copy(indexofNodes, indexofNodes + nodesTotal + 2, g_copy.indexofNodes);
+    } else {
+      g_copy.indexofNodes = nullptr;
+    }
+
+
+    if (edgeList) {
+      g_copy.edgeList = new int32_t[edgesTotal];
+      std::copy(edgeList, edgeList + edgesTotal, g_copy.edgeList);
+    } else {
+      g_copy.edgeList = nullptr;
+    }
+
+    if (srcList) {
+      g_copy.srcList = new int32_t[edgesTotal];
+      std::copy(srcList, srcList + edgesTotal, g_copy.srcList);
+    } else {
+      g_copy.srcList = nullptr;
+    }
+
+    g_copy.graph_edge = graph_edge;
+
+    g_copy.outDeg = outDeg;
+    g_copy.inDeg = inDeg;
+
+    return g_copy;
   }
 
   std::map<int, std::vector<edge>> getEdges()
@@ -130,6 +181,36 @@ public:
 
     return foundEdge; // TODO: Maybe return a default value?
   }
+
+  void randomShuffle(){
+  
+    auto rd = std::random_device {}; 
+    auto rng = std::default_random_engine {rd()};
+    for(int i=0;i<=nodesTotal;i++)
+      {
+        std::vector<edge>& edgeOfVertex=edges[i];
+        std::shuffle(edgeOfVertex.begin(),edgeOfVertex.end(), rng);
+      }
+
+    std::shuffle(graph_edge.begin(), graph_edge.end(), rng);
+    int edge_no=0;
+
+    for(int i=0;i<=nodesTotal;i++) //change to 1-nodesTotal.
+    {
+      std::vector<edge> edgeofVertex=edges[i];
+      indexofNodes[i]=edge_no;
+      std::vector<edge>::iterator itr;
+      for(itr=edgeofVertex.begin();itr!=edgeofVertex.end();itr++)
+      {
+        edgeList[edge_no]=(*itr).destination;
+        edgeLen[edge_no]=(*itr).weight;
+        edge_no++;
+      }
+    }
+    indexofNodes[nodesTotal+1]=edge_no;//change to nodesTotal+1.
+    
+  }
+
 
   // library function to check candidate vertex is in the path from root to dest in SPT.
   bool inRouteFromSource(int candidate, int dest, int *parent)
@@ -633,14 +714,8 @@ public:
     //  printf("hello after this %d %d\n",nodesTotal,edgesTotal);
   }
 
-  void parseGraph()
-  {
-
-    parseEdges();
-
-    printf("Here half\n");
-// printf("HELLO AFTER THIS %d \n",nodesTotal);
-#pragma omp parallel for
+  void parseEdgesContent(){
+    #pragma omp parallel for
     for (int i = 0; i <= nodesTotal; i++) // change to 1-nodesTotal.
     {
       std::vector<edge> &edgeOfVertex = edges[i];
@@ -717,15 +792,16 @@ public:
       }
     }
 
-    /* convert to revCSR */
-    int prefix_sum = 0;
-    for (int i = 0; i <= nodesTotal; i++)
-    {
-      int temp = prefix_sum;
-      prefix_sum = prefix_sum + rev_indexofNodes[i];
-      rev_indexofNodes[i] = temp;
-    }
-    rev_indexofNodes[nodesTotal + 1] = prefix_sum;
+    
+      /* convert to revCSR */
+      int prefix_sum = 0;
+      for(int i=0;i<=nodesTotal;i++)
+        {
+          int temp = prefix_sum;
+          prefix_sum = prefix_sum + rev_indexofNodes[i];
+          rev_indexofNodes[i]=temp;
+        }
+        rev_indexofNodes[nodesTotal+1] = prefix_sum;
 
     /* store the sources in srcList */
 #pragma omp parallel for num_threads(4)
@@ -776,8 +852,13 @@ public:
     }
     free(vertexInter);
     free(edgeMapInter);
-    // change to nodesTotal+1.
-    //  printf("hello after this %d %d\n",nodesTotal,edgesTotal);
+
+  }
+
+  void parseGraph()
+  {
+    parseEdges();
+    parseEdgesContent();
   }
 
   /******************************|| Dynamic Graph Libraries ||********************************/
@@ -908,7 +989,7 @@ public:
         edge e;
         e.source = node;
         e.destination = nbr;
-        e.weight = edgeLen[i];
+        e.weight = this->edgeLen[i];
         e.id = i;
         e.dir = 1;
         //  printf(" weight %d\n", e.weight);
@@ -975,6 +1056,102 @@ public:
     }
 
     return in_edges;
+  }
+
+  void parseAdjacencyList(std::map<int, std::vector<edge>>& graph){
+    std::map<std::pair<int, int>, int> mpp;
+    for (auto &kv : graph) {
+      int node = kv.first;
+      std::vector<edge> edges = kv.second;
+      for (auto &e : edges) {
+        mpp[{node, e.destination}] += e.weight;
+      }
+    }
+
+    for (auto it = mpp.begin(); it != mpp.end(); ++it)
+    {
+      std::pair<int, int> key = it->first;
+      int value = it->second;
+      edge e;
+      e.source = key.first;
+      e.destination = key.second;
+      e.weight = value;
+
+      edgesTotal++;
+      edges[e.source].push_back(e);
+      graph_edge.push_back(e);
+    }
+    parseEdgesContent();  
+  }
+
+  graph getMST() {
+    int V = nodesTotal + 1;
+    std::vector<bool> inMST(V, false);
+    std::vector<int> key(V, INT_MAX);
+    std::vector<int> parent(V, -1);
+
+    typedef std::pair<int, int> P;
+    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;
+
+    key[0] = 0;
+    pq.push({0, 0});
+
+    graph mstGraph((char*)"");
+    mstGraph.nodesTotal = 0;
+    mstGraph.edgesTotal = 0;
+
+    std::map<int, std::vector<edge>> tempMST;
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+        if (inMST[u])
+            continue;
+        inMST[u] = true;
+        if (parent[u] != -1) {
+            edge edgeTemp;
+            edgeTemp.source = u;
+            edgeTemp.destination = parent[u];
+            edgeTemp.weight = key[u];
+            tempMST[u].push_back(edgeTemp);
+
+            edge edgeTemp2;
+            edgeTemp2.destination = u;
+            edgeTemp2.source = parent[u];
+            edgeTemp2.weight = key[u];
+            tempMST[parent[u]].push_back(edgeTemp2);
+        }
+        std::vector<edge> neighbors = this->getNeighbors(u);
+        for (auto &e : neighbors) {
+            int v = e.destination;
+            int w = e.weight;
+            if (!inMST[v] && w < key[v]) {
+                key[v] = w;
+                parent[v] = u;
+                pq.push({key[v], v});
+            }
+        }
+    }
+
+    mstGraph.nodesTotal = tempMST.size();
+    mstGraph.parseAdjacencyList(tempMST);
+
+    return mstGraph;
+}
+  void setNodes(int nodes){
+    this->nodesTotal=nodes;
+  }
+
+  void printGraph()
+  {
+    for (int i = 0; i < nodesTotal; i++)
+    {
+      std::cout << "Node " << i << ": ";
+      for (edge e : getNeighbors(i))
+      {
+        std::cout << "(" << e.destination << ", " << e.weight << ") ";
+      }
+      std::cout << std::endl;
+    }
   }
 
 
@@ -1101,3 +1278,5 @@ class GNN
     // }
 
 };
+
+#endif

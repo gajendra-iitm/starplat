@@ -54,6 +54,8 @@ namespace spomp
     addIncludeToFile("../graph.hpp", header, false);
     header.pushString("#include");
     addIncludeToFile("../atomicUtil.h", header, false);
+  header.pushString("#include");
+  addIncludeToFile("../geomCompleteGraph.hpp", header, false);
     header.NewLine();
     main.pushString("#include");
     sprintf(temp, "%s.h", fileName);
@@ -79,42 +81,53 @@ namespace spomp
     main->pushstr_newL("levelCount[phase] = bfsCount;");
   }
 
-  void add_BFSIterationLoop(dslCodePad *main, iterateBFS *bfsAbstraction)
-  {
-    char strBuffer[1024];
-    char *iterNode = bfsAbstraction->getIteratorNode()->getIdentifier();
-    char *graphId = bfsAbstraction->getGraphCandidate()->getIdentifier();
-    main->pushstr_newL("while ( bfsCount > 0 )");
-    main->pushstr_newL("{");
-    main->pushstr_newL(" int prev_count = bfsCount ;");
-    main->pushstr_newL("bfsCount = 0 ;");
-    main->pushstr_newL("#pragma omp parallel for");
-    sprintf(strBuffer, "for( %s %s = %s; %s < prev_count ; %s++)", "int", "l", "0", "l", "l");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "int %s = levelNodes[phase][%s] ;", iterNode, "l");
-    main->pushstr_newL(strBuffer);
-    sprintf(strBuffer, "for(%s %s = %s.%s[%s] ; %s < %s.%s[%s+1] ; %s++) ", "int", "edge", graphId, "indexofNodes", iterNode, "edge", graphId, "indexofNodes", iterNode, "edge");
-    main->pushString(strBuffer);
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", "nbr", graphId, "edgeList", "edge");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("int dnbr ;");
-    main->pushstr_newL("if(bfsDist[nbr]<0)");
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "dnbr = %s(&bfsDist[nbr],-1,bfsDist[%s]+1);", "__sync_val_compare_and_swap", iterNode);
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("if (dnbr < 0)");
-    main->pushstr_newL("{");
-    sprintf(strBuffer, "%s %s = %s();", "int", "num_thread", "omp_get_thread_num");
-    // sprintf(strBuffer,"int %s = bfsCount.fetch_add(%s,%s) ;","loc","1","std::memory_order_relaxed");
-    main->pushstr_newL(strBuffer);
-    sprintf(strBuffer, " levelNodes_later[%s].push_back(%s) ;", "num_thread", "nbr");
-    main->pushstr_newL(strBuffer);
-    main->pushstr_newL("}");
-    main->pushstr_newL("}");
-    main->pushstr_newL("}");
+void add_BFSIterationLoop(dslCodePad* main, iterateBFS* bfsAbstraction) {
+  char strBuffer[1024];
+  char* iterNode = bfsAbstraction->getIteratorNode()->getIdentifier();
+  char* graphId = bfsAbstraction->getGraphCandidate()->getIdentifier();
+  bool isGeomCompleteGraph = false;
+  if(bfsAbstraction->getGraphCandidate()->getSymbolInfo()->getType()->gettypeId() == TYPE_GEOMCOMPLETEGRAPH ){
+    isGeomCompleteGraph = true;
   }
+  main->pushstr_newL("while ( bfsCount > 0 )");
+  main->pushstr_newL("{");
+  main->pushstr_newL(" int prev_count = bfsCount ;");
+  main->pushstr_newL("bfsCount = 0 ;");
+  main->pushstr_newL("#pragma omp parallel for");
+  sprintf(strBuffer, "for( %s %s = %s; %s < prev_count ; %s++)", "int", "l", "0", "l", "l");
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "int %s = levelNodes[phase][%s] ;", iterNode, "l");
+  main->pushstr_newL(strBuffer);
+  if(isGeomCompleteGraph){
+    sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s()-1; %s++) ","int","edge","0","edge","g","num_nodes","edge");
+  }else{
+    sprintf(strBuffer, "for(%s %s = %s.%s[%s] ; %s < %s.%s[%s+1] ; %s++) ", "int", "edge", graphId, "indexofNodes", iterNode, "edge", graphId, "indexofNodes", iterNode, "edge");    
+  }
+  main->pushString(strBuffer);
+  main->pushstr_newL("{");
+  if(isGeomCompleteGraph){
+    sprintf(strBuffer, "%s %s = %s.getNeighbourFromEdge(%s,%s) ;", "int", "nbr", "g", iterNode, "edge");
+  }else{
+    sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", "nbr", graphId, "edgeList", "edge");
+  }
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("int dnbr ;");
+  main->pushstr_newL("if(bfsDist[nbr]<0)");
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "dnbr = %s(&bfsDist[nbr],-1,bfsDist[%s]+1);", "__sync_val_compare_and_swap", iterNode);
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("if (dnbr < 0)");
+  main->pushstr_newL("{");
+  sprintf(strBuffer, "%s %s = %s();", "int", "num_thread", "omp_get_thread_num");
+  //sprintf(strBuffer,"int %s = bfsCount.fetch_add(%s,%s) ;","loc","1","std::memory_order_relaxed");
+  main->pushstr_newL(strBuffer);
+  sprintf(strBuffer, " levelNodes_later[%s].push_back(%s) ;", "num_thread", "nbr");
+  main->pushstr_newL(strBuffer);
+  main->pushstr_newL("}");
+  main->pushstr_newL("}");
+  main->pushstr_newL("}");
+}
 
   void add_RBFSIterationLoop(dslCodePad *main, iterateBFS *bfsAbstraction)
   {
@@ -245,6 +258,10 @@ namespace spomp
     {
       generateForAll((forallStmt *)stmt);
     }
+
+  if (stmt->getTypeofNode() == NODE_LOOPSTMT){
+    generateLoopStmt((loopStmt*) stmt);
+  }
 
     if (stmt->getTypeofNode() == NODE_FIXEDPTSTMT)
     {
@@ -1013,104 +1030,130 @@ namespace spomp
     return (extractString == "elements");
   }
 
-  void dsl_cpp_generator::generateForAllSignature(forallStmt *forAll)
+
+void dsl_cpp_generator::generateForAllSignature(forallStmt* forAll)
+{
+
+  char strBuffer[1024];
+  Identifier* iterator=forAll->getIterator();
+  if(forAll->isSourceProcCall())
   {
-
-    char strBuffer[1024];
-    Identifier *iterator = forAll->getIterator();
-    if (forAll->isSourceProcCall())
-    {
-      Identifier *sourceGraph = forAll->getSourceGraph();
-      proc_callExpr *extractElemFunc = forAll->getExtractElementFunc();
-      Identifier *iteratorMethodId = extractElemFunc->getMethodId();
-      if (allGraphIteration(iteratorMethodId->getIdentifier()))
-      {
-        char *graphId = sourceGraph->getIdentifier();
-        char *methodId = iteratorMethodId->getIdentifier();
-        string s(methodId);
-        if (s.compare("nodes") == 0)
-        {
-          cout << "INSIDE NODES VALUE" << "\n";
-          sprintf(strBuffer, "for (%s %s = 0; %s < %s.%s(); %s ++) ", "int", iterator->getIdentifier(), iterator->getIdentifier(), graphId, "num_nodes", iterator->getIdentifier());
-        }
-        else
-          sprintf(strBuffer, "for (%s %s = 0; %s < %s.%s(); %s ++) ", "int", iterator->getIdentifier(), iterator->getIdentifier(), graphId, "num_edges", iterator->getIdentifier());
-
-        main.pushstr_newL(strBuffer);
-      }
-      else if (neighbourIteration(iteratorMethodId->getIdentifier()))
-      {
-
-        char *graphId = sourceGraph->getIdentifier();
-        char *methodId = iteratorMethodId->getIdentifier();
-        string s(methodId);
-        if (s.compare("neighbors") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ", "int", "edge", graphId, "indexofNodes", nodeNbr->getIdentifier(), "edge", graphId, "indexofNodes", nodeNbr->getIdentifier(), "edge");
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", iterator->getIdentifier(), graphId, "edgeList", "edge"); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        }
-        if (s.compare("nodes_to") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ", "int", "edge", graphId, "rev_indexofNodes", nodeNbr->getIdentifier(), "edge", graphId, "rev_indexofNodes", nodeNbr->getIdentifier(), "edge");
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s.%s[%s] ;", "int", iterator->getIdentifier(), graphId, "srcList", "edge"); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        }
-        if (s.compare("inOutNbrs") == 0)
-        {
-          list<argument *> argList = extractElemFunc->getArgList();
-          assert(argList.size() == 1);
-          Identifier *nodeNbr = argList.front()->getExpr()->getId();
-          sprintf(strBuffer, "for (edge %s_edges: %s.getInOutNbrs(%s)) ", nodeNbr->getIdentifier(), graphId, nodeNbr->getIdentifier());
-          main.pushstr_newL(strBuffer);
-          main.pushString("{");
-          sprintf(strBuffer, "%s %s = %s_edges.destination ;", "int", iterator->getIdentifier(), nodeNbr->getIdentifier()); // needs to move the addition of
-          main.pushstr_newL(strBuffer);
-        } // statement to a different method.                                                                                                  //statement to a different method.
-      }
+    Identifier* sourceGraph=forAll->getSourceGraph();
+    proc_callExpr* extractElemFunc=forAll->getExtractElementFunc();
+    Identifier* iteratorMethodId=extractElemFunc->getMethodId();
+    bool isGeomCompleteGraph = false;
+    if(sourceGraph->getSymbolInfo()->getType()->gettypeId() == TYPE_GEOMCOMPLETEGRAPH ){
+      isGeomCompleteGraph = true;
     }
-    else if (forAll->isSourceField())
+    if(allGraphIteration(iteratorMethodId->getIdentifier()))
     {
-      /*PropAccess* sourceField=forAll->getPropSource();
-      Identifier* dsCandidate = sourceField->getIdentifier1();
-      Identifier* extractId=sourceField->getIdentifier2();
-
-      if(dsCandidate->getSymbolInfo()->getType()->gettypeId()==TYPE_SETN)
+      char* graphId=sourceGraph->getIdentifier();
+      char* methodId=iteratorMethodId->getIdentifier();
+      string s(methodId);
+      if(s.compare("nodes")==0)
       {
-        main.pushstr_newL("std::set<int>::iterator itr;");
-        sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",dsCandidate->getIdentifier(),dsCandidate->getIdentifier());
-        main.pushstr_newL(strBuffer);
+        cout<<"INSIDE NODES VALUE"<<"\n";
+        sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++) ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_nodes",iterator->getIdentifier());
+      }
+      else
+      {
+        sprintf(strBuffer,"for (%s %s = 0; %s < %s.%s(); %s ++) ","int",iterator->getIdentifier(),iterator->getIdentifier(),graphId,"num_edges",iterator->getIdentifier());
       }
 
-      /*
-      if(elementsIteration(extractId->getIdentifier()))
-        {
-          Identifier* collectionName=forAll->getPropSource()->getIdentifier1();
-          int typeId=collectionName->getSymbolInfo()->getType()->gettypeId();
-          if(typeId==TYPE_SETN)
-          {
-            main.pushstr_newL("std::set<int>::iterator itr;");
-            sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",collectionName->getIdentifier(),collectionName->getIdentifier());
-            main.pushstr_newL(strBuffer);
-          }
-        }*/
-    }
-    else if (forAll->isSourceExpr())
-    {
+      main.pushstr_newL(strBuffer);
 
-      Expression *expr = forAll->getSourceExpr();
-      Expression *mapExpr = expr->getMapExpr();
-      Identifier *mapId = mapExpr->getId();
+    }
+    else if(neighbourIteration(iteratorMethodId->getIdentifier()))
+    { 
+       
+       char* graphId=sourceGraph->getIdentifier();
+       char* methodId=iteratorMethodId->getIdentifier();
+       string s(methodId);
+       if(s.compare("neighbors")==0)
+       {
+       list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s()-1; %s ++) ","int","edge","0","edge","g","num_nodes","edge");
+       }else{
+        sprintf(strBuffer,"for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ","int","edge",graphId,"indexofNodes",nodeNbr->getIdentifier(),"edge",graphId,"indexofNodes",nodeNbr->getIdentifier(),"edge");
+       }
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"%s %s = %s.%s(%s, %s) ;","int",iterator->getIdentifier(),graphId,"getNeighbourFromEdge",nodeNbr->getIdentifier(), "edge"); 
+       }else{
+        sprintf(strBuffer,"%s %s = %s.%s[%s] ;","int",iterator->getIdentifier(),graphId,"edgeList","edge"); //needs to move the addition of
+       }
+       main.pushstr_newL(strBuffer);
+       }
+       if(s.compare("nodes_to")==0)
+       {
+        list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       if(isGeomCompleteGraph){
+        // Assumption, it doesn't matter since it's a complete graph, the reverse index is the same as the index because all nodes are connected to each other
+        sprintf(strBuffer,"for (%s %s = %s; %s < %s.%s(); %s ++) ","int","edge","0","edge","g","num_nodes","edge");
+       }else{
+        sprintf(strBuffer,"for (%s %s = %s.%s[%s]; %s < %s.%s[%s+1]; %s ++) ","int","edge",graphId,"rev_indexofNodes",nodeNbr->getIdentifier(),"edge",graphId,"rev_indexofNodes",nodeNbr->getIdentifier(),"edge");
+       }
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       if(isGeomCompleteGraph){
+        sprintf(strBuffer,"%s %s = %s.%s(%s, %s) ;","int",iterator->getIdentifier(),graphId,"getNeighbourFromEdge",nodeNbr->getIdentifier(), "edge"); 
+       }else{
+        sprintf(strBuffer,"%s %s = %s.%s[%s] ;","int",iterator->getIdentifier(),graphId,"edgeList","edge"); //needs to move the addition of
+       }
+       main.pushstr_newL(strBuffer);
+       }  
+       if(s.compare("inOutNbrs")==0)
+       {
+        list<argument*>  argList=extractElemFunc->getArgList();
+       assert(argList.size()==1);
+       Identifier* nodeNbr=argList.front()->getExpr()->getId();
+       sprintf(strBuffer,"for (edge %s_edges: %s.getInOutNbrs(%s)) ",nodeNbr->getIdentifier(),graphId,nodeNbr->getIdentifier());
+       main.pushstr_newL(strBuffer);
+       main.pushString("{");
+       sprintf(strBuffer,"%s %s = %s_edges.destination ;","int",iterator->getIdentifier(),nodeNbr->getIdentifier()); //needs to move the addition of
+       main.pushstr_newL(strBuffer);
+       }                                                                                                //statement to a different method.                                                                                                  //statement to a different method.
+
+    }
+  }
+  else if(forAll->isSourceField())
+  {
+    /*PropAccess* sourceField=forAll->getPropSource();
+    Identifier* dsCandidate = sourceField->getIdentifier1();
+    Identifier* extractId=sourceField->getIdentifier2();
+    
+    if(dsCandidate->getSymbolInfo()->getType()->gettypeId()==TYPE_SETN)
+    {
+      main.pushstr_newL("std::set<int>::iterator itr;");
+      sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",dsCandidate->getIdentifier(),dsCandidate->getIdentifier());
+      main.pushstr_newL(strBuffer);
+    }
+        
+    /*
+    if(elementsIteration(extractId->getIdentifier()))
+      {
+        Identifier* collectionName=forAll->getPropSource()->getIdentifier1();
+        int typeId=collectionName->getSymbolInfo()->getType()->gettypeId();
+        if(typeId==TYPE_SETN)
+        {
+          main.pushstr_newL("std::set<int>::iterator itr;");
+          sprintf(strBuffer,"for(itr=%s.begin();itr!=%s.end();itr++)",collectionName->getIdentifier(),collectionName->getIdentifier());
+          main.pushstr_newL(strBuffer);
+        }
+      }*/
+
+  }
+   else if(forAll->isSourceExpr()){
+  
+  Expression* expr = forAll->getSourceExpr();
+  Expression* mapExpr = expr->getMapExpr();
+  Identifier* mapId = mapExpr->getId();
 
       cout << "ENTERED................................................." << "\n";
 
@@ -1524,24 +1567,77 @@ namespace spomp
 
         /* write logic here */
 
-        set<Identifier *> containerId = forAll->getMapLocal();
-        auto it = containerId.begin();
-        Identifier *id = *it;
-        int start = 0;
-        generateForMergeContainer(id->getSymbolInfo()->getType(), start);
-        char val = 'k' + start + 1;
-        sprintf(strBuffer, "for(int %c = 0 ; %c < omp_get_max_threads() ; %c++)", val, val, val);
-        main.pushstr_newL(strBuffer);
-        generateInserts(id->getSymbolInfo()->getType(), id);
+    set<Identifier*>  containerId = forAll->getMapLocal();
+    auto it = containerId.begin();
+    Identifier* id = *it;
+    int start = 0;
+    generateForMergeContainer(id->getSymbolInfo()->getType(), start);
+    char val = 'k' + start + 1;
+    sprintf(strBuffer, "for(int %c = 0 ; %c < omp_get_max_threads() ; %c++)", val, val, val);
+    main.pushstr_newL(strBuffer);
+    generateInserts(id->getSymbolInfo()->getType(), id);
+
+ }   
+
+}  
+  
+} 
+
+void dsl_cpp_generator::generateLoop_header(loopStmt* loop){
+    main.pushString("#pragma omp parallel for"); 
+    if(loop->getReduceKeys().size()>0)
+    { 
+      set<int> reduce_Keys=loop->getReduceKeys();
+      assert(reduce_Keys.size()==1);
+      char strBuffer[1024];
+      set<int>::iterator it;
+      it=reduce_Keys.begin();
+      list<Identifier*> op_List=loop->getReduceIds(*it);
+      list<Identifier*>::iterator list_itr;
+      main.space();
+      sprintf(strBuffer,"reduction(%s : ",getOperatorString(*it));
+      main.pushString(strBuffer);
+      for(list_itr=op_List.begin();list_itr!=op_List.end();list_itr++)
+      {
+        Identifier* id=*list_itr;
+        main.pushString(id->getIdentifier());
+        if(std::next(list_itr)!=op_List.end())
+         main.pushString(",");
       }
+      main.pushString(")");
     }
+    main.NewLine();
+
+}
+
+void dsl_cpp_generator::generateLoopStmt(loopStmt* loop){
+  if(loop->isLoop()){
+    generateLoop_header(loop);
   }
+  main.pushString("for(auto ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString(" = ");
+  generateExpr(loop->getStartValue());
+  main.pushString("; ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString("< ");
+  generateExpr(loop->getEndValue());
+  main.pushString("; ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString("= ");
+  generate_exprIdentifier(loop->getIterator());
+  main.pushString(" + ");
+  generateExpr(loop->getStepValue());
+  main.pushString(")");
+  generateStatement(loop->getBody());
+}
 
-  void dsl_cpp_generator::generatefixedpt_filter(Expression *filterExpr)
-  {
 
-    Expression *lhs = filterExpr->getLeft();
-    char strBuffer[1024];
+void dsl_cpp_generator::generatefixedpt_filter(Expression* filterExpr)
+{  
+ 
+  Expression* lhs=filterExpr->getLeft();
+  char strBuffer[1024];
 
     vector<Identifier *> graphIds = graphId[curFuncType][curFuncCount()];
     /*printf("curFuncType %d curFuncCount() %d \n",curFuncType,curFuncCount());
@@ -1667,39 +1763,50 @@ namespace spomp
         /*placeholder for adding code for declarations that are initialized as well*/
       }
 
-      if (insideBatchBlock) /* the properties are malloced, so they need
-                                   to be freed to manage memory.*/
-        freeIdStore.back().push_back(declStmt->getdeclId());
-    }
-    else if (type->isHeapType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isMapType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isBtreeType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      main.pushstr_newL(";");
-    }
-    else if (type->isPrimitiveType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      if (declStmt->isInitialized())
-      {
-        main.pushString(" = ");
-        /* the following if conditions is for cases where the
-           predefined functions are used as initializers
-           but the variable's type doesnot match*/
-        if (declStmt->getExpressionAssigned()->getExpressionFamily() == EXPR_PROCCALL)
+      if(insideBatchBlock)   /* the properties are malloced, so they need 
+                                    to be freed to manage memory.*/
+             freeIdStore.back().push_back(declStmt->getdeclId());
+             
+   }
+   else if(type->isGraphType()){
+     main.pushString("graph ");
+     main.pushString(declStmt->getdeclId()->getIdentifier());
+     if(declStmt->isInitialized())
+     {
+       main.pushString(" = ");
+       generateExpr(declStmt->getExpressionAssigned());
+     }
+     main.pushstr_newL(";");
+   }
+   else if(type->isHeapType())
+   { 
+     main.pushstr_space(convertToCppType(type));
+     main.pushString(declStmt->getdeclId()->getIdentifier());
+     main.pushstr_newL(";");
+   }
+   else if(type->isMapType())
+   { 
+     main.pushstr_space(convertToCppType(type));
+     main.pushString(declStmt->getdeclId()->getIdentifier());
+     main.pushstr_newL(";");
+   }
+   else if(type->isBtreeType())
+   { 
+     main.pushstr_space(convertToCppType(type));
+     main.pushString(declStmt->getdeclId()->getIdentifier());
+     main.pushstr_newL(";");
+   }
+   else if(type->isPrimitiveType())
+   { 
+     main.pushstr_space(convertToCppType(type));
+     main.pushString(declStmt->getdeclId()->getIdentifier());
+     if(declStmt->isInitialized())
+     {
+       main.pushString(" = ");
+       /* the following if conditions is for cases where the 
+          predefined functions are used as initializers
+          but the variable's type doesnot match*/
+       if(declStmt->getExpressionAssigned()->getExpressionFamily()==EXPR_PROCCALL)
         {
           proc_callExpr *pExpr = (proc_callExpr *)declStmt->getExpressionAssigned();
           Identifier *methodId = pExpr->getMethodId();
@@ -1713,47 +1820,75 @@ namespace spomp
         main.pushString(" = ");
         getDefaultValueforTypes(type->gettypeId());
         main.pushstr_newL(";");
-      }
-    }
-    else if (type->isNodeEdgeType())
-    {
-      main.pushstr_space(convertToCppType(type));
-      main.pushString(declStmt->getdeclId()->getIdentifier());
-      if (declStmt->isInitialized())
-      {
-        main.pushString(" = ");
-        generateExpr(declStmt->getExpressionAssigned());
-        main.pushstr_newL(";");
-      }
-    }
-    else if (type->isCollectionType())
-    {
-      if (type->gettypeId() == TYPE_UPDATES)
-      {
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
-        if (declStmt->isInitialized())
+     }
+     
+
+
+   }
+   else if(type->isNodeEdgeType())
         {
-          main.pushString(" = ");
-          generateExpr(declStmt->getExpressionAssigned());
+          main.pushstr_space(convertToCppType(type));
+          main.pushString(declStmt->getdeclId()->getIdentifier());
+          if(declStmt->isInitialized())
+           {
+              main.pushString(" = ");
+              generateExpr(declStmt->getExpressionAssigned());
+              main.pushstr_newL(";");
+           }
+         
+
         }
-        main.pushstr_newL(";");
+    else if(type->isCollectionType())
+         {
+           if(type->gettypeId() == TYPE_UPDATES)
+             {
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(declStmt->isInitialized())
+                   {
+                      main.pushString(" = ");
+                      generateExpr(declStmt->getExpressionAssigned());
+                     
+                   } 
+                  main.pushstr_newL(";");
+   
 
-        if (insideBatchBlock)
-          freeIdStore.back().push_back(declStmt->getdeclId());
-      }
-      if (type->gettypeId() == TYPE_NODEMAP)
-      {
-
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
-        main.pushstr_newL(";");
-      }
-      if (type->gettypeId() == TYPE_CONTAINER)
-      {
-
-        main.pushstr_space(convertToCppType(type));
-        main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(insideBatchBlock)
+                   freeIdStore.back().push_back(declStmt->getdeclId());   
+             }
+            if(type->gettypeId() == TYPE_NODEMAP){
+               
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                main.pushstr_newL(";");
+           }
+           if(type->gettypeId() == TYPE_SET){
+             
+              main.pushstr_space(convertToCppType(type));
+              main.pushString(declStmt->getdeclId()->getIdentifier());
+              main.pushstr_newL(";");
+           }
+            if(type->gettypeId() == TYPE_VECTOR){
+              
+                main.pushstr_space(convertToCppType(type));
+                main.pushString(declStmt->getdeclId()->getIdentifier());
+                if(declStmt->isParam()){
+                  main.pushString("(");
+                  generateExpr(declStmt->getExpressionAssigned());
+                  main.pushString(")");
+                }
+                else if(declStmt->isInitialized())
+                {
+                  main.pushString(" = ");
+                  generateExpr(declStmt->getExpressionAssigned());
+                  
+                } 
+                main.pushstr_newL(";");
+            }
+           if(type->gettypeId() == TYPE_CONTAINER){
+             
+              main.pushstr_space(convertToCppType(type));
+              main.pushString(declStmt->getdeclId()->getIdentifier());
 
         if (type->getArgList().size() != 0)
         {
@@ -1995,49 +2130,47 @@ namespace spomp
     else if (expr->isArithmetic() || expr->isLogical())
     {
 
-      generate_exprArL(expr);
-    }
-    else if (expr->isRelational())
-    {
+         generate_exprArL(expr);
+       }
+       else if(expr->isRelational())
+       {
+          
+          generate_exprRelational(expr);
+       }
+       else if(expr->isProcCallExpr())
+       {
+         generate_exprProcCall(expr);
+       }
+       else if(expr->isUnary())
+       {
+         generate_exprUnary(expr);
+       }
+       else if(expr->isIndexExpr())
+       {
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString("!");
 
-      generate_exprRelational(expr);
-    }
-    else if (expr->isProcCallExpr())
-    {
-      generate_exprProcCall(expr);
-    }
-    else if (expr->isUnary())
-    {
-      generate_exprUnary(expr);
-    }
-    else if (expr->isIndexExpr())
-    {
+          } }
+        generate_exprIndex(expr, false);
+          if(expr->getTypeofExpr() == TYPE_BOOL){
+            if(expr->getMapExpr()->getId()->getSymbolInfo()!= NULL){
+              if(expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
+                 main.pushString(".empty()");
 
-      if (expr->getTypeofExpr() == TYPE_BOOL)
-      {
-        if (expr->getMapExpr()->getId()->getSymbolInfo() != NULL)
-        {
-          if (expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
-            main.pushString("!");
-        }
-      }
+          } }
 
-      generate_exprIndex(expr, false);
 
-      if (expr->getTypeofExpr() == TYPE_BOOL)
-      {
-        if (expr->getMapExpr()->getId()->getSymbolInfo() != NULL)
-        {
-          if (expr->getMapExpr()->getId()->getSymbolInfo()->getType()->gettypeId() == TYPE_CONTAINER)
-            main.pushString(".empty()");
-        }
-      }
-    }
-    else
-    {
-      assert(false);
-    }
-  }
+       }
+       else 
+       {
+         assert(false);
+       }
+
+ 
+
+}
 
   void dsl_cpp_generator::generate_exprIndex(Expression *expr, bool isLocal)
   {
@@ -2046,18 +2179,16 @@ namespace spomp
     Expression *mapExpr = expr->getMapExpr();
     Expression *indexExpr = expr->getIndexExpr();
 
-    Identifier *mapExprId = mapExpr->getId();
+Identifier* mapExprId = mapExpr->getId();
+if(indexExpr->isIdentifierExpr()){
+cout<<"entered here for indentifier gen for indexexpr"<<"\n";
+Identifier* indexExprId = indexExpr->getId();  
 
-    if (indexExpr->isIdentifierExpr())
-    {
-
-      cout << "entered here for indentifier gen for indexexpr" << "\n";
-      Identifier *indexExprId = indexExpr->getId();
-
-      if (isLocal)
-        sprintf(strBuffer, "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier(), indexExprId->getIdentifier());
-      else
-        sprintf(strBuffer, "%s[%s]", mapExprId->getIdentifier(), indexExprId->getIdentifier());
+if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+}else{
+    sprintf(strBuffer , "%s[%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+}
 
       cout << "string gen " << strBuffer << "\n";
       main.pushString(strBuffer);
@@ -2065,23 +2196,46 @@ namespace spomp
     else if (indexExpr->isPropIdExpr())
     {
 
-      cout << "entered here for index " << "\n";
-      if (isLocal)
-      {
-        sprintf(strBuffer, "%s_local[omp_get_thread_num()][", mapExprId->getIdentifier());
-        main.pushString(strBuffer);
-        generate_exprPropId(indexExpr->getPropId());
-        main.pushString("]");
-      }
-      else
-      {
-        sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
-        main.pushString(strBuffer);
-        generate_exprPropId(indexExpr->getPropId());
-        main.pushString("]");
-      }
-    }
+cout<<"entered here for index "<<"\n";
+if(isLocal){
+   sprintf(strBuffer, "%s_local[omp_get_thread_num()][", mapExprId->getIdentifier());
+   main.pushString(strBuffer);
+   generate_exprPropId(indexExpr->getPropId());
+   main.pushString("]");
+}
+else {
+   sprintf(strBuffer, "%s[", mapExprId->getIdentifier());
+   main.pushString(strBuffer);
+   generate_exprPropId(indexExpr->getPropId());
+   main.pushString("]");
+}
+
+}else if(indexExpr->isArithmetic()){
+// TODO: fix isLocal
+
+  Identifier* indexExprId = indexExpr->getId(); 
+  if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+  }else{
+      sprintf(strBuffer , "%s[", mapExprId->getIdentifier());
+      main.pushString(strBuffer);
+      generate_exprArL(indexExpr);
+      main.pushString("]");
   }
+}else if(indexExpr->isLiteral()){
+  // TODO: fix isLocal
+  Identifier* indexExprId = indexExpr->getId();
+  if(isLocal){
+     sprintf(strBuffer , "%s_local[omp_get_thread_num()][%s]", mapExprId->getIdentifier() , indexExprId->getIdentifier());
+  }else{
+      sprintf(strBuffer , "%s[", mapExprId->getIdentifier());
+      main.pushString(strBuffer);
+      generate_exprLiteral(indexExpr);
+      main.pushString("]");
+  }
+}
+
+}
 
   void dsl_cpp_generator::generate_exprArL(Expression *expr)
   {
@@ -2292,42 +2446,50 @@ namespace spomp
       return methodId;
   }
 
-  void dsl_cpp_generator::generate_exprProcCall(Expression *expr)
-  {
-    proc_callExpr *proc = (proc_callExpr *)expr;
-    string methodId(proc->getMethodId()->getIdentifier());
-    if (methodId == "get_edge")
-    {
 
-      // if(curFuncType == INCREMENTAL_FUNC || curFuncType == DECREMENTAL_FUNC)
-      getEdgeTranslation(expr);
-      /*else
-       main.pushString("edge");*/
-      // To be changed..need to check for a neighbour iteration
-      //  and then replace by the iterator.
-    }
-    else if (methodId == "count_outNbrs")
-    {
-      char strBuffer[1024];
-      list<argument *> argList = proc->getArgList();
-      assert(argList.size() == 1);
-      Identifier *nodeId = argList.front()->getExpr()->getId();
-      Identifier *objectId = proc->getId1();
-      sprintf(strBuffer, "(%s.%s[%s+1]-%s.%s[%s])", objectId->getIdentifier(), "indexofNodes", nodeId->getIdentifier(), objectId->getIdentifier(), "indexofNodes", nodeId->getIdentifier());
-      main.pushString(strBuffer);
-    }
-    else if (methodId == "is_an_edge")
-    {
-      char strBuffer[1024];
-      list<argument *> argList = proc->getArgList();
-      assert(argList.size() == 2);
-      Identifier *srcId = argList.front()->getExpr()->getId();
-      Identifier *destId = argList.back()->getExpr()->getId();
-      Identifier *objectId = proc->getId1();
-      sprintf(strBuffer, "%s.%s(%s, %s)", objectId->getIdentifier(), "check_if_nbr", srcId->getIdentifier(), destId->getIdentifier());
-      main.pushString(strBuffer);
-    }
-    else
+void dsl_cpp_generator::generate_exprProcCall(Expression* expr)
+{
+  proc_callExpr* proc=(proc_callExpr*)expr;
+  string methodId(proc->getMethodId()->getIdentifier());
+  if(methodId=="get_edge")
+  {
+    
+   // if(curFuncType == INCREMENTAL_FUNC || curFuncType == DECREMENTAL_FUNC)
+        getEdgeTranslation(expr);
+    /*else    
+     main.pushString("edge");*/ //To be changed..need to check for a neighbour iteration 
+                             // and then replace by the iterator.
+  }
+  else if(methodId=="count_outNbrs")
+       {
+         char strBuffer[1024];
+         list<argument*> argList=proc->getArgList();
+         assert(argList.size()==1);
+         Identifier* nodeId=argList.front()->getExpr()->getId();
+         Identifier* objectId=proc->getId1();
+         sprintf(strBuffer,"(%s.%s[%s+1]-%s.%s[%s])",objectId->getIdentifier(),"indexofNodes",nodeId->getIdentifier(),objectId->getIdentifier(),"indexofNodes",nodeId->getIdentifier());
+         main.pushString(strBuffer);
+       }
+  else if(methodId=="is_an_edge")
+     {
+        char strBuffer[1024];
+         list<argument*> argList=proc->getArgList();
+         assert(argList.size()==2);
+         Identifier* srcId=argList.front()->getExpr()->getId();
+         Identifier* destId=argList.back()->getExpr()->getId();
+         Identifier* objectId=proc->getId1();
+         sprintf(strBuffer,"%s.%s(%s, %s)",objectId->getIdentifier(),"check_if_nbr",srcId->getIdentifier(),destId->getIdentifier());
+         main.pushString(strBuffer);
+  }
+  else if(methodId == "reverse"){
+    char strBuffer[1024];
+    list<argument*> argList=proc->getArgList();
+    assert(argList.size()==2);
+    sprintf(strBuffer,"std::reverse(");
+    main.pushString(strBuffer);
+    generateArgList(argList, false);
+    main.pushString(")");
+  }else
     {
 
       char strBuffer[1024];
@@ -2371,40 +2533,42 @@ namespace spomp
 
       main.pushString(strBuffer);
 
-      if (methodId == "insert")
-      {
+      if(methodId == "insert"){
 
-        main.pushString("(");
+        if(argList.size() == 1 && argList.front()->getExpr()->isIdentifierExpr() && 
+           argList.front()->getExpr()->getId()->getSymbolInfo()->getType()->isIntegerType())
+          {
+            main.pushString("(");
+            generateExpr(argList.front()->getExpr());
+            main.pushString(")");
+          }else{
+            main.pushString("(");
+            if(indexExpr != NULL){
+              Expression* mapExpr = indexExpr->getMapExpr();
+              Identifier* mapExprId = mapExpr->getId();
 
-        if (indexExpr != NULL)
-        {
-          Expression *mapExpr = indexExpr->getMapExpr();
-          Identifier *mapExprId = mapExpr->getId();
-
-          if (parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
-            generate_exprIndex(indexExpr, true);
-          else
-            generate_exprIndex(indexExpr, false);
-        }
-        else if (objectId != NULL)
-        {
-          Identifier *id2 = proc->getId2();
-          if (id2 != NULL)
-            sprintf(strBuffer, "%s.%s", objectId->getIdentifier(), id2->getIdentifier());
-          else
-            sprintf(strBuffer, "%s", objectId->getIdentifier());
-
-          main.pushString(strBuffer);
-        }
-
-        main.pushString(".end()");
-        main.pushString(",");
-        generateArgList(argList, false);
-        main.pushString(".begin(),");
-        generateArgList(argList, false);
-        main.pushString(".end())");
-      }
-      else
+              if(parallelConstruct.size() > 0 && mapExprId->getSymbolInfo()->getId()->isLocalMapReq())
+                  generate_exprIndex(indexExpr, true);
+              else
+                  generate_exprIndex(indexExpr, false);
+            }
+            else if(objectId != NULL){
+              Identifier* id2 = proc->getId2();
+              if(id2 != NULL)
+                sprintf(strBuffer,"%s.%s",objectId->getIdentifier(), id2->getIdentifier());               
+              else
+                sprintf(strBuffer,"%s",objectId->getIdentifier()); 
+              main.pushString(strBuffer);      
+            }
+            main.pushString(".end()");
+            main.pushString(",");
+            generateArgList(argList,false);
+            main.pushString(".begin(),");
+            generateArgList(argList, false);
+            main.pushString(".end())");
+          }
+      }  
+      else  
       {
         cout << "isnide here 4" << endl;
         generateArgList(argList, true);
@@ -2772,25 +2936,30 @@ namespace spomp
           string funcIdString(funcId);
           map<string, bool> dynamicFuncs = frontEndContext.getDynamicLinkFuncs();
 
-          if (dynamicFuncs.find(funcIdString) != dynamicFuncs.end() && dynamicFuncs[funcIdString])
-            return "edge";
-          else
-            return "int"; // need to be modified.
-        }
-      }
-      else
-        return "int";
-    }
-    else if (type->isGraphType())
-    {
-      return "graph&";
-    }
-    else if (type->isGNNType())
-    {
-      return "GNN ";
-    }
-    else if (type->isCollectionType())
-    {
+        if(dynamicFuncs.find(funcIdString) != dynamicFuncs.end() && dynamicFuncs[funcIdString])
+           return "edge";
+        else
+          return "int"; //need to be modified.
+         
+     }
+    } 
+   else
+      return "int"; 
+      
+  }
+  else if(type->isGraphType())
+  {
+    return "graph&";
+  }
+  else if(type->isGeomCompleteGraphType()){
+    return "geomCompleteGraph&";
+  }
+   else if (type->isGNNType())
+  {
+    return "GNN ";
+  }
+  else if(type->isCollectionType())
+  { 
 
       printf("Collection Type \n");
       int typeId = type->gettypeId();
@@ -2825,12 +2994,43 @@ namespace spomp
         vecString = vecString + innerString;
         vecString = vecString + ">";
 
-        copy(vecString.begin(), vecString.end(), newS);
-        newS[vecString.size()] = '\0';
-        return newS;
-      }
-      default:
-        assert(false);
+           copy(vecString.begin(), vecString.end(), newS);
+           newS[vecString.size()] = '\0';
+           return newS; 
+
+        } 
+        case TYPE_SET:
+        {
+            char* newS = new char[1024];
+            string setString = "std::set<";   
+  
+            char* valType = (char*)convertToCppType(type->getInnerTargetType());
+            string innerString = valType;
+            setString = setString + innerString;
+            setString = setString + ">";
+  
+            copy(setString.begin(), setString.end(), newS);
+            newS[setString.size()] = '\0';
+
+            printf("SET STRING %s\n",setString.c_str());
+            return newS; 
+        }
+        case TYPE_VECTOR:
+        {
+          char* newS = new char[1024];
+          string vecString = "std::vector<";   
+
+          char* valType = (char*)convertToCppType(type->getInnerTargetType());
+          string innerString = valType;
+          vecString = vecString + innerString;
+          vecString = vecString + ">";
+
+          copy(vecString.begin(), vecString.end(), newS);
+          newS[vecString.size()] = '\0';
+          return newS; 
+        }
+        default:
+         assert(false);          
       }
     }
 
@@ -2850,6 +3050,9 @@ namespace spomp
 
       Type *type = (*itr)->getType();
       targetFile.pushString(convertToCppType(type));
+      if(type->getRefType()){
+        targetFile.pushString("&");
+      }
       /*if(type->isPropType())
       {
           targetFile.pushString("* ");
