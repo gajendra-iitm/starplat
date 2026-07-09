@@ -29,8 +29,12 @@ public:
 
     graph copyGraph()
     {
-        // TODO implemente this method
-        geomCompleteGraph g_copy(filePath);
+        // Resolve the original TODO: return a copy of this graph, typed as
+        // `graph` (the base class fixes the return type). *this binds to graph's
+        // converting constructor (see graph.hpp / the definition at the bottom of
+        // this file), which reconstructs the equivalent adjacency structure from
+        // this geometric graph.
+        graph g_copy(*this);
         return g_copy;
     }
 
@@ -451,8 +455,20 @@ public:
     mstGraph.setNodes(tempMST.size());
     mstGraph.parseAdjacencyList(tempMST);
 
-    // mstGraph.printGraph();    
+    // mstGraph.printGraph();
 
     return mstGraph;
 }
 };
+
+// Converting constructor declared in graph.hpp. Defined here now that both
+// `graph` and `geomCompleteGraph` are complete types. It mirrors the geometric
+// graph's structure into a `graph` using geomCompleteGraph's public edge API and
+// graph's own adjacency-list machinery -- the same path getMST() uses -- so the
+// resulting `graph` owns properly-allocated CSR arrays and is destructor-safe.
+inline graph::graph(geomCompleteGraph &other) : graph((char *)"")
+{
+    setNodes(other.num_nodes());
+    std::map<int, std::vector<edge>> adj = other.getEdges();
+    parseAdjacencyList(adj);
+}

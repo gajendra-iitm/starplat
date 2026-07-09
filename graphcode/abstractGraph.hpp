@@ -1,6 +1,7 @@
 #ifndef STARPLAT_ABSTRACTGRAPH_HPP
 #define STARPLAT_ABSTRACTGRAPH_HPP
 
+class graph;
 #include <fstream>
 #include <sstream>
 #include <iostream>

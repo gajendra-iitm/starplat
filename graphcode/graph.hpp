@@ -28,6 +28,14 @@
 
 
 //bool counter=true;
+
+// geomCompleteGraph is a sibling AbstractGraph implementation that stores
+// geometric data rather than an adjacency list. It is forward-declared here so
+// `graph` can offer a converting constructor from it (defined in
+// geomCompleteGraph.hpp, once both types are complete). This lets
+// geomCompleteGraph::copyGraph() return a properly-typed `graph`.
+class geomCompleteGraph;
+
 class graph : public AbstractGraph
 {
 private:
@@ -75,6 +83,12 @@ public:
     diff_rev_edgeList = NULL;
     rev_edgeLen = NULL;
   }
+
+  // Converting constructor: build a `graph` that mirrors the structure of a
+  // geomCompleteGraph. Defined out-of-line in geomCompleteGraph.hpp because it
+  // needs the complete geomCompleteGraph type. This is what lets
+  // geomCompleteGraph::copyGraph() return a graph copy with the correct type.
+  graph(geomCompleteGraph &other);
 
   graph copyGraph(){
     graph g_copy((char*)"");
